@@ -11,123 +11,168 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/style.css">
 </head>
-<body class="home">
-<main>
-<header>
-  <span style="display:flex;align-items:center;gap:12px"><img src="/favicon.svg" alt=""><a href="/">Nodo</a></span>
-  <nav><a href="#recursos">Recursos</a><a href="#baixar">Baixar</a><a href="/privacidade/">Privacidade</a><a href="#english">English</a>
-  <a class="gh" href="https://github.com/wylho/nodo" aria-label="Nodo no GitHub"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg></a></nav>
+<body>
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="/"><img src="/favicon.svg" alt="">Nodo</a>
+    <nav class="nav-links"><a href="#recursos">Recursos</a><a href="#claude">Claude</a><a href="#baixar">Baixar</a><a href="#english">English</a></nav>
+    <a class="icon-link" href="https://github.com/wylho/nodo" aria-label="Nodo no GitHub"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg></a>
+    <a class="btn primary sm" href="#baixar">Baixar grátis</a>
+  </div>
 </header>
 
+<main>
 <section class="hero">
-  <span class="pill">Windows · macOS · Linux</span>
-  <h1>Pense em mapas.</h1>
-  <p>Um app de mapas mentais que abre num instante, funciona sem internet e guarda cada mapa num arquivo seu. Abre os
-  mapas do Minder sem perder nada. E o Claude pode trabalhar no mesmo mapa que você, pelas mesmas regras.</p>
-  <p class="news-link"><a href="https://github.com/wylho/nodo/releases/latest">Versão 0.1: a primeira →</a></p>
-  <p class="cta"><a class="btn-dl" href="#baixar">Baixar grátis</a> <a class="btn-gh" href="https://github.com/wylho/nodo"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>Ver no GitHub</a> <a class="btn-sp" href="https://github.com/sponsors/wylho"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="m8 14.25.345.666a.75.75 0 0 1-.69 0l-.008-.004-.018-.01a7.152 7.152 0 0 1-.31-.17 22.055 22.055 0 0 1-3.434-2.414C2.045 10.731 0 8.35 0 5.5 0 2.836 2.086 1 4.25 1 5.797 1 7.153 1.802 8 3.02 8.847 1.802 10.203 1 11.75 1 13.914 1 16 2.836 16 5.5c0 2.85-2.045 5.231-3.885 6.818a22.066 22.066 0 0 1-3.744 2.584l-.018.01-.006.003h-.002ZM4.25 2.5c-1.336 0-2.75 1.164-2.75 3 0 2.15 1.58 4.144 3.365 5.682A20.58 20.58 0 0 0 8 13.393a20.58 20.58 0 0 0 3.135-2.211C12.92 9.644 14.5 7.65 14.5 5.5c0-1.836-1.414-3-2.75-3-1.373 0-2.609.986-3.029 2.456a.749.749 0 0 1-1.442 0C6.859 3.486 5.623 2.5 4.25 2.5Z"/></svg>Apoiar</a></p>
+  <div class="tile t1 map" style="--size: 330%; --pos: 18% 46%" aria-hidden="true"></div>
+  <div class="tile t2 map" style="--size: 360%; --pos: 86% 30%" aria-hidden="true"></div>
+  <div class="tile t3 themes" style="--size: 300%; --pos: 30% 62%" aria-hidden="true"></div>
+  <div class="tile t4 map" style="--size: 300%; --pos: 72% 74%" aria-hidden="true"></div>
+  <div class="hero-inner">
+    <span class="chip">Windows · macOS · Linux</span>
+    <h1>Pense em mapas.</h1>
+    <p class="lead">Um app de mapas mentais que abre num instante, funciona sem internet e guarda cada mapa num arquivo
+    seu. E o Claude pode trabalhar no mesmo mapa que você.</p>
+    <div class="cta">
+      <a class="btn primary" href="#baixar">Baixar grátis</a>
+      <a class="btn soft" href="https://github.com/wylho/nodo"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>Ver no GitHub</a>
+    </div>
+    <p class="fine">Grátis e de código aberto · <a href="https://github.com/wylho/nodo/releases/latest">Versão 0.1: a primeira →</a></p>
+  </div>
 </section>
 
-<picture>
-  <source srcset="/img/mapa-escuro.webp" media="(prefers-color-scheme: dark)">
-  <img class="shot hero-shot" src="/img/mapa.webp" width="2880" height="1800" alt="Um mapa mental no Nodo: a raiz no centro, ramos coloridos dos dois lados e o painel com o texto, a nota e a cor do nó selecionado">
-</picture>
-
-<h2 class="section-title">Feito para pensar rápido</h2>
-<p class="muted center">Tudo pelo teclado, nada de esperar. O mapa se arruma sozinho enquanto você escreve.</p>
-<div class="grid views">
-  <div class="box"><h3>Selecione e digite</h3><p>O texto entra direto no nó. Tab cria um filho, Enter um irmão, já prontos para escrever; as setas andam pelo mapa.</p></div>
-  <div class="box"><h3>Dos dois lados</h3><p>Ramos à esquerda e à direita da raiz, como no Minder. Escolha o lado de cada um no painel.</p></div>
-  <div class="box"><h3>Notas em cada nó</h3><p>Texto curto no mapa, detalhes na nota em Markdown, que fica guardada junto.</p></div>
-  <div class="box"><h3>Desfazer de verdade</h3><p>Duzentos passos para trás e para a frente, sem perder o que você recolheu ou mudou de lado.</p></div>
-  <div class="box"><h3>Busca no mapa</h3><p>Encontra pelo texto ou pela nota, e marca cada nó que bate.</p></div>
-  <div class="box"><h3>Sem internet</h3><p>Nenhuma conta, nenhum servidor. O mapa é um arquivo no seu computador.</p></div>
+<div class="showcase">
+  <picture>
+    <source srcset="/img/mapa-escuro.webp" media="(prefers-color-scheme: dark)">
+    <img src="/img/mapa.webp" width="2880" height="1800" alt="Um mapa mental no Nodo: a raiz no centro, ramos coloridos dos dois lados e o painel com o texto, a nota e a cor do nó selecionado">
+  </picture>
 </div>
 
-<section id="recursos">
-<div class="feature">
-  <div class="text">
-    <h2>O Claude no mesmo mapa</h2>
-    <p>O Nodo traz um servidor MCP embutido. Ligue nas Configurações e peça ao Claude para ler, criar e reorganizar
-    seus mapas. Ele usa o mesmo núcleo do app: cada edição dele segue as mesmas regras de uma feita à mão, e ele
-    também desfaz o que fez.</p>
+<section class="section" id="recursos">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="chip accent">Feito para pensar rápido</span>
+      <h2>Tudo pelo teclado, nada de esperar.</h2>
+      <p>O mapa se arruma sozinho enquanto você escreve.</p>
+    </div>
+    <div class="grid">
+      <div class="box"><span class="ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"/></svg></span><h3>Selecione e digite</h3><p>O texto entra direto no nó. Tab cria um filho, Enter um irmão, já prontos para escrever; as setas andam pelo mapa.</p></div>
+      <div class="box"><span class="ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M15 12h4M5 12h4M19 12l2-3M19 12l2 3M5 12 3 9M5 12l-2 3"/></svg></span><h3>Dos dois lados</h3><p>Ramos à esquerda e à direita da raiz, como no Minder. Escolha o lado de cada um no painel.</p></div>
+      <div class="box"><span class="ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/></svg></span><h3>Notas em cada nó</h3><p>Texto curto no mapa, detalhes na nota em Markdown, que fica guardada junto.</p></div>
+      <div class="box"><span class="ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span><h3>Desfazer de verdade</h3><p>Duzentos passos para trás e para a frente, sem perder o que você recolheu ou mudou de lado.</p></div>
+      <div class="box"><span class="ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span><h3>Busca no mapa</h3><p>Encontra pelo texto ou pela nota, e marca cada nó que bate.</p></div>
+      <div class="box"><span class="ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h.01M8.5 16.43a5 5 0 0 1 7 0M5 12.86a10 10 0 0 1 5.17-2.69M19 12.86a10 10 0 0 0-2-1.5M2 8.82a15 15 0 0 1 4.18-2.65M22 8.82a15 15 0 0 0-11.29-3.76M2 2l20 20"/></svg></span><h3>Sem internet</h3><p>Nenhuma conta, nenhum servidor. O mapa é um arquivo no seu computador.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section band" id="claude">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="chip accent">Claude</span>
+      <h2>O Claude no mesmo mapa.</h2>
+      <p>O Nodo traz um servidor MCP embutido. Ligue nas Configurações e peça ao Claude para ler, criar e reorganizar
+      seus mapas.</p>
+    </div>
+    <div class="cards">
+      <div class="card wide">
+        <div>
+          <h3>As mesmas regras de uma edição à mão</h3>
+          <p>Ele usa o mesmo núcleo do app: cada edição dele vai para o mesmo histórico, e ele também desfaz o que fez.</p>
+          <ul>
+            <li>Claude Desktop: um botão nas Configurações</li>
+            <li>Claude Code: um comando para colar no terminal</li>
+            <li>Quando o Claude salva, a janela recarrega o mapa ao voltar para ela</li>
+          </ul>
+        </div>
+        <div class="media"><img src="/img/claude.webp" width="2880" height="1800" loading="lazy" alt="Configurações do Nodo com a aparência, o traçado das linhas e a seção Claude, com o botão Ligar e o comando do Claude Code"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="chip accent">Seus mapas</span>
+      <h2>Com a sua cara, no seu arquivo.</h2>
+      <p>Temas para o mapa e para a janela, e um formato que já existia antes do Nodo.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <h3>Temas de mapa</h3>
+        <p>Seis temas, no espírito do XMind: cartões coloridos, contorno, texto sobre a linha, cores fortes, pílulas ou
+        cinzas. Cada ramo principal ganha uma cor e os de baixo herdam. O tema fica salvo no próprio mapa.</p>
+        <div class="media"><img src="/img/temas.webp" width="2880" height="1800" loading="lazy" alt="A folha Tema do mapa, com seis mapinhas de exemplo: Clássico, Contorno, Sublinhado, Vibrante, Pílulas e Monocromático"></div>
+      </div>
+      <div class="card">
+        <h3>Seus mapas do Minder abrem aqui</h3>
+        <p>O Nodo lê e grava o formato <code>.minder</code>, o mesmo do <a href="https://github.com/phase1geo/Minder">Minder</a>.
+        Um mapa vai e volta sem perder texto, notas, cores, lados ou estilos, e salvar nunca deixa um arquivo pela metade.</p>
+        <div class="media"><img src="/img/busca.webp" width="2880" height="1800" loading="lazy" alt="Mapa com a busca aberta na barra, marcando os nós que contêm a palavra Design"></div>
+      </div>
+      <div class="card wide">
+        <div>
+          <h3>Com a cara do seu sistema</h3>
+          <p>Temas claro e escuro, e um tema Sistema que imita as cores do Windows, do macOS, do GNOME e do KDE. Ramos em
+          curva ou em ângulo, com cantos arredondados. Funciona também numa janela estreita.</p>
+        </div>
+        <div class="media phone"><img src="/img/janela-estreita.webp" width="1170" height="2532" loading="lazy" alt="O Nodo numa janela estreita, no tema escuro, com o mapa inteiro na tela"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section band" id="baixar">
+  <div class="wrap">
+    <div class="section-head center">
+      <span class="chip accent">Baixar</span>
+      <h2>Grátis e de código aberto.</h2>
+      <p>Os instaladores ficam na página de <a href="https://github.com/wylho/nodo/releases/latest">versões do GitHub</a>.</p>
+    </div>
+    <div class="grid dl">
+      <div class="box"><span class="ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18M12 3v18"/></svg></span><h3>Windows</h3><p>O <code>-setup.exe</code> (ou o <code>.msi</code>).</p><a class="btn soft sm" href="https://github.com/wylho/nodo/releases/latest">Baixar</a></div>
+      <div class="box"><span class="ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5c1-2 2.5-3 4-3 .2 1.6-.6 3.2-2 4"/><path d="M17 9c-1.5-1.2-3.2-1-5 0-1.8-1-3.5-1.2-5 0-2.5 2-2 7 .5 10.5 1.2 1.6 2.6 2 4.5 1 1.9 1 3.3.6 4.5-1 1-1.4 1.7-3 2-4.5-2-1-2.5-4.5-1.5-6Z"/></svg></span><h3>macOS</h3><p>O <code>.dmg</code>, para Apple Silicon e Intel. Na primeira vez, clique com o botão direito no app e escolha <b>Abrir</b>: ele ainda não é assinado pela Apple.</p><a class="btn soft sm" href="https://github.com/wylho/nodo/releases/latest">Baixar</a></div>
+      <div class="box"><span class="ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17 10 11 4 5"/><path d="M12 19h8"/></svg></span><h3>Linux</h3><p>O <code>.AppImage</code>, que roda em qualquer distribuição, o <code>.deb</code> ou o <code>.rpm</code>.</p><a class="btn soft sm" href="https://github.com/wylho/nodo/releases/latest">Baixar</a></div>
+    </div>
+    <p class="note">Sem anúncios, sem rastreamento, sem coleta de dados. Leia a <a href="/privacidade/">Política de Privacidade</a>.</p>
+  </div>
+</section>
+
+<section class="section" id="english" lang="en">
+  <div class="wrap english">
+    <h2>Nodo, in English</h2>
+    <p>Nodo is a free, open-source mind-mapping app for Windows, macOS and Linux. It opens instantly, works offline and
+    keeps each map in a file on your computer, in the format of <a href="https://github.com/phase1geo/Minder">Minder</a>, so
+    your existing Minder maps open without loss. A built-in MCP server lets Claude (Desktop and Code) read and edit the same
+    map you are working on, through the same core as the window.</p>
     <ul>
-      <li>Claude Desktop: um botão nas Configurações</li>
-      <li>Claude Code: um comando para colar no terminal</li>
-      <li>Quando o Claude salva, a janela recarrega o mapa ao voltar para ela</li>
+      <li>Select and type: Tab for a child, Enter for a sibling, both ready to write; arrows to move</li>
+      <li>Six map themes in the spirit of XMind, saved in the map</li>
+      <li>Branches on both sides of the root, notes in Markdown on every node, branch colours</li>
+      <li>Curved or angled links, light and dark themes, and a System theme that follows Windows, macOS, GNOME or KDE</li>
+      <li>200 steps of undo; Claude can undo its own edits too</li>
     </ul>
+    <p><a href="https://github.com/wylho/nodo/releases/latest">Download the latest version</a> · <a href="https://github.com/wylho/nodo">Source code on GitHub</a> ·
+    <a href="https://github.com/sponsors/wylho">Sponsor ♥</a> · <a href="/privacidade/#english">Privacy Policy</a></p>
   </div>
-  <img class="shot" src="/img/claude.webp" width="2880" height="1800" loading="lazy" alt="Configurações do Nodo com a aparência, o traçado das linhas e a seção Claude, com o botão Ligar e o comando do Claude Code">
-</div>
-
-<div class="feature flip">
-  <div class="text">
-    <h2>Seus mapas do Minder abrem aqui</h2>
-    <p>O Nodo lê e grava o formato <code>.minder</code>, o mesmo do <a href="https://github.com/phase1geo/Minder">Minder</a>.
-    Um mapa vai e volta sem perder texto, notas, cores, lados ou estilos. O arquivo continua seu, legível sem o app,
-    e salvar nunca deixa um arquivo pela metade.</p>
-  </div>
-  <img class="shot" src="/img/busca.webp" width="2880" height="1800" loading="lazy" alt="Mapa com a busca aberta na barra, marcando os nós que contêm a palavra Design">
-</div>
-
-<div class="feature">
-  <div class="text">
-    <h2>Temas de mapa</h2>
-    <p>Seis temas, no espírito do XMind: cartões coloridos, contorno, texto sobre a linha, cores fortes, pílulas ou
-    cinzas. Cada ramo principal ganha uma cor e os de baixo herdam. O tema fica salvo no próprio mapa.</p>
-    <ul>
-      <li>Ramos em curva ou em ângulo, com cantos arredondados</li>
-      <li>Uma cor escolhida à mão continua valendo por cima do tema</li>
-    </ul>
-  </div>
-  <img class="shot" src="/img/temas.webp" width="2880" height="1800" loading="lazy" alt="A folha Tema do mapa, com seis mapinhas de exemplo: Clássico, Contorno, Sublinhado, Vibrante, Pílulas e Monocromático">
-</div>
-
-<div class="feature flip narrow">
-  <div class="text">
-    <h2>Com a cara do seu sistema</h2>
-    <p>Temas claro e escuro, e um tema Sistema que imita as cores do Windows, do macOS, do GNOME e do KDE. Funciona
-    também numa janela estreita.</p>
-  </div>
-  <img class="shot" src="/img/janela-estreita.webp" width="1170" height="2532" loading="lazy" alt="O Nodo numa janela estreita, no tema escuro, com o mapa inteiro na tela">
-</div>
 </section>
-
-<h2 class="section-title" id="baixar">Baixar</h2>
-<p class="muted center">Grátis e de código aberto. Os instaladores ficam na página de
-<a href="https://github.com/wylho/nodo/releases/latest">versões do GitHub</a>.</p>
-<div class="grid dl">
-  <div class="box"><h3>Windows</h3><p>O <code>-setup.exe</code> (ou o <code>.msi</code>).</p></div>
-  <div class="box"><h3>macOS</h3><p>O <code>.dmg</code>, para Apple Silicon e Intel. Na primeira vez, clique com o botão direito no app e escolha <b>Abrir</b>: ele ainda não é assinado pela Apple.</p></div>
-  <div class="box"><h3>Linux</h3><p>O <code>.AppImage</code>, que roda em qualquer distribuição, o <code>.deb</code> ou o <code>.rpm</code>.</p></div>
-</div>
-
-<div class="box">
-  <p><b>Privacidade:</b> sem anúncios, sem rastreamento, sem coleta de dados. Seus mapas ficam no seu computador. Leia a
-  <a href="/privacidade/">Política de Privacidade</a>.</p>
-</div>
-
-<hr>
-
-<section id="english" lang="en">
-  <h2>Nodo, in English</h2>
-  <p>Nodo is a free, open-source mind-mapping app for Windows, macOS and Linux. It opens instantly, works offline and
-  keeps each map in a file on your computer, in the format of <a href="https://github.com/phase1geo/Minder">Minder</a>, so
-  your existing Minder maps open without loss. A built-in MCP server lets Claude (Desktop and Code) read and edit the same
-  map you are working on, through the same core as the window.</p>
-  <ul>
-    <li>Select and type: Tab for a child, Enter for a sibling, both ready to write; arrows to move</li>
-    <li>Six map themes in the spirit of XMind, saved in the map</li>
-    <li>Branches on both sides of the root, notes in Markdown on every node, branch colours</li>
-    <li>Curved or angled links, light and dark themes, and a System theme that follows Windows, macOS, GNOME or KDE</li>
-    <li>200 steps of undo; Claude can undo its own edits too</li>
-  </ul>
-  <p><a href="https://github.com/wylho/nodo/releases/latest">Download the latest version</a> · <a href="https://github.com/wylho/nodo">Source code on GitHub</a> ·
-  <a href="https://github.com/sponsors/wylho">Sponsor ♥</a> · <a href="/privacidade/#english">Privacy Policy</a></p>
-</section>
-
-<footer>Nodo · <a href="https://github.com/wylho/nodo">GitHub</a> · <a href="/privacidade/">Privacidade</a> ·
-Derivado do <a href="https://github.com/phase1geo/Minder">Minder</a>, de Trevor Williams · GPL-3.0</footer>
 </main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="cols">
+      <div><a class="brand" href="/"><img src="/favicon.svg" alt="">Nodo</a><p>Mapas mentais no seu computador.</p></div>
+      <div><h4>Nodo</h4><a href="/#recursos">Recursos</a><a href="/#claude">Claude</a><a href="/#baixar">Baixar</a></div>
+      <div><h4>Projeto</h4><a href="https://github.com/wylho/nodo">GitHub</a><a href="https://github.com/wylho/nodo/releases">Versões</a><a href="https://github.com/sponsors/wylho">Apoiar</a></div>
+      <div><h4>Sobre</h4><a href="/privacidade/">Privacidade</a><a href="/#english">English</a><a href="https://github.com/phase1geo/Minder">Minder</a></div>
+    </div>
+    <p class="legal">Derivado do <a href="https://github.com/phase1geo/Minder" style="display:inline">Minder</a>, de Trevor Williams · GPL-3.0</p>
+  </div>
+</footer>
+<script>
+  const nav = document.querySelector('.nav')
+  const onScroll = () => nav.classList.toggle('scrolled', scrollY > 8)
+  addEventListener('scroll', onScroll, { passive: true }); onScroll()
+</script>
 </body>
 </html>
