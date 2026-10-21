@@ -71,7 +71,10 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   grade do macOS e Linux sem placa a 1,12×). Regenerar: `tauri icon icons/source/nodo.svg -o icons`, o `.icns` de
   `macos.svg` e os quatro PNG do Linux de `linux.svg` (ver o commit que os gerou).
 - **D13:** **site em nodo-1c7.pages.dev** (`site/`, Cloudflare Pages sem build), mesma estrutura e `style.css` do site
-  do Ideario; README com o mesmo conteúdo (skill `sync-site`).
+  do Ideario; README com o mesmo conteúdo (skill `sync-site`). Diagramação inspirada no affinity.studio (abertura em
+  palco com recortes soltos, print grande, seções com selo e título grande, cartões em dupla, faixas alternadas,
+  rodapé em colunas), com os tokens do Ideario e ícones do Lucide inline. O `style.css` é o mesmo nos dois sites:
+  mudou num, copiar para o outro.
 
 - **D14:** **edição como no XMind** (pedido do usuário: "não sei se já posso digitar"): sempre há um nó selecionado,
   digitar escreve nele, Espaço/F2 editam, Tab/Enter criam já em edição, recolher em ⌘/; dica de teclado no canto.
@@ -113,7 +116,7 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
 - **CI/Release:** `.github/workflows/build.yml` (verificação + instaladores dos três sistemas nos Artifacts) e
   `release.yml` (rascunho → publicar); `scripts/check-version.sh` e `scripts/bump-version.sh`; guia em
   `docs/RELEASE.md`.
-- **Site:** `site/` (index, privacidade, prints de `ui/scripts/site-shots.mjs`). Precisa ligar o projeto no Cloudflare
+- **Site:** `site/` (index, privacidade, prints de `ui/scripts/site-shots.mjs`), na diagramação nova (D13). Precisa ligar o projeto no Cloudflare
   Pages (pasta `site`, sem build) para ir ao ar.
 - **Edição XMind e temas de mapa** (`lib/maptheme.ts`, `components/MapThemeSheet.svelte`, `Action::SetMapStyle`,
   `set_map_theme` no MCP, `set_map_style` no app); barra do macOS integrada (`setup` + `mac_lights_width` em
