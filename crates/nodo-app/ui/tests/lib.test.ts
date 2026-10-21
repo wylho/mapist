@@ -113,7 +113,7 @@ describe('palettes', () => {
 
 describe('cssVars', () => {
   it('emits every variable app.css expects', () => {
-    const v = cssVars(PALETTES.nodo.light, 'light')
+    const v = cssVars(PALETTES.atrio.light, 'light')
     for (const key of [
       '--bg',
       '--stage',
@@ -140,7 +140,7 @@ describe('cssVars', () => {
   })
 
   it('derives accent-soft when the palette omits it', () => {
-    const noSoft = { ...PALETTES.nodo.light, accentSoft: undefined }
+    const noSoft = { ...PALETTES.atrio.light, accentSoft: undefined }
     const v = cssVars(noSoft, 'light')
     expect(v['--accent-soft']).toBeTruthy()
     expect(v['--accent-soft']).not.toBe(noSoft.accent)
@@ -152,7 +152,7 @@ describe('cssVars', () => {
   })
 
   it('gives dark mode a dark shadow', () => {
-    const v = cssVars(PALETTES.nodo.dark, 'dark')
+    const v = cssVars(PALETTES.atrio.dark, 'dark')
     expect(v['--shadow']).toContain('rgb(0 0 0')
   })
 })
@@ -239,20 +239,20 @@ describe('hitTest', () => {
 
 describe('cor de nó: token vira hex, nunca o contrário', () => {
   it('resolve cada token para um hex válido do tema', () => {
-    const c = PALETTES.nodo.light
+    const c = PALETTES.atrio.light
     for (const t of NODE_COLOR_TOKENS) {
       expect(resolveNodeColor(t, c), t).toMatch(/^#[0-9a-f]{6}$/i)
     }
   })
 
   it('resolve o token para o primeiro valor de notes, na ordem certa', () => {
-    const c = PALETTES.nodo.light
+    const c = PALETTES.atrio.light
     expect(resolveNodeColor('--n-sand', c)).toBe(NOTES_FIRST)
     expect(resolveNodeColor('--n-sand', c)).toBe(c.notes[0])
   })
 
   it('passa hex direto, como um .minder carregaria', () => {
-    const c = PALETTES.nodo.light
+    const c = PALETTES.atrio.light
     expect(resolveNodeColor('#c6262e', c)).toBe('#c6262e')
   })
 
@@ -267,17 +267,17 @@ describe('cor de nó: token vira hex, nunca o contrário', () => {
       accent: '',
       onAccent: '',
       cardEdge: '',
-      nodeColors: PALETTES.nodo.light.notes,
+      nodeColors: PALETTES.atrio.light.notes,
     }
     for (const t of NODE_COLOR_TOKENS) {
-      expect(resolveColor(t, colors)).toBe(resolveNodeColor(t, PALETTES.nodo.light))
+      expect(resolveColor(t, colors)).toBe(resolveNodeColor(t, PALETTES.atrio.light))
     }
     expect(resolveColor('#c6262e', colors)).toBe('#c6262e')
     expect(resolveColor(null, colors)).toBe('#ffffff')
   })
 })
 
-const NOTES_FIRST = PALETTES.nodo.light.notes[0]
+const NOTES_FIRST = PALETTES.atrio.light.notes[0]
 
 describe('traceBranch', () => {
   function recorder() {

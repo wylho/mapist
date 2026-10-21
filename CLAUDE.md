@@ -1,13 +1,14 @@
 # Nodo — app de mapas mentais local-first (Tauri 2 + Rust + Svelte 5)
 
-App de mapas mentais multiplataforma, derivado do [Minder](https://github.com/phase1geo/Minder), com servidor MCP embutido
-para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
+App de mapas mentais multiplataforma, moderno, com servidor MCP embutido para que um agente leia e edite os mapas pelo
+mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/phase1geo/Minder); hoje é um app próprio
+(D27): o Minder não é referência nem restrição.
 **Especificação completa: `docs/SPEC.md`. Leia antes de qualquer tarefa.** O protótipo de design está em `prototype/`.
 
 ## Regras do projeto
 - **Local-first**: o mapa vive num arquivo no disco do usuário. Nada de servidor, conta ou rede para abrir, editar ou salvar.
-- **O arquivo é do usuário**: formato `.minder` (XML do Minder 2.0.9), legível sem o app e compatível com o Minder original.
-  Ida e volta sem perda nos campos que o Nodo modela.
+- **O arquivo é do usuário**: texto legível sem o app, gravado de forma atômica, ida e volta sem perda. Hoje é o XML
+  `.minder` herdado do começo; compatibilidade com o Minder original **não** é mais requisito (D27).
 - **Um núcleo, duas portas**: o aplicativo e o servidor MCP usam o mesmo `nodo-core`. Um agente editando por MCP
   produz exatamente o mesmo resultado que uma pessoa editando na janela, inclusive no histórico de desfazer.
 - **Um binário, dois modos**: `nodo` abre a janela; `nodo --mcp` fala o protocolo. O instalador leva um arquivo só.
@@ -52,9 +53,10 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   mais que a liberdade de inventar. Campos novos entram como atributos ignorados pelo Minder original.
 - **D6:** o servidor MCP é o **próprio executável** com `--mcp` (padrão copiado do Ideario), não um segundo binário.
   O `nodo-mcp` continua existindo como binário enxuto para uso sem interface.
-- **D7:** **paletas nomeadas + tema Sistema** (Nodo, Papel, Grafite, Floresta; a Nodo é a paleta-base do Ideario
-  com o nome do app, pedido do usuário; Sistema imita GNOME, KDE, Windows,
-  macOS), cada uma clara e escura. Os tokens são copiados de `ideario/src/lib/palettes.ts`; o `fitAccent` garante que
+- **D7:** **paletas nomeadas + tema Sistema**, hoje **do Atrio** (Atrio, Papel, Grafite, Floresta; a Atrio é a
+  paleta-base dos dois apps, pedido do usuário: o tema é do Atrio; a escolha gravada `nodo`/`ideario`/`mapist` vira
+  `atrio`; Sistema imita GNOME, KDE, Windows,
+  macOS), cada uma clara e escura. Os tokens vêm do Atrio (`src/lib/palettes.ts` só reexporta e monta o tema Sistema); o `fitAccent` garante que
   qualquer destaque do sistema continue legível.
 - **D8:** **medição de texto no frontend** (`set_sizes`), não no Rust. Uma crate de fontes no núcleo duplicaria a pilha e
   divergiria do que a tela desenha.
@@ -111,6 +113,10 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   `CardBody` (miolo do card de nota), a prévia de Markdown com as regras do Ideario e o **card na área de
   transferência** (HTML com `data-atrio-card` + Markdown). Mudança de visual compartilhado se faz lá, e aqui só sobe
   a tag. Licença MIT (o Nodo é GPL e o Ideario não).
+- **D27:** **o Nodo não é mais preso ao Minder** (pedido do usuário: "esquece o Minder"; foi inspiração, não é fork).
+  Funcionalidade nova não precisa caber no formato nem no comportamento do Minder. Ainda em aberto com o usuário: o
+  formato e a extensão do arquivo daqui para a frente (os `.minder` existentes continuam abrindo) e a licença (a GPL
+  veio do Minder).
 - **D18:** **o canvas redesenha no máximo uma vez por quadro**, e o que o desenho lê não pode ser `$state` escrito no
   mesmo efeito. Motivo: um laço assim (`colors`) fazia centenas de redesenhos por tecla e deixava a edição travando.
 

@@ -7,6 +7,7 @@ import {
   cssVars,
   DESKTOPS,
   PALETTES,
+  normalizePaletteId,
   paletteColors,
   type Colors,
   type DesktopId,
@@ -57,9 +58,8 @@ const readMode = (): ThemePref => {
 
 const readPalette = (): PaletteId => {
   const v = load(PALETTE_KEY)
-  // A paleta-base já se chamou 'ideario' e 'mapist'; quem escolheu continua nela.
-  if (v === 'ideario' || v === 'mapist') return 'nodo'
-  return v === 'system' || (v && v in PALETTES) ? (v as PaletteId) : 'nodo'
+  // A paleta-base é a Atrio (já se chamou Ideario, Mapist e Nodo); quem escolheu continua nela.
+  return normalizePaletteId(v)
 }
 
 /** No navegador (prévia), adivinha a área de trabalho pelo user agent. */
