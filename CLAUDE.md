@@ -81,6 +81,13 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   botões em (18, 33) dentro da barra de 64 px, espaço medido por `mac_lights_width`. Sem atualização automática por
   enquanto (decisão do usuário).
 
+- **D17:** **nome Nodo** (antes Mapist, que ficava a uma letra de uma palavra ofensiva em inglês; escolha do usuário).
+  Repositório `wylho/nodo`, binário `nodo`, crates `nodo-*`, identificador `io.github.wylho.nodo`, site
+  `nodo-1c7.pages.dev` (os nomes `nodo`, `nodoapp` e `usenodo` do Pages já tinham dono). O que a 0.1.0 gravou como
+  Mapist continua sendo lido: atributo `mapist-style`, preferências `mapist.*`, entrada "mapist" no Claude Desktop.
+- **D18:** **o canvas redesenha no máximo uma vez por quadro**, e o que o desenho lê não pode ser `$state` escrito no
+  mesmo efeito. Motivo: um laço assim (`colors`) fazia centenas de redesenhos por tecla e deixava a edição travando.
+
 ## Estado atual
 - **Fases 1 e 2 concluídas. Versão 0.1.0 lançada** (Release `v0.1.0`: `.dmg` universal, `-setup.exe`/`.msi`,
   `.AppImage`/`.deb`/`.rpm`), sem atualização automática (decisão do usuário). O site depende de reconectar o Git no
@@ -111,4 +118,7 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
 - **Edição XMind e temas de mapa** (`lib/maptheme.ts`, `components/MapThemeSheet.svelte`, `Action::SetMapStyle`,
   `set_map_theme` no MCP, `set_map_style` no app); barra do macOS integrada (`setup` + `mac_lights_width` em
   `src/lib.rs`, `main.ts`, `map.css`).
-- **Próximo:** a Fase 3 (importação e exportação). Atualização automática fica para depois (decisão do usuário).
+- **Renomeado para Nodo e versão 0.2.0 no `main`** (ainda não lançada). Edição rápida de novo (`Canvas.svelte`:
+  `scheduleRender`, 12–26 ms por Tab/Enter na prévia, um desenho só). Botões do macOS pela configuração da janela.
+- **Próximo:** lançar a 0.2.0 quando o usuário pedir; depois a Fase 3 (importação e exportação). Atualização
+  automática fica para depois (decisão do usuário).
