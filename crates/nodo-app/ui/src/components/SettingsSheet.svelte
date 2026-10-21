@@ -188,6 +188,7 @@
               <div class="keys-row"><span>Abrir</span><kbd>{mod}O</kbd></div>
               <div class="keys-row"><span>Salvar</span><kbd>{mod}S</kbd></div>
               <div class="keys-row"><span>Salvar como</span><kbd>{mod}⇧S</kbd></div>
+              <div class="keys-row"><span>Exportar</span><kbd>{mod}⇧E</kbd></div>
               <div class="keys-row"><span>Desfazer</span><kbd>{mod}Z</kbd></div>
               <div class="keys-row"><span>Refazer</span><kbd>{mod}⇧Z</kbd></div>
               <div class="keys-row"><span>Configurações</span><kbd>{mod},</kbd></div>

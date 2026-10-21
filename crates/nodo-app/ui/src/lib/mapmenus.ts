@@ -15,6 +15,7 @@ import {
   Plus,
   Redo2,
   Search,
+  Share,
   Spline,
   Trash2,
   Undo2,
@@ -141,6 +142,7 @@ export function backgroundMenu(view: ViewActions): MenuEntry[] {
     },
     { label: 'Arrumar posições', icon: WandSparkles, onSelect: () => void doc.relayout() },
     { label: 'Tema do mapa…', icon: Palette, onSelect: () => (ui.themeOpen = true) },
+    { label: 'Exportar…', icon: Share, hint: `${mod}⇧E`, onSelect: () => (ui.exportOpen = true) },
     {
       label: 'Linhas',
       icon: Spline,

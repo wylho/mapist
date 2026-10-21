@@ -260,6 +260,20 @@ fn save_map(state: State<'_, AppState>, path: Option<String>) -> Result<Snapshot
     Ok(snapshot(&doc))
 }
 
+/// The open map as text: markdown, opml or html (`nodo_core::export`), the same the MCP server exports.
+#[tauri::command]
+fn export_text(state: State<'_, AppState>, format: String) -> Result<String, String> {
+    let mut doc = lock(&state)?;
+    nodo_core::export::to_text(editor(&mut doc)?.map(), &format).map_err(|e| e.to_string())
+}
+
+/// Write an export the interface made (PNG, SVG, PDF, HTML, text) to the path the person chose.
+#[tauri::command]
+fn write_export(path: String, bytes: Vec<u8>) -> Result<(), String> {
+    nodo_core::write_atomic(std::path::Path::new(&path), &bytes)
+        .map_err(|e| format!("não foi possível exportar: {e}"))
+}
+
 /// Apply an edit through the editor (undo history and positioning).
 fn mutate(state: State<'_, AppState>, action: Action) -> Result<Snapshot, String> {
     let mut doc = lock(&state)?;
@@ -574,6 +588,8 @@ pub fn run() {
             set_structure,
             set_spacing,
             relayout,
+            export_text,
+            write_export,
             move_node,
             undo,
             redo,

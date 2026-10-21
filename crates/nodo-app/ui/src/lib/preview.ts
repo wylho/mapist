@@ -464,6 +464,57 @@ export const previewBackend = {
     return snapshotOf()
   },
 
+  // Espelha nodo_core::export (o mesmo formato, sem os detalhes de estilo da página).
+  export_text: ({ format }: { format: string }) => {
+    const root = nodes.get(rootId)
+    if (!root) return ''
+    const line = (t: string) => t.split(/\s+/).filter(Boolean).join(' ')
+    const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+    const kids = (n: PNode) => n.children.map((id) => nodes.get(id)!).filter(Boolean)
+    if (format === 'markdown') {
+      let out = `# ${line(root.text)}\n\n${root.note.trim() ? root.note.trim() + '\n\n' : ''}`
+      const walk = (n: PNode, d: number) => {
+        out += `${'  '.repeat(d)}- ${line(n.text)}\n`
+        for (const l of n.note.trim() ? n.note.trim().split('\n') : []) out += `${'  '.repeat(d)}  ${l}\n`
+        kids(n).forEach((c) => walk(c, d + 1))
+      }
+      kids(root).forEach((c) => walk(c, 0))
+      return out
+    }
+    if (format === 'opml') {
+      let out = `<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0">\n  <head>\n    <title>${esc(line(root.text))}</title>\n  </head>\n  <body>\n`
+      const walk = (n: PNode, d: number) => {
+        const pad = '  '.repeat(d + 2)
+        const note = n.note.trim() ? ` _note="${esc(n.note.trim())}"` : ''
+        if (n.children.length === 0) out += `${pad}<outline text="${esc(line(n.text))}"${note}/>\n`
+        else {
+          out += `${pad}<outline text="${esc(line(n.text))}"${note}>\n`
+          kids(n).forEach((c) => walk(c, d + 1))
+          out += `${pad}</outline>\n`
+        }
+      }
+      walk(root, 0)
+      return out + '  </body>\n</opml>\n'
+    }
+    if (format === 'html') {
+      let list = ''
+      const walk = (n: PNode) => {
+        const note = n.note.trim() ? `<p class="note">${esc(n.note.trim())}</p>` : ''
+        list += n.children.length
+          ? `<li><details open><summary>${esc(line(n.text))}</summary>${note}<ul>\n`
+          : `<li><span>${esc(line(n.text))}</span>${note}</li>\n`
+        if (n.children.length) {
+          kids(n).forEach(walk)
+          list += '</ul></details></li>\n'
+        }
+      }
+      kids(root).forEach(walk)
+      const title = esc(line(root.text))
+      return `<!doctype html>\n<html lang="pt-BR">\n<head>\n<meta charset="utf-8">\n<title>${title}</title>\n</head>\n<body>\n<main>\n<h1>${title}</h1>\n<figure><!-- nodo:figure --></figure>\n<ul class="outline">\n${list}</ul>\n</main>\n</body>\n</html>\n`
+    }
+    throw new Error(`unknown export format "${format}"`)
+  },
+
   reload_map: () => snapshotOf(),
 
   quit_app: () => undefined,

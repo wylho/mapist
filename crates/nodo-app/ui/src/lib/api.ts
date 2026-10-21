@@ -129,6 +129,12 @@ export const api = {
 
   setSpacing: (spacing: string | null) => call<Snapshot>('set_spacing', { spacing }),
 
+  /** O mapa como texto (markdown, opml ou html), do núcleo: o mesmo que o MCP exporta. */
+  exportText: (format: string) => call<string>('export_text', { format }),
+
+  /** Grava uma exportação feita aqui no caminho escolhido (gravação atômica no Rust). */
+  writeExport: (path: string, bytes: Uint8Array) => call<void>('write_export', { path, bytes: Array.from(bytes) }),
+
   /** Arruma tudo de novo pela estrutura, desfazendo os arrastos à mão. */
   relayout: () => call<Snapshot>('relayout'),
 

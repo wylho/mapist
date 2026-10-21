@@ -15,6 +15,7 @@
     Save,
     Search,
     Settings,
+    Share,
     Trash2,
     Undo2,
     X,
@@ -58,6 +59,7 @@
     <button class="icon-btn roomy" aria-label="Novo mapa" title="Novo mapa ({mod}N)" onclick={() => doc.newMap()}><FilePlus2 size={20} /></button>
     <button class="icon-btn roomy" aria-label="Abrir" title="Abrir ({mod}O)" onclick={() => doc.openDialog()}><FolderOpen size={20} /></button>
     <button class="icon-btn" aria-label="Salvar" title="Salvar ({mod}S)" onclick={() => doc.saveDialog()}><Save size={20} /></button>
+    <button class="icon-btn roomy" aria-label="Exportar" title="Exportar ({mod}⇧E)" onclick={() => (ui.exportOpen = true)}><Share size={19} /></button>
     <button class="icon-btn" aria-label="Estrutura e tema do mapa" title="Estrutura e tema do mapa" onclick={() => (ui.themeOpen = true)}><Palette size={20} /></button>
     <span class="doc-title" title={doc.snapshot.path ?? title}>
       <span class="grow">{title}</span>

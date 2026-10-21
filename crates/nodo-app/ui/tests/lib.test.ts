@@ -502,3 +502,37 @@ describe('temas de mapa', () => {
     expect([...list.matchAll(/"([^"]+)"/g)].map((m) => m[1])).toEqual(MAP_THEME_IDS)
   })
 })
+
+describe('exportação', () => {
+  it('o SVG grava o arcTo do canvas como reta + arco com os pontos de tangência certos', async () => {
+    const { SvgContext } = await import('../src/lib/svgctx')
+    const c = new SvgContext()
+    c.beginPath()
+    c.moveTo(0, 0)
+    c.arcTo(100, 0, 100, 100, 10)
+    c.lineTo(100, 100)
+    c.strokeStyle = '#123456'
+    c.stroke()
+    c.font = '600 13px Inter, system-ui'
+    c.textAlign = 'center'
+    c.textBaseline = 'middle'
+    c.fillStyle = '#000'
+    c.fillText('Olá & <tudo>', 50, 50)
+    const svg = c.toSvg(120, 120, '#fff')
+    // Reta até (90, 0), arco no sentido horário até (100, 10).
+    expect(svg).toContain('d="M0 0L90 0A10 10 0 0 1 100 10L100 100"')
+    expect(svg).toContain('stroke="#123456"')
+    expect(svg).toContain('font-weight="600" fill="#000" text-anchor="middle" dominant-baseline="central"')
+    expect(svg).toContain('>Olá &amp; &lt;tudo&gt;</text>')
+    expect(svg.startsWith('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"')).toBe(true)
+  })
+
+  it('PDF automático: paisagem para mapa largo, retrato para mapa alto; a escolha manual vale', async () => {
+    const { pickOrientation } = await import('../src/lib/exporter')
+    const snap = (w: number, h: number) =>
+      ({ bounds: { min_x: 0, min_y: 0, max_x: w, max_y: h } }) as unknown as import('../src/lib/api').Snapshot
+    expect(pickOrientation(snap(1200, 400), 'auto')).toBe('landscape')
+    expect(pickOrientation(snap(300, 1500), 'auto')).toBe('portrait')
+    expect(pickOrientation(snap(1200, 400), 'portrait')).toBe('portrait')
+  })
+})

@@ -136,7 +136,7 @@ Especificação: [`docs/SPEC.md`](docs/SPEC.md). Regras do projeto: [`CLAUDE.md`
 ```
 crates/
 ├── nodo-core/   modelo, layout, .minder, Editor (histórico + arquivo), sem interface
-├── nodo-mcp/    servidor MCP sobre stdio (19 ferramentas)
+├── nodo-mcp/    servidor MCP sobre stdio (21 ferramentas)
 └── nodo-app/    janela Tauri; a interface Svelte 5 fica em ui/
 site/              nodo-1c7.pages.dev (Cloudflare Pages, sem build)
 ```

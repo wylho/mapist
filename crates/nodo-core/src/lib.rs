@@ -17,6 +17,7 @@
 
 pub mod document;
 pub mod editor;
+pub mod export;
 pub mod layout;
 pub mod model;
 pub mod undo;
@@ -76,6 +77,9 @@ pub enum Error {
     #[error("unknown map structure {0:?}; use one of: mapa, logico, organograma, arvore")]
     UnknownStructure(String),
 
+    #[error("unknown export format {0:?}; use markdown, opml or html")]
+    UnknownFormat(String),
+
     #[error("unknown spacing {0:?}; use one of: compacto, normal, largo")]
     UnknownSpacing(String),
 
@@ -98,14 +102,18 @@ pub fn load(path: impl AsRef<std::path::Path>) -> Result<MindMap> {
 /// Write a map to a file, atomically: the XML goes to a temporary file beside
 /// the target and is renamed over it, so a crash mid-save never leaves half a map.
 pub fn save(map: &MindMap, path: impl AsRef<std::path::Path>) -> Result<()> {
-    let path = path.as_ref();
-    let xml = document::to_xml(map)?;
+    write_atomic(path.as_ref(), document::to_xml(map)?.as_bytes())
+}
+
+/// Write a file through a temporary sibling and a rename, so a crash never leaves it half written. Used for the map
+/// and for exports.
+pub fn write_atomic(path: &std::path::Path, bytes: &[u8]) -> Result<()> {
     let name = path
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_default();
     let tmp = path.with_file_name(format!(".{name}.nodo-tmp"));
-    std::fs::write(&tmp, xml)?;
+    std::fs::write(&tmp, bytes)?;
     if let Err(e) = std::fs::rename(&tmp, path) {
         let _ = std::fs::remove_file(&tmp);
         return Err(e.into());

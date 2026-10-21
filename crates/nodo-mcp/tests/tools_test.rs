@@ -348,3 +348,33 @@ fn set_layout_arranges_the_map_and_undoes() {
     );
     assert!(bad.is_err() || bad.unwrap()["isError"] == true);
 }
+
+#[test]
+fn export_map_returns_markdown_and_writes_a_file() {
+    let mut s = fresh();
+    let a = call(
+        &mut s,
+        "add_node",
+        json!({ "parent": 0, "text": "Roteiro" }),
+    )["id"]
+        .as_u64()
+        .unwrap();
+    call(&mut s, "add_node", json!({ "parent": a, "text": "Dia 1" }));
+    let md = call(&mut s, "export_map", json!({ "format": "markdown" }));
+    assert!(md["text"]
+        .as_str()
+        .unwrap()
+        .contains("- Roteiro\n  - Dia 1\n"));
+
+    let dir = std::env::temp_dir().join(format!("nodo-export-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("mapa.opml");
+    call(
+        &mut s,
+        "export_map",
+        json!({ "format": "opml", "path": path.to_string_lossy() }),
+    );
+    let written = std::fs::read_to_string(&path).unwrap();
+    assert!(written.contains("<outline text=\"Dia 1\"/>"));
+    let _ = std::fs::remove_dir_all(&dir);
+}

@@ -10,6 +10,7 @@
   import ConfirmDialog from './components/ConfirmDialog.svelte'
   import UpdateNotice from './components/UpdateNotice.svelte'
   import MenuAt from './components/MenuAt.svelte'
+  import ExportSheet from './components/ExportSheet.svelte'
   import { backgroundMenu, nodeMenu, type ViewActions } from './lib/mapmenus'
   import { doc } from './lib/document.svelte'
   import { hasHost, isPreview } from './lib/api'
@@ -46,6 +47,8 @@
         z: () => (e.shiftKey ? doc.redo() : doc.undo()),
         y: () => doc.redo(),
         s: () => doc.saveDialog(e.shiftKey),
+        // ⌘⇧E exporta (⌘E sozinho fica livre, como no XMind).
+        e: () => e.shiftKey && (ui.exportOpen = true),
         o: () => doc.openDialog(),
         n: () => doc.newMap(),
         f: () => {
@@ -207,6 +210,7 @@
 
   <UpdateNotice />
   <MenuAt bind:this={menuRef} />
+  <ExportSheet />
   <SettingsSheet />
   <ConfirmDialog />
 </div>

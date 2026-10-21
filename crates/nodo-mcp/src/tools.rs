@@ -146,6 +146,18 @@ pub fn catalog() -> Vec<Value> {
             }),
         ),
         tool(
+            "export_map",
+            "Export the open map as text: markdown (nested list with notes), opml (outline for other apps) or html (a self-contained page with the map as an outline). Returns the text; with path, also writes it there. Images (PNG, SVG, PDF) are made in the app window.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "format": { "type": "string", "enum": nodo_core::export::TEXT_FORMATS },
+                    "path": { "type": "string", "description": "Optional file to write" }
+                },
+                "required": ["format"]
+            }),
+        ),
+        tool(
             "set_layout",
             "Arrange the map automatically. structure: mapa (branches on both sides of the root), logico (everything to the right), organograma (org chart, top to bottom) or arvore (indented tree). spacing: compacto, normal or largo. Both are saved in the file; omit one to keep it.",
             json!({
@@ -312,6 +324,19 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
                 .map(|n| n.folded)
                 .unwrap_or(false);
             json!({ "ok": true, "id": id, "folded": folded })
+        }
+        "export_map" => {
+            let format = str_arg(&args, "format")?;
+            let text = nodo_core::export::to_text(session.require()?, &format)
+                .map_err(|e| e.to_string())?;
+            match args.get("path").and_then(|p| p.as_str()) {
+                Some(path) => {
+                    nodo_core::write_atomic(std::path::Path::new(path), text.as_bytes())
+                        .map_err(|e| format!("could not write {path}: {e}"))?;
+                    json!({ "ok": true, "path": path, "bytes": text.len() })
+                }
+                None => json!({ "ok": true, "format": format, "text": text }),
+            }
         }
         "set_layout" => {
             // "mapa" e "normal" são o padrão: gravam como ausentes, igual ao que o app faz.
