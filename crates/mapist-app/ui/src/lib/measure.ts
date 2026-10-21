@@ -9,6 +9,8 @@
 
 import type { FlatNode } from './api'
 
+import { nodeFont } from './font'
+
 const PAD_X = 36 // padding horizontal + folga da borda
 const PAD_Y = 22 // padding vertical
 const MIN_W = 84
@@ -27,25 +29,17 @@ function context(): CanvasRenderingContext2D {
   return ctx
 }
 
-/** Família e tamanho da fonte usados para desenhar os nós. */
-function fontFor(isRoot: boolean, zoom: number): string {
-  const family =
-    getComputedStyle(document.documentElement).getPropertyValue('--font-body').trim() ||
-    'system-ui, sans-serif'
-  const size = (isRoot ? 14 : 13.5) * Math.max(0.5, Math.min(zoom, 3))
-  return `${isRoot ? 700 : 600} ${size}px ${family}`
-}
-
 /**
- * Mede um nó e devolve suas dimensões em unidades de mapa.
+ * Mede um nó, em unidades de mundo.
  *
- * `zoom` entra porque a fonte desenhada acompanha o zoom; medir sempre em 1.0
- * daria caixas apertadas quando ampliado.
+ * Sem parâmetro de zoom de propósito: a geometria do mapa não pode depender de
+ * quanto ele está ampliado na tela. O desenho escala tudo junto com
+ * `ctx.scale()`, então medir e desenhar usam sempre a mesma referência.
  */
-export function measureNode(node: FlatNode, zoom = 1): { width: number; height: number } {
+export function measureNode(node: FlatNode): { width: number; height: number } {
   const c = context()
   const isRoot = node.parent === null
-  c.font = fontFor(isRoot, zoom)
+  c.font = nodeFont(isRoot)
 
   const lines = node.text.split('\n')
   let widest = 0
@@ -60,15 +54,15 @@ export function measureNode(node: FlatNode, zoom = 1): { width: number; height: 
   }
 }
 
-/** Mede todos os nós de um snapshot. */
-export function measureAll(nodes: FlatNode[], zoom = 1): { id: number; width: number; height: number }[] {
-  return nodes.map((n) => ({ id: n.id, ...measureNode(n, zoom) }))
+/** Mede todos os nós de um snapshot, em unidades de mundo. */
+export function measureAll(nodes: FlatNode[]): { id: number; width: number; height: number }[] {
+  return nodes.map((n) => ({ id: n.id, ...measureNode(n) }))
 }
 
-/** Trunca um texto para caber em `maxWidth`, com reticências. */
-export function fitText(text: string, maxWidth: number, isRoot: boolean, zoom: number): string {
+/** Trunca um texto para caber em `maxWidth`, com reticências. Tudo em unidades de mundo. */
+export function fitText(text: string, maxWidth: number, isRoot: boolean): string {
   const c = context()
-  c.font = fontFor(isRoot, zoom)
+  c.font = nodeFont(isRoot)
   if (c.measureText(text).width <= maxWidth) return text
   let out = text
   while (out.length > 1 && c.measureText(out + '…').width > maxWidth) {

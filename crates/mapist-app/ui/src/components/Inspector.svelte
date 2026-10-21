@@ -131,7 +131,7 @@
     <McpPanel />
 
     <div class="banner">
-      {doc.snapshot.nodes.length} nós · tema {theme.label}
+      {doc.snapshot.nodes.length === 1 ? '1 nó' : `${doc.snapshot.nodes.length} nós`} · tema {theme.label}
     </div>
   </div>
 </aside>

@@ -6,7 +6,7 @@
   import Inspector from './components/Inspector.svelte'
   import ThemeSheet from './components/ThemeSheet.svelte'
   import { doc } from './lib/document.svelte'
-  import { hasHost } from './lib/api'
+  import { hasHost, isPreview } from './lib/api'
   import { prefs } from './lib/prefs.svelte'
 
   let canvasRef = $state<Canvas | undefined>(undefined)
@@ -125,7 +125,11 @@
     </div>
   {/if}
 
-  {#if !hasHost}
+  {#if isPreview}
+    <div class="preview-tag" title="Backend simulado em memória; nenhum arquivo é lido ou gravado">
+      <span class="dot"></span> Preview — dados de exemplo
+    </div>
+  {:else if !hasHost}
     <div class="banner" style="position:absolute;top:76px;left:50%;transform:translateX(-50%);z-index:9">
       Rodando fora do Tauri — sem acesso ao documento
     </div>

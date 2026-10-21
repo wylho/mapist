@@ -59,7 +59,32 @@ export interface NodeSize {
 /** Há um host Tauri do outro lado? */
 export const hasHost = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 
+/**
+ * Modo preview: o app roda no navegador com um backend simulado.
+ *
+ * Serve para ajustar a interface sem compilar o Tauri, que leva minutos e não
+ * deixa inspecionar nada. Ativa com `?preview` ou, em desenvolvimento, sempre
+ * que não houver host.
+ */
+export const isPreview =
+  typeof window !== 'undefined' &&
+  (new URLSearchParams(location.search).has('preview') || (!hasHost && import.meta.env.DEV))
+
+let backend: Record<string, (args: never) => unknown> | null = null
+
+async function previewCall<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+  if (!backend) {
+    const mod = await import('./preview')
+    mod.seedDemo()
+    backend = mod.previewBackend as unknown as Record<string, (args: never) => unknown>
+  }
+  const fn = backend[cmd]
+  if (!fn) throw new Error(`comando ${cmd} não existe no preview`)
+  return fn((args ?? {}) as never) as T
+}
+
 async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+  if (isPreview) return previewCall<T>(cmd, args)
   if (!hasHost) throw new Error(`comando ${cmd} indisponível fora do Tauri`)
   return tauriInvoke<T>(cmd, args)
 }

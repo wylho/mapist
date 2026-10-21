@@ -5,6 +5,7 @@
 
 import type { Snapshot } from './api'
 import { fitText } from './measure'
+import { nodeFont, uiFont } from './font'
 
 export interface Viewport {
   x: number
@@ -22,7 +23,6 @@ export interface ThemeColors {
   accent: string
   onAccent: string
   cardEdge: string
-  fontBody: string
   /** Cores de nó do tema, na ordem areia, sálvia, céu, rosa, lilás, manteiga. */
   nodeColors: string[]
 }
@@ -56,35 +56,37 @@ export function draw(o: DrawOptions) {
   const ctx = canvas.ctx
   if (!ctx) return
 
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-  ctx.clearRect(0, 0, width, height)
+  // Um único ponto onde o zoom entra: daqui para baixo tudo é coordenada de
+  // mundo, então geometria, traço e texto escalam juntos e nunca divergem.
+  ctx.setTransform(dpr * view.scale, 0, 0, dpr * view.scale, dpr * view.x, dpr * view.y)
+  ctx.clearRect(
+    -view.x / view.scale,
+    -view.y / view.scale,
+    width / view.scale,
+    height / view.scale,
+  )
 
   if (snapshot.nodes.length === 0) {
     ctx.fillStyle = colors.muted
-    ctx.font = `14px ${colors.fontBody}`
+    ctx.font = uiFont(14)
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText('Nenhum mapa aberto — use Novo para começar', width / 2, height / 2)
     return
   }
 
-  const sx = (x: number) => x * view.scale + view.x
-  const sy = (y: number) => y * view.scale + view.y
   const byId = new Map(snapshot.nodes.map((n) => [n.id, n]))
 
   // Ramos primeiro, para os nós ficarem por cima.
   for (const n of snapshot.nodes) {
     if (n.parent === null) continue
     const p = byId.get(n.parent)
-    if (p) drawBranch(ctx, p, n, colors, sx, sy, view.scale)
+    if (p) drawBranch(ctx, p, n, colors)
   }
 
   for (const n of snapshot.nodes) {
     drawNode(ctx, n, {
       colors,
-      sx,
-      sy,
-      scale: view.scale,
       isSelected: n.id === selected,
       isHovered: n.id === hovered,
       isMatch: matches.has(n.id),
@@ -97,9 +99,6 @@ function drawBranch(
   parent: { x: number; y: number; width: number; height: number },
   child: { x: number; y: number; width: number; height: number; side: string; color: string | null },
   colors: ThemeColors,
-  sx: (x: number) => number,
-  sy: (y: number) => number,
-  scale: number,
 ) {
   const left = child.side === 'left'
   const ax = left ? parent.x : parent.x + parent.width
@@ -109,21 +108,18 @@ function drawBranch(
 
   ctx.save()
   ctx.strokeStyle = child.color ? resolveColor(child.color, colors) : colors.line
-  ctx.lineWidth = Math.max(1.5, 2.4 * scale)
+  ctx.lineWidth = 2.4
   ctx.lineCap = 'round'
   ctx.beginPath()
-  ctx.moveTo(sx(ax), sy(ay))
-  const mid = (sx(ax) + sx(bx)) / 2
-  ctx.bezierCurveTo(mid, sy(ay), mid, sy(by), sx(bx), sy(by))
+  ctx.moveTo(ax, ay)
+  const mid = (ax + bx) / 2
+  ctx.bezierCurveTo(mid, ay, mid, by, bx, by)
   ctx.stroke()
   ctx.restore()
 }
 
 interface NodeOpts {
   colors: ThemeColors
-  sx: (x: number) => number
-  sy: (y: number) => number
-  scale: number
   isSelected: boolean
   isHovered: boolean
   isMatch: boolean
@@ -147,11 +143,11 @@ function drawNode(
   },
   o: NodeOpts,
 ) {
-  const { colors, sx, sy, scale, isSelected, isHovered, isMatch } = o
-  const x = sx(n.x)
-  const y = sy(n.y)
-  const w = n.width * scale
-  const h = n.height * scale
+  const { colors, isSelected, isHovered, isMatch } = o
+  const x = n.x
+  const y = n.y
+  const w = n.width
+  const h = n.height
   const isRoot = n.parent === null
   const radius = Math.min(14, h * 0.34)
 
@@ -163,8 +159,8 @@ function drawNode(
     ctx.fillStyle = colors.accent
     ctx.fill()
     ctx.shadowColor = colors.accent
-    ctx.shadowBlur = 14 * scale
-    ctx.shadowOffsetY = 3 * scale
+    ctx.shadowBlur = 14
+    ctx.shadowOffsetY = 3
     ctx.globalAlpha = 0.35
     ctx.fill()
     ctx.globalAlpha = 1
@@ -201,12 +197,11 @@ function drawNode(
   }
 
   // Rótulo
-  const fs = Math.max(9.5, (isRoot ? 14 : 13.5) * scale)
-  ctx.font = `${isRoot ? 700 : 600} ${fs}px ${colors.fontBody}`
+  ctx.font = nodeFont(isRoot)
   ctx.fillStyle = isRoot ? colors.onAccent : colors.fg
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  const label = fitText(n.text, w - 20, isRoot, scale)
+  const label = fitText(n.text, w - 20, isRoot)
   ctx.fillText(label, x + w / 2, y + h / 2)
 
   // Marcador de nota
@@ -275,7 +270,6 @@ export function readThemeColors(): ThemeColors {
     accent: v('--accent'),
     onAccent: v('--on-accent'),
     cardEdge: v('--card-edge'),
-    fontBody: v('--font-body'),
     nodeColors: [v('--n-sand'), v('--n-sage'), v('--n-sky'), v('--n-rose'), v('--n-lilac'), v('--n-butter')],
   }
 }

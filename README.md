@@ -7,16 +7,23 @@ Mapist keeps Minder's file format so existing maps open unchanged, and adds a
 built-in Model Context Protocol server so that agents can read and edit maps
 directly.
 
+**Full specification: [`docs/SPEC.md`](docs/SPEC.md). Project rules: [`CLAUDE.md`](CLAUDE.md).**
+Design prototypes live in [`prototype/`](prototype/).
+
 ## Status
 
-Phase 2 — desktop shell. The core, MCP server, and Tauri application are
-implemented and tested. Editing happens in the window or over MCP.
+Phases 1 and 2 are done. The window opens, draws, and edits maps; the same
+binary serves MCP to an agent.
 
 | Component | State |
 |---|---|
 | `mapist-core` — model, layout, document I/O, undo | Implemented, 15 tests |
-| `mapist-mcp` — MCP server over stdio | Implemented, 19 tests |
-| `mapist-app` — Tauri desktop shell | Implemented, 5 tests |
+| `mapist-mcp` — MCP server over stdio, 16 tools | Implemented, 25 tests |
+| `mapist-app` — Tauri shell, 18 commands | Implemented, 5 tests |
+| `mapist-app/ui` — Svelte 5 interface | Implemented, 24 tests |
+
+70 tests total. `cargo clippy --all-targets -- -D warnings` and `svelte-check`
+are both clean.
 
 ## Layout
 
@@ -43,17 +50,32 @@ cargo test
 
 The MCP server binary lands at `target/release/mapist-mcp`.
 
-To run the desktop application:
+### Preview in a browser
+
+The interface runs in a browser over a simulated backend, with hot reload. This
+is the fast path for any visual change — the Tauri build takes minutes and shows
+nothing during it.
 
 ```bash
-cargo run -p mapist-app
+cd crates/mapist-app/ui
+pnpm install
+pnpm dev
 ```
 
-To produce a bundled `.app` and `.dmg`:
+Then open `http://localhost:1420/?preview`. Edits to `.svelte` files appear
+immediately.
+
+### Run the desktop application
 
 ```bash
 cargo tauri build --config crates/mapist-app/tauri.conf.json
+open target/release/bundle/macos/Mapist.app
 ```
+
+> `cargo build` alone produces a binary with **no interface embedded** — the
+> `beforeBuildCommand` that generates the frontend only runs under the Tauri
+> CLI, and `cargo build` skips it. The window would open blank. Use
+> `cargo tauri build`.
 
 ### Using the window
 

@@ -4,7 +4,7 @@
 // store só o guarda. Não há estado de mapa duplicado no frontend, o que evita
 // divergência entre o que a tela mostra e o que o core acha que tem.
 
-import { api, hasHost, type Snapshot } from './api'
+import { api, hasHost, isPreview, type Snapshot } from './api'
 import { measureAll } from './measure'
 
 const EMPTY: Snapshot = {
@@ -60,7 +60,7 @@ class Document {
    * entraríamos em laço.
    */
   async syncSizes() {
-    if (!hasHost || this.snapshot.nodes.length === 0) return
+    if ((!hasHost && !isPreview) || this.snapshot.nodes.length === 0) return
     const measured = measureAll(this.snapshot.nodes)
     let changed = false
     const next = new Map<number, { width: number; height: number }>()
@@ -85,7 +85,7 @@ class Document {
 
   /** Executa um comando do host tratando erro de forma uniforme. */
   private async run(fn: () => Promise<Snapshot>) {
-    if (!hasHost) return
+    if (!hasHost && !isPreview) return
     this.busy = true
     try {
       await this.adopt(await fn())
@@ -99,7 +99,7 @@ class Document {
   }
 
   async load() {
-    if (!hasHost) return
+    if (!hasHost && !isPreview) return
     try {
       const snap = await api.snapshot()
       if (snap.nodes.length > 0) await this.adopt(snap)
@@ -173,7 +173,7 @@ class Document {
   }
 
   async search(query: string) {
-    if (!hasHost) return
+    if (!hasHost && !isPreview) return
     const q = query.trim()
     if (!q) {
       this.matches = new Set()

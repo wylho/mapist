@@ -4,6 +4,7 @@
   import { doc } from '../lib/document.svelte'
   import { theme } from '../lib/theme.svelte'
   import { draw, hitTest, readThemeColors, type Viewport } from '../lib/render'
+  import { prefs } from '../lib/prefs.svelte'
 
   import type { Snippet } from 'svelte'
 
@@ -230,6 +231,8 @@
 
   onMount(() => {
     colors = readThemeColors()
+    // Retoma a escala da sessão anterior; `fit` a substitui se for a estreia.
+    view.scale = prefs.zoom
     render()
     ro = new ResizeObserver(() => render())
     ro.observe(stageEl)
@@ -240,11 +243,18 @@
     onzoom?.(view.scale)
   })
 
+  let framed = false
+
   $effect(() => {
-    // Enquadra na primeira vez que um documento com nós aparece.
-    if (doc.hasDocument && view.scale === 1 && view.x === 0 && view.y === 0) {
-      requestAnimationFrame(() => fit(false))
-    }
+    // Enquadra uma vez, quando o primeiro documento com nós chega. Não pode
+    // depender do zoom ser exatamente 1: as preferências restauram o zoom da
+    // sessão anterior, e aí o mapa nunca seria enquadrado.
+    if (framed || !doc.hasDocument) return
+    framed = true
+    // Dois quadros: o primeiro deixa o ResizeObserver medir o palco, o segundo
+    // enquadra sobre um tamanho já correto. Com um só, o fit usava o rect
+    // anterior e o mapa ficava fora de escala.
+    requestAnimationFrame(() => requestAnimationFrame(() => fit(false)))
   })
 </script>
 
