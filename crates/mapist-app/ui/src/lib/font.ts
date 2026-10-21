@@ -43,6 +43,11 @@ export function nodeFont(isRoot: boolean): string {
   return `${isRoot ? 700 : 600} ${isRoot ? ROOT_FONT_SIZE : NODE_FONT_SIZE}px ${fontStack()}`
 }
 
+/** `ctx.font` para um nível do tema do mapa, em unidades de mundo. */
+export function levelFont(style: { size: number; weight: number }): string {
+  return `${style.weight} ${style.size}px ${fontStack()}`
+}
+
 /** `ctx.font` para textos de interface no canvas, em unidades de mundo. */
 export function uiFont(size: number): string {
   return `${size}px ${fontStack()}`

@@ -8,6 +8,7 @@
     ChevronsUpDown,
     FilePlus2,
     FolderOpen,
+    Palette,
     PanelRight,
     Plus,
     Redo2,
@@ -21,6 +22,9 @@
   import { doc } from '../lib/document.svelte'
   import { prefs } from '../lib/prefs.svelte'
   import { ui } from '../lib/ui.svelte'
+  import MapThemeSheet from './MapThemeSheet.svelte'
+
+  let themeOpen = $state(false)
 
   const mod = /Mac/.test(navigator.platform) ? '⌘' : 'Ctrl+'
   const overlayTitlebar = document.documentElement.dataset.titlebar === 'overlay'
@@ -55,6 +59,7 @@
     <button class="icon-btn" aria-label="Novo mapa" title="Novo mapa ({mod}N)" onclick={() => doc.newMap()}><FilePlus2 size={20} /></button>
     <button class="icon-btn" aria-label="Abrir" title="Abrir ({mod}O)" onclick={() => doc.openDialog()}><FolderOpen size={20} /></button>
     <button class="icon-btn" aria-label="Salvar" title="Salvar ({mod}S)" onclick={() => doc.saveDialog()}><Save size={20} /></button>
+    <button class="icon-btn" aria-label="Tema do mapa" title="Tema do mapa" onclick={() => (themeOpen = true)}><Palette size={20} /></button>
     <span class="doc-title" title={doc.snapshot.path ?? title}>
       <span class="grow">{title}</span>
       {#if doc.snapshot.dirty}<i class="dirty" aria-label="Alterações não salvas" title="Alterações não salvas"></i>{/if}
@@ -118,3 +123,5 @@
     <button class="icon-btn" aria-label="Configurações" title="Configurações ({mod},)" onclick={() => (ui.settingsOpen = true)}><Settings size={19} /></button>
   </div>
 </header>
+
+<MapThemeSheet bind:open={themeOpen} />

@@ -4,9 +4,11 @@
 // estado da aplicação: é uma função de (dados, tema, viewport) para pixels.
 
 import type { Snapshot } from './api'
+import type { FlatNode } from './api'
 import { fitText } from './measure'
-import { nodeFont, uiFont } from './font'
+import { levelFont, uiFont } from './font'
 import { NODE_COLOR_TOKENS } from './palettes'
+import { branchColors, levelStyle, lineWidth, mapTheme, softFill, textOn, type LevelStyle, type MapTheme } from './maptheme'
 
 export interface Viewport {
   x: number
@@ -38,6 +40,8 @@ export type LinkStyle = 'curved' | 'orthogonal'
 export interface DrawOptions {
   snapshot: Snapshot
   linkStyle?: LinkStyle
+  /** Claro ou escuro: os recheios suaves e a paleta cinza dependem dele. */
+  mode?: 'light' | 'dark'
   colors: ThemeColors
   view: Viewport
   selected: number | null
@@ -89,17 +93,23 @@ export function draw(o: DrawOptions) {
   }
 
   const byId = new Map(snapshot.nodes.map((n) => [n.id, n]))
+  const theme = mapTheme(snapshot.style)
+  const mode = o.mode ?? 'light'
+  const branch = branchColors(snapshot.nodes, theme, mode, colors.nodeColors, (c) => resolveColor(c, colors))
 
   // Ramos primeiro, para os nós ficarem por cima.
   for (const n of snapshot.nodes) {
     if (n.parent === null) continue
     const p = byId.get(n.parent)
-    if (p) drawBranch(ctx, p, n, colors, linkStyle)
+    if (p) drawBranch(ctx, p, n, theme, branch.get(n.id) ?? colors.muted, linkStyle)
   }
 
   for (const n of snapshot.nodes) {
     drawNode(ctx, n, {
       colors,
+      theme,
+      mode,
+      branch: branch.get(n.id) ?? colors.muted,
       isSelected: n.id === selected,
       isHovered: n.id === hovered,
       isMatch: matches.has(n.id),
@@ -107,30 +117,30 @@ export function draw(o: DrawOptions) {
   }
 }
 
-function drawBranch(
-  ctx: CanvasRenderingContext2D,
-  parent: { x: number; y: number; width: number; height: number },
-  child: { x: number; y: number; width: number; height: number; side: string; color: string | null },
-  colors: ThemeColors,
-  style: LinkStyle,
-) {
+/**
+ * Altura onde um ramo encosta no nó: no meio da caixa, ou na linha de baixo quando o nível é sublinhado
+ * (o texto fica em cima da linha, como no XMind).
+ */
+function anchorY(n: FlatNode, style: LevelStyle): number {
+  return style.underline ? n.y + n.height : n.y + n.height / 2
+}
+
+function drawBranch(ctx: CanvasRenderingContext2D, parent: FlatNode, child: FlatNode, theme: MapTheme, color: string, style: LinkStyle) {
   const left = child.side === 'left'
   const ax = left ? parent.x : parent.x + parent.width
-  const ay = parent.y + parent.height / 2
+  const ay = anchorY(parent, levelStyle(theme, parent.depth))
   const bx = left ? child.x + child.width : child.x
-  const by = child.y + child.height / 2
+  const by = anchorY(child, levelStyle(theme, child.depth))
 
   ctx.save()
-  // Sem cor de ramo, o traço usa o texto secundário: --line some contra o fundo do palco.
-  ctx.strokeStyle = child.color ? resolveColor(child.color, colors) : colors.muted
-  ctx.lineWidth = 2.4
+  ctx.strokeStyle = color
+  ctx.lineWidth = lineWidth(theme, child.depth)
   ctx.lineCap = 'round'
   ctx.beginPath()
   traceBranch(ctx, style, ax, ay, bx, by)
   ctx.stroke()
   ctx.restore()
 }
-
 /** Raio máximo dos cantos do traçado ortogonal, em unidades de mundo. */
 const CORNER_RADIUS = 14
 
@@ -166,96 +176,99 @@ export function traceBranch(
 
 interface NodeOpts {
   colors: ThemeColors
+  theme: MapTheme
+  mode: 'light' | 'dark'
+  /** Cor do ramo deste nó (já resolvida). */
+  branch: string
   isSelected: boolean
   isHovered: boolean
   isMatch: boolean
 }
 
-function drawNode(
-  ctx: CanvasRenderingContext2D,
-  n: {
-    id: number
-    text: string
-    note: string
-    side: string
-    x: number
-    y: number
-    width: number
-    height: number
-    color: string | null
-    folded: boolean
-    parent: number | null
-    has_children: boolean
-  },
-  o: NodeOpts,
-) {
-  const { colors, isSelected, isHovered, isMatch } = o
-  const x = n.x
-  const y = n.y
-  const w = n.width
-  const h = n.height
+function drawNode(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
+  const { colors, theme, mode, branch, isSelected, isHovered, isMatch } = o
+  const { x, y, width: w, height: h } = n
   const isRoot = n.parent === null
-  const radius = Math.min(14, h * 0.34)
+  const style = levelStyle(theme, n.depth)
+  const radius = Math.min(h * style.round, 18)
+
+  const fill =
+    style.fill === 'accent' ? colors.accent
+    : style.fill === 'branch' ? branch
+    : style.fill === 'soft' ? softFill(branch, colors.surface, mode)
+    : style.fill === 'surface' ? colors.surface
+    : null
 
   ctx.save()
 
-  // Corpo: a raiz usa o destaque; os demais, a cor do ramo ou a superfície.
-  roundRect(ctx, x, y, w, h, radius)
-  if (isRoot) {
-    ctx.fillStyle = colors.accent
+  if (fill) {
+    roundRect(ctx, x, y, w, h, radius)
+    ctx.fillStyle = fill
     ctx.fill()
-    ctx.shadowColor = colors.accent
-    ctx.shadowBlur = 14
-    ctx.shadowOffsetY = 3
-    ctx.globalAlpha = 0.35
-    ctx.fill()
-    ctx.globalAlpha = 1
-    ctx.shadowColor = 'transparent'
-    ctx.shadowBlur = 0
-    ctx.shadowOffsetY = 0
-  } else {
-    ctx.fillStyle = n.color ? resolveColor(n.color, colors) : colors.surface
-    ctx.fill()
+    if (isRoot) {
+      // Uma sombra leve na raiz, como o cartão em destaque do Ideario.
+      ctx.shadowColor = fill
+      ctx.shadowBlur = 14
+      ctx.shadowOffsetY = 3
+      ctx.globalAlpha = 0.35
+      ctx.fill()
+      ctx.globalAlpha = 1
+      ctx.shadowColor = 'transparent'
+      ctx.shadowBlur = 0
+      ctx.shadowOffsetY = 0
+    }
   }
 
-  // Contorno: --card-edge, ou o destaque quando selecionado.
-  roundRect(ctx, x, y, w, h, radius)
-  if (isSelected) {
-    ctx.strokeStyle = colors.accent
-    ctx.lineWidth = 2
+  // Contorno do estilo.
+  if (style.border !== 'none') {
+    roundRect(ctx, x, y, w, h, radius)
+    ctx.strokeStyle = style.border === 'branch' ? branch : colors.cardEdge
+    ctx.lineWidth = style.border === 'branch' ? 2 : 1
     ctx.stroke()
-  } else if (isMatch) {
-    ctx.strokeStyle = colors.accent
-    ctx.lineWidth = 2
-    ctx.globalAlpha = 0.55
-    ctx.stroke()
-    ctx.globalAlpha = 1
-  } else if (isHovered) {
-    ctx.strokeStyle = colors.accent
-    ctx.lineWidth = 1.5
-    ctx.globalAlpha = 0.4
-    ctx.stroke()
-    ctx.globalAlpha = 1
-  } else {
+  } else if (fill && fill === colors.surface) {
+    roundRect(ctx, x, y, w, h, radius)
     ctx.strokeStyle = colors.cardEdge
     ctx.lineWidth = 1
     ctx.stroke()
   }
 
+  // Sublinhado: a linha do ramo continua por baixo do texto.
+  if (style.underline) {
+    ctx.beginPath()
+    ctx.moveTo(x, y + h)
+    ctx.lineTo(x + w, y + h)
+    ctx.strokeStyle = branch
+    ctx.lineWidth = lineWidth(theme, n.depth)
+    ctx.lineCap = 'round'
+    ctx.stroke()
+  }
+
+  // Seleção, busca e foco por cima de tudo, com um respiro de 3 px.
+  const ring = isSelected ? 1 : isMatch ? 0.55 : isHovered ? 0.4 : 0
+  if (ring > 0) {
+    roundRect(ctx, x - 3, y - 3, w + 6, h + 6, radius + 3)
+    ctx.strokeStyle = colors.accent
+    ctx.lineWidth = isSelected ? 2 : 1.5
+    ctx.globalAlpha = ring
+    ctx.stroke()
+    ctx.globalAlpha = 1
+  }
+
   // Rótulo
-  ctx.font = nodeFont(isRoot)
-  ctx.fillStyle = isRoot ? colors.onAccent : colors.fg
+  ctx.font = levelFont(style)
+  const ink = style.text === 'branch' ? branch : textOn(fill ?? colors.stage, colors.fg, colors.onAccent)
+  ctx.fillStyle = ink
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  const label = fitText(n.text, w - 20, isRoot)
-  ctx.fillText(label, x + w / 2, y + h / 2)
+  const label = fitText(n.text, w - style.padX / 2, style)
+  ctx.fillText(label, x + w / 2, style.underline ? y + h / 2 - 2 : y + h / 2)
 
   // Marcador de nota
   if (n.note) {
     ctx.beginPath()
     ctx.arc(x + w - 8, y + 8, 2.8, 0, Math.PI * 2)
-    ctx.fillStyle = isRoot ? colors.onAccent : colors.muted
-    ctx.globalAlpha = isRoot ? 0.85 : 0.7
+    ctx.fillStyle = ink
+    ctx.globalAlpha = 0.6
     ctx.fill()
     ctx.globalAlpha = 1
   }
@@ -263,8 +276,8 @@ function drawNode(
   // Ramo recolhido: a bolinha fica do lado onde os filhos estariam.
   if (n.has_children && n.folded) {
     ctx.beginPath()
-    ctx.arc(n.side === 'left' ? x - 8 : x + w + 8, y + h / 2, 5, 0, Math.PI * 2)
-    ctx.fillStyle = colors.accent
+    ctx.arc(n.side === 'left' ? x - 8 : x + w + 8, anchorY(n, style), 5, 0, Math.PI * 2)
+    ctx.fillStyle = branch
     ctx.fill()
     ctx.strokeStyle = colors.stage
     ctx.lineWidth = 2

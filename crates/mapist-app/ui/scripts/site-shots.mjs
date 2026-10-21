@@ -57,8 +57,10 @@ try {
   const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {})
   await shot(browser, 'mapa', { query: '&select=Servidor%20MCP' })
   await shot(browser, 'mapa-escuro', { dark: true, lines: 'orthogonal', query: '&select=Servidor%20MCP' })
-  await shot(browser, 'linhas', { lines: 'orthogonal' }, async (page) => {
-    await page.getByRole('button', { name: 'Abrir painel' }).or(page.getByRole('button', { name: 'Fechar painel' })).first().click()
+  await shot(browser, 'temas', {}, async (page) => {
+    await page.getByRole('button', { name: 'Tema do mapa' }).click()
+    await page.getByRole('radio', { name: /Sublinhado/ }).click()
+    await sleep(400)
   })
   await shot(browser, 'busca', {}, async (page) => {
     await page.getByRole('button', { name: 'Buscar' }).click()

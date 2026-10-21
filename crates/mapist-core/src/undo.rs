@@ -33,6 +33,8 @@ pub enum Action {
     ToggleFold { id: u64 },
     /// Discard hand-placed positions and lay the whole map out again.
     Relayout,
+    /// Choose the map's theme (one of [`crate::MAP_STYLES`]), or the default with `None`.
+    SetMapStyle { style: Option<String> },
 }
 
 impl Action {
@@ -92,6 +94,15 @@ impl Action {
             }
             Action::Relayout => {
                 crate::layout::layout(map);
+                Ok(None)
+            }
+            Action::SetMapStyle { style } => {
+                if let Some(s) = style {
+                    if !crate::MAP_STYLES.contains(&s.as_str()) {
+                        return Err(crate::Error::UnknownStyle(s.clone()));
+                    }
+                }
+                map.theme.style = style.clone();
                 Ok(None)
             }
         }

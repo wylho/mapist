@@ -273,3 +273,18 @@ fn set_side_and_fold_survive_later_edits() {
         "right"
     );
 }
+
+#[test]
+fn map_theme_is_set_read_back_and_validated() {
+    let mut s = fresh();
+    assert_eq!(call(&mut s, "get_map", json!({}))["theme"], "classico");
+    call(&mut s, "set_map_theme", json!({ "theme": "sublinhado" }));
+    assert_eq!(call(&mut s, "get_map", json!({}))["theme"], "sublinhado");
+    let params = json!({ "name": "set_map_theme", "arguments": { "theme": "neon" } });
+    assert!(
+        tools::call(&mut s, &params).is_err(),
+        "tema desconhecido é recusado"
+    );
+    call(&mut s, "undo", json!({}));
+    assert_eq!(call(&mut s, "get_map", json!({}))["theme"], "classico");
+}

@@ -53,9 +53,12 @@ Sete modos herdados do Minder: `Horizontal`, `Vertical`, `Up`, `Down`, `Left`, `
 espelha o do Minder: o pai se centra na extensão dos filhos, irmãos são separados por uma margem fixa, o lado decide o
 eixo de crescimento.
 
-### 3.3 Seleção e edição
-Seleção por clique; navegação por setas (vizinho geometricamente mais próximo na direção); edição no lugar por
-duplo-clique; painel lateral para texto, nota, cor e métricas.
+### 3.3 Seleção e edição (como no XMind)
+Sempre há um nó selecionado (a raiz, ao abrir). Com um nó selecionado, qualquer letra começa a escrever nele,
+substituindo o texto; Espaço, F2 ou duplo clique editam o texto atual. Tab cria um filho e Enter um irmão, já em
+edição com "Nova ideia" selecionado; na edição, Enter confirma, Tab confirma e cria um filho, Esc cancela. Setas andam
+para o vizinho geometricamente mais próximo; ⌘/ (Ctrl+/) recolhe. Uma dica no canto mostra o que o teclado faz agora.
+Painel lateral para texto, nota, cor, lado do ramo e métricas.
 
 ### 3.4 Desfazer
 Toda edição entra num histórico de instantâneos, com limite de 200 passos: texto, nota, cor, lado, recolher, mover e
@@ -69,9 +72,16 @@ cada uma em claro e escuro. As cores de nó saem da própria paleta, então troc
 `fitAccent` ajusta um destaque do sistema até ele ter contraste suficiente contra a superfície.
 As linhas entre nós podem ser **curvas** (Bézier) ou **em ângulo** (degrau com cantos arredondados), nas Configurações.
 
+**Temas de mapa** (como os do XMind, `ui/src/lib/maptheme.ts`): Clássico, Contorno, Sublinhado, Vibrante, Pílulas,
+Monocromático. Cada um define forma, recheio, contorno, texto e tamanho por nível (raiz, ramos principais, sub-ramos),
+a paleta dos ramos e a espessura das linhas. Cada ramo principal recebe uma cor da paleta e os filhos herdam; a cor
+escolhida no painel vale por cima. O tema é do mapa: fica no `.minder` como atributo `mapist-style` do `<theme>`
+(ausente no Clássico, para o arquivo continuar igual ao do Minder), muda pelo histórico (`Action::SetMapStyle`) e o
+núcleo só aceita os nomes de `MAP_STYLES`. Pelo MCP: `set_map_theme`.
+
 ### 3.6 Servidor MCP
-`mapist --mcp` fala JSON-RPC sobre stdio e oferece 17 ferramentas (criar, abrir, salvar, ler, adicionar, remover,
-editar texto e nota, cor, lado, recolher, rearranjar, buscar, desfazer, refazer, estatísticas). Quando o agente salva o
+`mapist --mcp` fala JSON-RPC sobre stdio e oferece 18 ferramentas (criar, abrir, salvar, ler, adicionar, remover,
+editar texto e nota, cor, lado, tema do mapa, recolher, rearranjar, buscar, desfazer, refazer, estatísticas). Quando o agente salva o
 arquivo que está aberto na janela, a janela relê ao voltar o foco (perguntando antes, se houver algo não salvo nela). Negocia a versão do protocolo e
 envia `instructions` descrevendo o modelo de dados. O registro no Claude Desktop é feito pela própria interface, com as
 garantias da §4.4.
@@ -148,7 +158,7 @@ O `.minder` é XML do Minder 2.0.9 (`<minder version="1.15.0">`). O que o Mapist
 | Elemento | Campos |
 |---|---|
 | `<minder>` | `version` |
-| `<theme>` | `name`, `label`, `index` |
+| `<theme>` | `name`, `label`, `index`; `mapist-style` (tema do mapa, só do Mapist) |
 | `<styles><style>` | 20 atributos por nível (margens, raios, fontes, larguras, traços, setas) |
 | `<drawarea>` | `x`, `y`, `scale` |
 | `<nodes><node>` | `id`, `posx`, `posy`, `width`, `height`, `side`, `fold`, `treesize`, `layout`, `group`, `color`, `colorroot` |

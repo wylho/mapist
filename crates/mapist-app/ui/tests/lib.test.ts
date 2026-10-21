@@ -375,3 +375,30 @@ describe('edição estilo XMind', () => {
     expect(doc.editing).toBeNull()
   })
 })
+
+describe('temas de mapa', () => {
+  it('cada ramo principal ganha uma cor, os filhos herdam, e a cor escolhida à mão manda', async () => {
+    const { branchColors, mapTheme, MAP_THEMES } = await import('../src/lib/maptheme')
+    const node = (id: number, depth: number, parent: number | null, color: string | null = null) =>
+      ({ id, depth, parent, color, text: '', note: '', side: 'right', x: 0, y: 0, width: 0, height: 0, folded: false, child_ids: [], has_children: false }) as never
+    const nodes = [node(0, 0, null), node(1, 1, 0), node(2, 2, 1), node(3, 1, 0, '#123456'), node(4, 2, 3), node(5, 1, 0)]
+    const colors = branchColors(nodes, MAP_THEMES.vibrante, 'light', [], (c) => c)
+    expect(colors.has(0)).toBe(false)
+    expect(colors.get(2)).toBe(colors.get(1))
+    expect(colors.get(3)).toBe('#123456')
+    expect(colors.get(4)).toBe('#123456')
+    expect(new Set([colors.get(1), colors.get(3), colors.get(5)]).size).toBe(3)
+    expect(mapTheme('nao-existe').id).toBe('classico')
+    expect(mapTheme(null).id).toBe('classico')
+  })
+
+  it('os nomes batem com os do núcleo (mapist_core::MAP_STYLES)', async () => {
+    const { MAP_THEME_IDS } = await import('../src/lib/maptheme')
+    const fs = await import('node:fs')
+    const path = await import('node:path')
+    // Os testes rodam a partir de crates/mapist-app/ui.
+    const core = fs.readFileSync(path.resolve(process.cwd(), '../../mapist-core/src/lib.rs'), 'utf8')
+    const list = /MAP_STYLES: \[&str; \d+\] = \[([^\]]*)\]/.exec(core)![1]
+    expect([...list.matchAll(/"([^"]+)"/g)].map((m) => m[1])).toEqual(MAP_THEME_IDS)
+  })
+})

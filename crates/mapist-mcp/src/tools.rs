@@ -127,6 +127,16 @@ pub fn catalog() -> Vec<Value> {
             }),
         ),
         tool(
+            "set_map_theme",
+            "Choose the map's look, as in XMind: classico (soft filled branches), contorno (outlined), sublinhado (text on a coloured line), vibrante (bold colours), pilulas (rounded pills) or mono (greys). Omit theme for the default.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "theme": { "type": "string", "enum": mapist_core::MAP_STYLES }
+                }
+            }),
+        ),
+        tool(
             "toggle_fold",
             "Fold a node (hide its children) or unfold it.",
             json!({
@@ -200,7 +210,12 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
         }
         "get_map" => {
             let map = session.require()?;
-            json!({ "version": map.version, "nodes": map.node_count(), "tree": tree_json(&map.root) })
+            json!({
+                "version": map.version,
+                "theme": map.theme.style.as_deref().unwrap_or("classico"),
+                "nodes": map.node_count(),
+                "tree": tree_json(&map.root)
+            })
         }
         "get_node" => {
             let id = int_arg(&args, "id")?;
@@ -249,6 +264,19 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
             };
             mutate(session, Action::SetSide { id, side })?;
             json!({ "ok": true, "id": id, "side": side.as_str() })
+        }
+        "set_map_theme" => {
+            let style = args
+                .get("theme")
+                .and_then(|t| t.as_str())
+                .map(str::to_string);
+            mutate(
+                session,
+                Action::SetMapStyle {
+                    style: style.clone(),
+                },
+            )?;
+            json!({ "ok": true, "theme": style.unwrap_or_else(|| "classico".into()) })
         }
         "toggle_fold" => {
             let id = int_arg(&args, "id")?;

@@ -30,7 +30,7 @@ Tudo pelo teclado, nada de esperar. O mapa se arruma sozinho enquanto você escr
 
 | | |
 |---|---|
-| **Teclado primeiro** | Tab cria um filho, Enter um irmão, as setas andam pelo mapa e Espaço recolhe um ramo. |
+| **Selecione e digite** | O texto entra direto no nó. Tab cria um filho, Enter um irmão, já prontos para escrever; as setas andam pelo mapa. |
 | **Dos dois lados** | Ramos à esquerda e à direita da raiz, como no Minder. Escolha o lado de cada um no painel. |
 | **Notas em cada nó** | Texto curto no mapa, detalhes na nota em Markdown, que fica guardada junto. |
 | **Desfazer de verdade** | Duzentos passos para trás e para a frente, sem perder o que você recolheu ou mudou de lado. |
@@ -57,12 +57,15 @@ arquivo pela metade.
 
 <img src="site/img/busca.webp" alt="Mapa com a busca aberta na barra, marcando os nós que contêm a palavra Design">
 
-## Curvas ou em ângulo
+## Temas de mapa
 
-Escolha como os ramos ligam um nó ao outro: curvas soltas, ou linhas em degrau com cantos arredondados, mais
-organizadas para mapas grandes.
+Seis temas, no espírito do XMind: cartões coloridos, contorno, texto sobre a linha, cores fortes, pílulas ou cinzas.
+Cada ramo principal ganha uma cor e os de baixo herdam. O tema fica salvo no próprio mapa.
 
-<img src="site/img/linhas.webp" alt="Mapa com as linhas em ângulo, em degraus com cantos arredondados">
+- Ramos em curva ou em ângulo, com cantos arredondados
+- Uma cor escolhida à mão continua valendo por cima do tema
+
+<img src="site/img/temas.webp" alt="A folha Tema do mapa, com seis mapinhas de exemplo: Clássico, Contorno, Sublinhado, Vibrante, Pílulas e Monocromático">
 
 ## Com a cara do seu sistema
 
@@ -94,7 +97,8 @@ each map in a file on your computer, in the format of [Minder](https://github.co
 Minder maps open without loss. A built-in MCP server lets Claude (Desktop and Code) read and edit the same map you are
 working on, through the same core as the window.
 
-- Keyboard-first editing: Tab for a child, Enter for a sibling, arrows to move, Space to fold
+- Select and type: Tab for a child, Enter for a sibling, both ready to write; arrows to move
+- Six map themes in the spirit of XMind, saved in the map
 - Branches on both sides of the root, notes in Markdown on every node, branch colours
 - Curved or angled links, light and dark themes, and a System theme that follows Windows, macOS, GNOME or KDE
 - 200 steps of undo; Claude can undo its own edits too
@@ -111,7 +115,7 @@ Especificação: [`docs/SPEC.md`](docs/SPEC.md). Regras do projeto: [`CLAUDE.md`
 ```
 crates/
 ├── mapist-core/   modelo, layout, .minder, Editor (histórico + arquivo), sem interface
-├── mapist-mcp/    servidor MCP sobre stdio (17 ferramentas)
+├── mapist-mcp/    servidor MCP sobre stdio (18 ferramentas)
 └── mapist-app/    janela Tauri; a interface Svelte 5 fica em ui/
 site/              mapist.pages.dev (Cloudflare Pages, sem build)
 ```
@@ -143,7 +147,8 @@ crates/mapist-app/ui/node_modules/.bin/tauri build
 ```
 
 Ferramentas: `new_map`, `open_map`, `save_map`, `get_map`, `get_node`, `add_node`, `remove_node`, `set_text`,
-`set_note`, `set_color`, `set_side`, `toggle_fold`, `relayout`, `search_nodes`, `undo`, `redo`, `map_stats`.
+`set_note`, `set_color`, `set_side`, `set_map_theme`, `toggle_fold`, `relayout`, `search_nodes`, `undo`, `redo`,
+`map_stats`.
 
 ## Licença
 

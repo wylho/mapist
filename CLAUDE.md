@@ -70,6 +70,14 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
 - **D13:** **site em mapist.pages.dev** (`site/`, Cloudflare Pages sem build), mesma estrutura e `style.css` do site
   do Ideario; README com o mesmo conteúdo (skill `sync-site`).
 
+- **D14:** **edição como no XMind** (pedido do usuário: "não sei se já posso digitar"): sempre há um nó selecionado,
+  digitar escreve nele, Espaço/F2 editam, Tab/Enter criam já em edição, recolher em ⌘/; dica de teclado no canto.
+- **D15:** **temas de mapa no arquivo**, como no XMind (esqueleto + cores por ramo), separados da paleta de interface
+  (que é do aparelho). Atributo `mapist-style` no `<theme>`, que o Minder ignora.
+- **D16:** **barra de título do macOS como a do Ideario**: janela criada no `setup` com `TitleBarStyle::Overlay`,
+  botões em (18, 33) dentro da barra de 64 px, espaço medido por `mac_lights_width`. Sem atualização automática por
+  enquanto (decisão do usuário).
+
 ## Estado atual
 - **Fases 1 e 2 concluídas; preparado para o primeiro release** (falta só a decisão P5, atualização automática).
 - `mapist-core`: modelo (`model.rs`), `.minder` (`document.rs`), layout (`layout.rs`: faixa por sub-árvore, lado de cada
@@ -88,12 +96,14 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   palettes, theme, render com `traceBranch` curvas/em ângulo, measure, font, preview). `ideario.css` + `map.css`.
 - **Preview** (`ui/src/lib/preview.ts`): espelha o núcleo (mesmo layout, recolhidos escondidos); `?preview`, e
   `?select=Texto` abre com o nó selecionado. Mapa de exemplo "Lançamento do app", inventado.
-- **Testes:** 60 Rust + 33 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
+- **Testes:** 64 Rust + 36 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
   `.AppImage`; a janela abre um `.minder` passado como argumento) e `mapist --mcp` testado de ponta a ponta.
 - **CI/Release:** `.github/workflows/build.yml` (verificação + instaladores dos três sistemas nos Artifacts) e
   `release.yml` (rascunho → publicar); `scripts/check-version.sh` e `scripts/bump-version.sh`; guia em
   `docs/RELEASE.md`.
 - **Site:** `site/` (index, privacidade, prints de `ui/scripts/site-shots.mjs`). Precisa ligar o projeto no Cloudflare
   Pages (pasta `site`, sem build) para ir ao ar.
-- **Próximo:** decidir P5 (atualização automática) antes do primeiro release; depois a Fase 3 (importação e
-  exportação).
+- **Edição XMind e temas de mapa** (`lib/maptheme.ts`, `components/MapThemeSheet.svelte`, `Action::SetMapStyle`,
+  `set_map_theme` no MCP, `set_map_style` no app); barra do macOS integrada (`setup` + `mac_lights_width` em
+  `src/lib.rs`, `main.ts`, `map.css`).
+- **Próximo:** a Fase 3 (importação e exportação). Atualização automática fica para depois (decisão do usuário).

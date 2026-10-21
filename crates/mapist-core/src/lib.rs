@@ -32,6 +32,18 @@ pub use model::{
 /// Matches the Minder 2.0.9 release whose XML shape this crate reads.
 pub const FORMAT_VERSION: &str = "1.15.0";
 
+/// Map themes the app knows how to draw. The look itself lives in the
+/// renderer; the core only checks names, so a file never carries a theme
+/// that no door can show.
+pub const MAP_STYLES: [&str; 6] = [
+    "classico",
+    "contorno",
+    "sublinhado",
+    "vibrante",
+    "pilulas",
+    "mono",
+];
+
 /// Errors produced by this crate.
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -46,6 +58,9 @@ pub enum Error {
 
     #[error("cannot remove the root node")]
     CannotRemoveRoot,
+
+    #[error("unknown map theme {0:?}; use one of: classico, contorno, sublinhado, vibrante, pilulas, mono")]
+    UnknownStyle(String),
 
     #[error("the map has never been saved; choose where to save it")]
     NoPath,
@@ -314,5 +329,52 @@ mod tests {
         assert_eq!(map.root.children[0].color.as_deref(), Some("#c6262e"));
         assert_eq!(map.draw_area.x, -299.53125);
         assert_eq!(map.root.children[0].pos.x, 432.53125);
+    }
+
+    #[test]
+    fn map_style_round_trips_as_an_extra_theme_attribute() {
+        let mut map = sample();
+        map.theme.style = Some("contorno".into());
+        let xml = document::to_xml(&map).unwrap();
+        assert!(
+            xml.contains(r#"mapist-style="contorno""#),
+            "atributo novo, que o Minder ignora"
+        );
+        let back = document::from_xml(&xml).unwrap();
+        assert_eq!(back.theme.style.as_deref(), Some("contorno"));
+        assert_eq!(
+            back.theme.name, map.theme.name,
+            "o tema do Minder continua lá"
+        );
+
+        map.theme.style = None;
+        let xml = document::to_xml(&map).unwrap();
+        assert!(
+            !xml.contains("mapist-style"),
+            "sem tema escolhido, o arquivo fica igual ao do Minder"
+        );
+    }
+
+    #[test]
+    fn map_style_is_an_undoable_edit() {
+        let mut ed = Editor::new("Raiz");
+        ed.apply(undo::Action::SetMapStyle {
+            style: Some("vibrante".into()),
+        })
+        .unwrap();
+        assert_eq!(ed.map().theme.style.as_deref(), Some("vibrante"));
+        assert!(ed.is_dirty());
+        ed.undo();
+        assert_eq!(ed.map().theme.style, None);
+    }
+
+    #[test]
+    fn unknown_map_style_is_refused() {
+        let mut ed = Editor::new("Raiz");
+        let err = ed.apply(undo::Action::SetMapStyle {
+            style: Some("inexistente".into()),
+        });
+        assert!(matches!(err, Err(Error::UnknownStyle(_))));
+        assert!(!ed.can_undo(), "recusado não entra no histórico");
     }
 }

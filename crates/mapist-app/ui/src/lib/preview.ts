@@ -39,6 +39,9 @@ let nextId = 1
 let rootId = 0
 let dirty = false
 let path: string | null = null
+/** Tema do mapa, como `theme.style` no núcleo. */
+let style: string | null = null
+const MAP_STYLES = ['classico', 'contorno', 'sublinhado', 'vibrante', 'pilulas', 'mono']
 const past: string[] = []
 const future: string[] = []
 
@@ -68,6 +71,7 @@ function snapshotState() {
     rootId,
     dirty,
     path,
+    style,
   })
 }
 
@@ -78,12 +82,14 @@ function restore(state: string) {
     rootId: number
     dirty: boolean
     path: string | null
+    style: string | null
   }
   nodes = new Map(o.nodes)
   nextId = o.nextId
   rootId = o.rootId
   dirty = o.dirty
   path = o.path
+  style = o.style
 }
 
 function snapshotOf(): Snapshot {
@@ -106,6 +112,7 @@ function snapshotOf(): Snapshot {
       can_undo: past.length > 0,
       can_redo: future.length > 0,
       stale: false,
+      style,
       bounds: { min_x: 0, min_y: 0, max_x: 0, max_y: 0 },
     }
   }
@@ -150,6 +157,7 @@ function snapshotOf(): Snapshot {
     can_undo: past.length > 0,
     can_redo: future.length > 0,
     stale: false,
+    style,
     bounds: { min_x: minX, min_y: minY, max_x: maxX, max_y: maxY },
   }
 }
@@ -235,6 +243,7 @@ export function seedDemo() {
   future.length = 0
   dirty = false
   path = 'exemplo.minder'
+  style = null
 
   // Um mapa inventado (o repositório é público): o lançamento de um app fictício, com ramos dos dois lados.
   const root = makeNode('Lançamento do app', 'right', 'Plano do trimestre. **Responsável:** time de produto.')
@@ -243,9 +252,10 @@ export function seedDemo() {
   nodes.set(root.id, root)
 
   const branch = (parent: PNode, text: string, token: string, children: string[] = [], side = parent.side) => {
-    const n = makeNode(text, side, '', token)
+    // Sem cor fixa: quem pinta os ramos é o tema do mapa (a cor escolhida à mão continua valendo por cima).
+    void token
+    const n = makeNode(text, side, '', null)
     n.parent = parent.id
-    n.color = token
     parent.children.push(n.id)
     nodes.set(n.id, n)
     for (const c of children) branch(n, c, token)
@@ -284,6 +294,7 @@ export const previewBackend = {
     nodes.set(root.id, root)
     dirty = false
     path = null
+    style = null
     relayout()
     return snapshotOf()
   },
@@ -308,8 +319,6 @@ export const previewBackend = {
       const n = makeNode(text)
       n.parent = parent
       n.side = parentNode.side
-      n.colorToken = parentNode.colorToken
-      n.color = parentNode.colorToken
       nodes.set(n.id, n)
       parentNode.children.push(n.id)
       newId = n.id
@@ -376,6 +385,14 @@ export const previewBackend = {
     return snapshotOf()
   },
 
+  set_map_style: ({ style: next }: { style: string | null }) => {
+    if (next !== null && !MAP_STYLES.includes(next)) throw new Error(`unknown map theme "${next}"`)
+    commit(() => {
+      style = next
+    })
+    return snapshotOf()
+  },
+
   reload_map: () => snapshotOf(),
 
   quit_app: () => undefined,
@@ -410,7 +427,7 @@ export const previewBackend = {
         n.height = s.height
       }
     }
-    relayout()
+    reposition() // como o núcleo: as medidas vieram da tela, não estimar de novo
     return snapshotOf()
   },
 

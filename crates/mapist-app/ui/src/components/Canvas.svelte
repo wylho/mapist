@@ -5,7 +5,7 @@
   import { theme } from '../lib/theme.svelte'
   import { draw, hitTest, readThemeColors, type Viewport } from '../lib/render'
   import { prefs } from '../lib/prefs.svelte'
-  import { NODE_FONT_SIZE, ROOT_FONT_SIZE } from '../lib/font'
+  import { levelStyle, mapTheme } from '../lib/maptheme'
 
   import type { Snippet } from 'svelte'
 
@@ -85,6 +85,7 @@
     draw({
       snapshot: doc.snapshot,
       linkStyle: prefs.linkStyle,
+      mode: theme.mode,
       colors,
       view,
       selected: doc.selected,
@@ -217,14 +218,14 @@
     const ed = doc.editing
     const n = ed ? doc.node(ed.id) : null
     if (!n) return null
-    const isRoot = n.parent === null
+    const style = levelStyle(mapTheme(doc.snapshot.style), n.depth)
     return {
       left: n.x * view.scale + view.x,
       top: n.y * view.scale + view.y,
       width: Math.max(60, n.width * view.scale),
       height: Math.max(24, n.height * view.scale),
-      font: (isRoot ? ROOT_FONT_SIZE : NODE_FONT_SIZE) * view.scale,
-      weight: isRoot ? 700 : 600,
+      font: style.size * view.scale,
+      weight: style.weight,
     }
   })
 

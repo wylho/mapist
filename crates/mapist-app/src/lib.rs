@@ -60,6 +60,8 @@ pub struct Snapshot {
     can_redo: bool,
     /// The file changed on disk since it was read or saved here (an agent saved it).
     stale: bool,
+    /// The map's theme (`mapist_core::MAP_STYLES`), or `None` for the default.
+    style: Option<String>,
     bounds: Bounds,
 }
 
@@ -104,6 +106,7 @@ fn snapshot(doc: &Doc) -> Snapshot {
             can_undo: false,
             can_redo: false,
             stale: false,
+            style: None,
             bounds: Bounds::default(),
         };
     };
@@ -174,6 +177,7 @@ fn snapshot(doc: &Doc) -> Snapshot {
         can_undo: ed.can_undo(),
         can_redo: ed.can_redo(),
         stale: ed.changed_on_disk(),
+        style: map.theme.style.clone(),
         bounds: Bounds {
             min_x: if min_x == f64::MAX { 0.0 } else { min_x },
             min_y: if min_y == f64::MAX { 0.0 } else { min_y },
@@ -296,6 +300,12 @@ fn set_side(state: State<'_, AppState>, id: u64, side: String) -> Result<Snapsho
         other => return Err(format!("lado inválido: {other}")),
     };
     mutate(state, Action::SetSide { id, side })
+}
+
+/// Choose the map's theme; it is saved in the file and undoable.
+#[tauri::command]
+fn set_map_style(state: State<'_, AppState>, style: Option<String>) -> Result<Snapshot, String> {
+    mutate(state, Action::SetMapStyle { style })
 }
 
 /// Fold or unfold a node.
@@ -524,6 +534,7 @@ pub fn run() {
             set_note,
             set_color,
             set_side,
+            set_map_style,
             toggle_fold,
             move_node,
             undo,

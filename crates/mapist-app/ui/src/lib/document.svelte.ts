@@ -6,6 +6,7 @@
 
 import { api, hasHost, isPreview, type Snapshot } from './api'
 import { measureAll } from './measure'
+import { mapTheme } from './maptheme'
 import { ui } from './ui.svelte'
 
 const EMPTY: Snapshot = {
@@ -17,6 +18,7 @@ const EMPTY: Snapshot = {
   can_undo: false,
   can_redo: false,
   stale: false,
+  style: null,
   bounds: { min_x: 0, min_y: 0, max_x: 0, max_y: 0 },
 }
 
@@ -79,7 +81,7 @@ class Document {
    */
   async syncSizes() {
     if ((!hasHost && !isPreview) || this.snapshot.nodes.length === 0) return
-    const measured = measureAll(this.snapshot.nodes)
+    const measured = measureAll(this.snapshot.nodes, mapTheme(this.snapshot.style))
     let changed = false
     const next = new Map<number, { width: number; height: number }>()
     for (const m of measured) {
@@ -271,6 +273,11 @@ class Document {
   /** Persiste a posição final de um nó arrastado. */
   move(id: number, x: number, y: number) {
     return this.run(() => api.moveNode(id, x, y))
+  }
+
+  /** Tema do mapa (fica no arquivo e desfaz como qualquer edição). */
+  setMapStyle(style: string | null) {
+    return this.run(() => api.setMapStyle(style))
   }
 
   setSide(id: number, side: 'left' | 'right') {
