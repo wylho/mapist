@@ -102,6 +102,7 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
 - **D23:** **exportar em formatos abertos** (pedido do usuário): PNG, SVG, PDF para imprimir (cabe numa página,
   retrato/paisagem automático), HTML de um arquivo só, Markdown e OPML. O PDF é imagem em alta resolução (igual à
   tela) em vez de vetor, para não depender de fontes embutidas; o SVG é o vetor.
+- **D24:** **importar Markdown e OPML** (pedido do usuário) pelo próprio Abrir, como mapa novo não salvo.
 - **D18:** **o canvas redesenha no máximo uma vez por quadro**, e o que o desenho lê não pode ser `$state` escrito no
   mesmo efeito. Motivo: um laço assim (`colors`) fazia centenas de redesenhos por tecla e deixava a edição travando.
 
@@ -126,7 +127,7 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   palettes, theme, render com `traceBranch` curvas/em ângulo, measure, font, preview). `ideario.css` + `map.css`.
 - **Preview** (`ui/src/lib/preview.ts`): espelha o núcleo (mesmo layout, recolhidos escondidos); `?preview`, e
   `?select=Texto` abre com o nó selecionado. Mapa de exemplo "Lançamento do app", inventado.
-- **Testes:** 80 Rust + 42 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
+- **Testes:** 87 Rust + 42 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
   `.AppImage`; a janela abre um `.minder` passado como argumento) e `nodo --mcp` testado de ponta a ponta.
 - **CI/Release:** `.github/workflows/build.yml` (verificação + instaladores dos três sistemas nos Artifacts) e
   `release.yml` (rascunho → publicar); `scripts/check-version.sh` e `scripts/bump-version.sh`; guia em
@@ -171,6 +172,12 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   se vier `path`). Interface: `lib/exporter.ts` (PNG em 1–3×, SVG pelo `lib/svgctx.ts`, um "canvas" que escreve SVG
   com o mesmo `draw` da tela; PDF de uma página pelo jsPDF carregado sob demanda, ~300 dpi, orientação automática pelo
   formato do mapa ou escolhida, A4/Carta; HTML = página do núcleo com o SVG dentro), folha `ExportSheet.svelte`, botão
-  na barra, ⌘⇧E e item no menu do fundo.
+  na barra, ⌘⇧E e item no menu do fundo. A folha oferece PNG, SVG, PDF, Markdown e OPML (o usuário dispensou o HTML,
+  que fica só no núcleo e no MCP).
+- **Importar Markdown e OPML** (D24): `nodo_core::import` (`from_markdown`: títulos e itens de lista em qualquer recuo
+  viram tópicos, o resto vira nota, um `# Título` único vira a raiz; `from_opml`: `text`/`_note`, um `<outline>` único
+  vira a raiz), `Editor::open_or_import` (por extensão; o mapa importado fica sem caminho e sujo, então salvar pergunta
+  onde e o arquivo original nunca é sobrescrito). Usado pelo `open_map` do app e do MCP; o diálogo Abrir aceita
+  `.md`, `.markdown`, `.txt` e `.opml`. Ida e volta: o Markdown e o OPML exportados voltam à mesma árvore.
 - **Próximo:** balão da nota com Markdown formatado (clicar na bolinha), depois aba Estrutura na barra lateral com
   colar lista, depois abrir `.xmind`.

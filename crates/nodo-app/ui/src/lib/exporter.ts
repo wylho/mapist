@@ -1,4 +1,4 @@
-// Exportação: PNG, SVG e PDF saem do mesmo desenho da tela (render.ts), sem seleção nem realce; HTML, Markdown e
+// Exportação: PNG, SVG e PDF saem do mesmo desenho da tela (render.ts), sem seleção nem realce; Markdown e
 // OPML vêm do núcleo (nodo_core::export), os mesmos que o Claude exporta pelo MCP. Gravar no disco passa pelo Rust
 // (gravação atômica); na prévia, vira um download do navegador.
 import { api, hasHost, type Snapshot } from './api'
@@ -7,7 +7,7 @@ import { prefs } from './prefs.svelte'
 import { theme } from './theme.svelte'
 import { SvgContext } from './svgctx'
 
-export type ExportFormat = 'png' | 'svg' | 'pdf' | 'html' | 'markdown' | 'opml'
+export type ExportFormat = 'png' | 'svg' | 'pdf' | 'markdown' | 'opml'
 export type Orientation = 'auto' | 'portrait' | 'landscape'
 export type Paper = 'a4' | 'letter'
 
@@ -24,9 +24,8 @@ export const FORMATS: { id: ExportFormat; label: string; ext: string; hint: stri
   { id: 'png', label: 'Imagem PNG', ext: 'png', hint: 'Para mensagens, slides e redes', mime: 'image/png' },
   { id: 'svg', label: 'SVG', ext: 'svg', hint: 'Vetor aberto: amplia sem perder e edita no Figma, Inkscape…', mime: 'image/svg+xml' },
   { id: 'pdf', label: 'PDF para imprimir', ext: 'pdf', hint: 'O mapa inteiro numa página, em alta resolução', mime: 'application/pdf' },
-  { id: 'html', label: 'Página HTML', ext: 'html', hint: 'Um arquivo só, com o desenho e os tópicos que abrem e fecham', mime: 'text/html' },
   { id: 'markdown', label: 'Markdown', ext: 'md', hint: 'Lista recuada com as notas, para Obsidian, Notion…', mime: 'text/markdown' },
-  { id: 'opml', label: 'OPML', ext: 'opml', hint: 'Estrutura de tópicos que outros apps de mapa e listas abrem', mime: 'text/x-opml' },
+  { id: 'opml', label: 'OPML', ext: 'opml', hint: 'Lista de tópicos que o MindNode, o XMind e apps de listas abrem', mime: 'text/x-opml' },
 ]
 
 const MARGIN = 40
@@ -116,10 +115,6 @@ export async function exportBytes(format: ExportFormat, s: Snapshot, o: ExportOp
       return text(renderSvg(s, o.background))
     case 'pdf':
       return new Uint8Array(await (await renderPdf(s, o)).arrayBuffer())
-    case 'html': {
-      const page = await api.exportText('html')
-      return text(page.replace('<!-- nodo:figure -->', renderSvg(s, true)))
-    }
     default:
       return text(await api.exportText(format))
   }

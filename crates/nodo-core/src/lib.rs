@@ -18,6 +18,7 @@
 pub mod document;
 pub mod editor;
 pub mod export;
+pub mod import;
 pub mod layout;
 pub mod model;
 pub mod undo;

@@ -464,7 +464,7 @@ export const previewBackend = {
     return snapshotOf()
   },
 
-  // Espelha nodo_core::export (o mesmo formato, sem os detalhes de estilo da página).
+  // Espelha nodo_core::export (Markdown e OPML, os formatos de texto que a folha Exportar oferece).
   export_text: ({ format }: { format: string }) => {
     const root = nodes.get(rootId)
     if (!root) return ''
@@ -495,22 +495,6 @@ export const previewBackend = {
       }
       walk(root, 0)
       return out + '  </body>\n</opml>\n'
-    }
-    if (format === 'html') {
-      let list = ''
-      const walk = (n: PNode) => {
-        const note = n.note.trim() ? `<p class="note">${esc(n.note.trim())}</p>` : ''
-        list += n.children.length
-          ? `<li><details open><summary>${esc(line(n.text))}</summary>${note}<ul>\n`
-          : `<li><span>${esc(line(n.text))}</span>${note}</li>\n`
-        if (n.children.length) {
-          kids(n).forEach(walk)
-          list += '</ul></details></li>\n'
-        }
-      }
-      kids(root).forEach(walk)
-      const title = esc(line(root.text))
-      return `<!doctype html>\n<html lang="pt-BR">\n<head>\n<meta charset="utf-8">\n<title>${title}</title>\n</head>\n<body>\n<main>\n<h1>${title}</h1>\n<figure><!-- nodo:figure --></figure>\n<ul class="outline">\n${list}</ul>\n</main>\n</body>\n</html>\n`
     }
     throw new Error(`unknown export format "${format}"`)
   },

@@ -292,7 +292,7 @@ fn parse_style(e: &quick_xml::events::BytesStart) -> Style {
     }
 }
 
-fn local_name(raw: &[u8]) -> String {
+pub(crate) fn local_name(raw: &[u8]) -> String {
     let s = String::from_utf8_lossy(raw);
     match s.rsplit(':').next() {
         Some(n) => n.to_string(),
@@ -300,7 +300,7 @@ fn local_name(raw: &[u8]) -> String {
     }
 }
 
-fn attr(e: &quick_xml::events::BytesStart, key: &str) -> Option<String> {
+pub(crate) fn attr(e: &quick_xml::events::BytesStart, key: &str) -> Option<String> {
     e.attributes().flatten().find_map(|a| {
         if local_name(a.key.as_ref()) == key {
             a.unescape_value().ok().map(|v| v.into_owned())

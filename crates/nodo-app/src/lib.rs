@@ -224,10 +224,11 @@ fn new_map(state: State<'_, AppState>, title: String) -> Result<Snapshot, String
     Ok(snapshot(&doc))
 }
 
-/// Open a map from disk.
+/// Open a map from disk, or import a Markdown or OPML file as a new map.
 #[tauri::command]
 fn open_map(state: State<'_, AppState>, path: String) -> Result<Snapshot, String> {
-    let ed = Editor::open(&path).map_err(|e| format!("não foi possível abrir {path}: {e}"))?;
+    let ed =
+        Editor::open_or_import(&path).map_err(|e| format!("não foi possível abrir {path}: {e}"))?;
     let mut doc = lock(&state)?;
     *doc = Some(ed);
     Ok(snapshot(&doc))

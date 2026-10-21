@@ -1,13 +1,13 @@
 <script lang="ts">
   // Exportar o mapa: escolhe o formato, ajusta as opções que valem para ele e grava. PNG, SVG e PDF saem do mesmo
-  // desenho da tela; HTML, Markdown e OPML vêm do núcleo, iguais aos que o Claude exporta.
+  // desenho da tela; Markdown e OPML vêm do núcleo, iguais aos que o Claude exporta.
   import { Dialog, ToggleGroup } from 'bits-ui'
-  import { Download, FileCode2, FileImage, FileText, FileType2, Globe, ListTree, X } from '@lucide/svelte'
+  import { Download, FileCode2, FileImage, FileText, FileType2, ListTree, X } from '@lucide/svelte'
   import { doc } from '../lib/document.svelte'
   import { ui } from '../lib/ui.svelte'
   import { FORMATS, exportTo, pickOrientation, type ExportFormat, type Orientation, type Paper } from '../lib/exporter'
 
-  const ICONS = { png: FileImage, svg: FileCode2, pdf: FileType2, html: Globe, markdown: FileText, opml: ListTree }
+  const ICONS = { png: FileImage, svg: FileCode2, pdf: FileType2, markdown: FileText, opml: ListTree }
 
   let format = $state<ExportFormat>('png')
   let scale = $state('2')

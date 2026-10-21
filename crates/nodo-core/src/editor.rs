@@ -57,6 +57,38 @@ impl Editor {
         Ok(ed)
     }
 
+    /// Open a `.minder` map, or import a Markdown (`.md`, `.markdown`, `.txt`) or OPML (`.opml`) file as a new map.
+    /// An import has no path: saving asks where, so the original file is never overwritten with map XML.
+    pub fn open_or_import(path: impl AsRef<Path>) -> crate::Result<Self> {
+        let path = path.as_ref();
+        let ext = path
+            .extension()
+            .map(|e| e.to_string_lossy().to_lowercase())
+            .unwrap_or_default();
+        let stem = path
+            .file_stem()
+            .map(|s| s.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        match ext.as_str() {
+            "md" | "markdown" | "txt" => {
+                let text = std::fs::read_to_string(path)?;
+                Ok(Self::imported(crate::import::from_markdown(&text, &stem)))
+            }
+            "opml" => {
+                let text = std::fs::read_to_string(path)?;
+                Ok(Self::imported(crate::import::from_opml(&text, &stem)?))
+            }
+            _ => Self::open(path),
+        }
+    }
+
+    /// A map that came from somewhere else (an imported Markdown): new and not saved yet, so closing it asks and
+    /// saving it asks where.
+    pub fn imported(mut map: MindMap) -> Self {
+        layout::layout(&mut map);
+        Self::from_map(map, None)
+    }
+
     fn from_map(map: MindMap, path: Option<PathBuf>) -> Self {
         Self {
             history: History::new(map),
@@ -322,6 +354,21 @@ mod tests {
                 structure: Some("espiral".into())
             })
             .is_err());
+    }
+
+    #[test]
+    fn importing_markdown_gives_an_unsaved_map_that_keeps_the_original_file() {
+        let dir = std::env::temp_dir().join(format!("nodo-import-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let md = dir.join("Compras.md");
+        std::fs::write(&md, "- Leite\n- Pão\n").unwrap();
+        let ed = Editor::open_or_import(&md).unwrap();
+        assert_eq!(ed.map().root.text, "Compras");
+        assert_eq!(ed.map().root.children.len(), 2);
+        assert!(ed.path().is_none(), "salvar tem de perguntar onde");
+        assert!(ed.is_dirty(), "fechar sem salvar pergunta");
+        assert_eq!(std::fs::read_to_string(&md).unwrap(), "- Leite\n- Pão\n");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

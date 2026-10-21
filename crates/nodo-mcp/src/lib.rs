@@ -71,7 +71,7 @@ pub fn write_msg(out: &mut impl Write, msg: &Value) -> std::io::Result<()> {
 
 /// Open a map from disk into the session.
 pub fn open_into(session: &mut Session, path: &str) -> Result<usize, String> {
-    let ed = Editor::open(path).map_err(|e| format!("failed to open {path}: {e}"))?;
+    let ed = Editor::open_or_import(path).map_err(|e| format!("failed to open {path}: {e}"))?;
     let count = ed.map().node_count();
     session.editor = Some(ed);
     Ok(count)
