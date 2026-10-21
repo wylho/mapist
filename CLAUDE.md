@@ -79,7 +79,9 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   enquanto (decisão do usuário).
 
 ## Estado atual
-- **Fases 1 e 2 concluídas; preparado para o primeiro release** (falta só a decisão P5, atualização automática).
+- **Fases 1 e 2 concluídas. Versão 0.1.0 lançada** (Release `v0.1.0`: `.dmg` universal, `-setup.exe`/`.msi`,
+  `.AppImage`/`.deb`/`.rpm`), sem atualização automática (decisão do usuário). O site depende de reconectar o Git no
+  projeto do Cloudflare Pages (o projeto perdeu o acesso ao repositório e só tem a publicação de antes de `site/`).
 - `mapist-core`: modelo (`model.rs`), `.minder` (`document.rs`), layout (`layout.rs`: faixa por sub-árvore, lado de cada
   ramo, descendentes de nó recolhido sem posição), histórico (`undo.rs`: `Action` inclui `SetSide`, `ToggleFold`,
   `Relayout`), **`Editor`** (`editor.rs`: histórico + arquivo + revisões; sujo segue o desfazer até o salvo; salvar é
