@@ -232,6 +232,11 @@ kbd {
   .doc-title { display: none; }
   .search.inline { min-width: 0; flex: 1 1 auto; }
 }
+/* Janela bem estreita, com nó selecionado e histórico: Novo e Abrir saem da barra (ficam ⌘N e ⌘O) para nada
+   se sobrepor. */
+@media (max-width: 479px) {
+  .topbar.appbar .roomy { display: none; }
+}
 
 /* Sem abas embaixo (como o .shell.wide do Ideario, que não usamos: lá ele vira grade com lateral). */
 .map-shell .toast { bottom: 32px; }

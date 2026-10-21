@@ -143,6 +143,9 @@ export const api = {
   mcpInstall: () => call<McpInfo>('mcp_install'),
   mcpUninstall: () => call<McpInfo>('mcp_uninstall'),
 
+  /** Este jeito de instalar se atualiza sozinho? (No Linux, só o AppImage; o `.deb` e o `.rpm` não.) */
+  updateSupported: () => call<boolean>('update_supported'),
+
   /** Versão nova no último Release do GitHub, ou `null` (também quando este jeito de instalar não se atualiza). */
   checkUpdate: () => call<UpdateInfo | null>('update_check'),
 

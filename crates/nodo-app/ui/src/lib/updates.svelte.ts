@@ -7,11 +7,14 @@ class Updates {
   phase = $state<'idle' | 'checking' | 'downloading' | 'error'>('idle')
   /** 0–1 enquanto baixa; `null` se o tamanho não é conhecido. */
   progress = $state<number | null>(null)
+  /** Este jeito de instalar se atualiza sozinho. Sem isso, nada de atualização aparece na interface. */
+  supported = $state(false)
   /** O aviso do canto foi fechado ("Depois"). As Configurações continuam oferecendo a versão. */
   dismissed = $state(false)
 
   /** Procura versão nova. Devolve se achou; erro de rede conta como "sem novidade" (tenta na próxima abertura). */
   async check(): Promise<boolean> {
+    if (!this.supported) return false
     if (this.phase === 'checking' || this.phase === 'downloading') return !!this.info
     this.phase = 'checking'
     try {
@@ -39,4 +42,9 @@ class Updates {
 
 export const updates = new Updates()
 
-if (hasHost || isPreview) setTimeout(() => void updates.check(), 5000)
+if (hasHost || isPreview) {
+  setTimeout(async () => {
+    updates.supported = await api.updateSupported().catch(() => false)
+    void updates.check()
+  }, 5000)
+}

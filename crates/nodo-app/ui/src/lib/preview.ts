@@ -471,6 +471,7 @@ export const previewBackend = {
   mcp_uninstall: () => previewBackend.mcp_info(),
 
   // `?update` simula uma versão nova, para ver o aviso.
+  update_supported: () => true,
   update_check: () => (new URLSearchParams(location.search).has('update') ? { version: '0.3.0', notes: null } : null),
   update_install: () => new Promise<void>(() => {}),
 

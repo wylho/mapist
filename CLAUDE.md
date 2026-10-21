@@ -102,9 +102,9 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   `Relayout`), **`Editor`** (`editor.rs`: histórico + arquivo + revisões; sujo segue o desfazer até o salvo; salvar é
   atômico; `changed_on_disk` para ver o que o agente salvou). Testes em `editor.rs`, `lib.rs` e
   `tests/layout_props.rs` (proptest).
-- `nodo-mcp`: `Session` = `Option<Editor>`; 17 ferramentas (`toggle_fold` nova; `set_side`/`relayout` passam pelo
+- `nodo-mcp`: `Session` = `Option<Editor>`; 18 ferramentas (`toggle_fold` e `set_map_theme` novas; `set_side`/`relayout` passam pelo
   histórico); `setup.rs` registra no Claude Desktop.
-- `nodo-app`: 21 comandos em `src/lib.rs` sobre o `Editor` (`set_side`, `reload_map`, `quit_app` novos); snapshot
+- `nodo-app`: 26 comandos (com `update_supported`/`update_check`/`update_install`) em `src/lib.rs` sobre o `Editor` (`set_side`, `reload_map`, `quit_app` novos); snapshot
   esconde filhos de nó recolhido e diz se o arquivo mudou no disco (`stale`); fechar/Cmd+Q com algo não salvo pergunta
   na interface (evento `close-requested`); `.minder` associado no instalador e aberto por argumento ou pelo evento do
   macOS (`open-file`). Ícones de todas as plataformas em `icons/`, `bundle.targets = all`.
@@ -113,7 +113,7 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   palettes, theme, render com `traceBranch` curvas/em ângulo, measure, font, preview). `ideario.css` + `map.css`.
 - **Preview** (`ui/src/lib/preview.ts`): espelha o núcleo (mesmo layout, recolhidos escondidos); `?preview`, e
   `?select=Texto` abre com o nó selecionado. Mapa de exemplo "Lançamento do app", inventado.
-- **Testes:** 64 Rust + 36 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
+- **Testes:** 66 Rust + 38 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
   `.AppImage`; a janela abre um `.minder` passado como argumento) e `nodo --mcp` testado de ponta a ponta.
 - **CI/Release:** `.github/workflows/build.yml` (verificação + instaladores dos três sistemas nos Artifacts) e
   `release.yml` (rascunho → publicar); `scripts/check-version.sh` e `scripts/bump-version.sh`; guia em
@@ -130,4 +130,7 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   `scheduleRender`, 12–26 ms por Tab/Enter na prévia, um desenho só). Botões do macOS pela configuração da janela.
 - **Atualização automática** (D19) e `.github/workflows/check-secrets.yml` (confere chave e token sem mostrar nada).
   O Release exige o segredo da chave.
+- **Revisão antes da 0.2.0:** letras digitadas logo após Tab/Enter iam para o nó anterior ou se perdiam
+  (`doc.type` guarda o que chega enquanto o nó nasce; `App.svelte` usa ele); "Procurar atualizações" só aparece onde
+  o app se atualiza (`update_supported`); barra sem sobreposição em janela de 390 px (Novo e Abrir saem abaixo de 480).
 - **Próximo:** lançar a 0.2.0 quando o usuário pedir; depois a Fase 3 (importação e exportação).

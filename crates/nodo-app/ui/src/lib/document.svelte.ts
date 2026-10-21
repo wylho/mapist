@@ -36,6 +36,9 @@ class Document {
    * selecionado (Espaço, F2, nó novo) ou com o cursor no fim (começou digitando uma letra).
    */
   editing = $state<{ id: number; draft: string; selectAll: boolean } | null>(null)
+  /** Um nó novo está nascendo (Tab/Enter): o que se digita até ele existir fica em `typed` e vai para ele. */
+  creating = false
+  private typed = ''
 
   get nodes() {
     return this.snapshot.nodes
@@ -208,6 +211,24 @@ class Document {
       : { id: n.id, draft: initial, selectAll: false }
   }
 
+  /**
+   * Uma letra digitada fora do campo de texto. Enquanto um nó novo nasce, fica guardada para ele; com o campo já
+   * aberto (o foco chega no quadro seguinte), entra no rascunho; senão começa a editar o nó selecionado. Assim quem
+   * digita rápido depois de Tab ou Enter não perde letras nem escreve no nó anterior.
+   */
+  type(ch: string) {
+    if (this.creating) {
+      this.typed += ch
+      return
+    }
+    const ed = this.editing
+    if (ed) {
+      this.editing = { ...ed, draft: ed.selectAll ? ch : ed.draft + ch, selectAll: false }
+      return
+    }
+    this.startEdit(ch)
+  }
+
   /** Grava o que está no campo. Texto vazio não apaga o nó: mantém o que havia. */
   async commitEdit() {
     const ed = this.editing
@@ -224,23 +245,32 @@ class Document {
   }
 
   /** Cria um nó, seleciona e já abre a edição com o texto provisório selecionado (como no XMind). */
-  private async addAndEdit(parent: number, text: string) {
-    const before = new Set(this.snapshot.nodes.map((n) => n.id))
-    await this.run(() => api.addNode(parent, text))
-    const created = this.snapshot.nodes.find((n) => !before.has(n.id))
+  private async addAndEdit(parent: number, text: string, unfoldFirst = false) {
+    this.creating = true
+    this.typed = ''
+    let created
+    try {
+      // Filho de um nó recolhido ficaria escondido: abre o ramo antes.
+      if (unfoldFirst) await this.run(() => api.toggleFold(parent))
+      const before = new Set(this.snapshot.nodes.map((n) => n.id))
+      await this.run(() => api.addNode(parent, text))
+      created = this.snapshot.nodes.find((n) => !before.has(n.id))
+    } finally {
+      this.creating = false
+    }
+    const typed = this.typed
+    this.typed = ''
     if (!created) return
     this.selected = created.id
-    this.editing = { id: created.id, draft: created.text, selectAll: true }
+    this.editing = typed
+      ? { id: created.id, draft: typed, selectAll: false }
+      : { id: created.id, draft: created.text, selectAll: true }
   }
 
   addChild(text = 'Nova ideia') {
     const id = this.selected
     if (id === null) return Promise.resolve()
-    // Filho de um nó recolhido ficaria escondido: abre o ramo antes.
-    if (this.selectedNode?.folded) {
-      return this.run(() => api.toggleFold(id)).then(() => this.addAndEdit(id, text))
-    }
-    return this.addAndEdit(id, text)
+    return this.addAndEdit(id, text, !!this.selectedNode?.folded)
   }
 
   addSibling(text = 'Nova ideia') {

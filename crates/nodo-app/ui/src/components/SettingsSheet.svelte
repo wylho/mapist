@@ -157,7 +157,7 @@
             · <button class="link" onclick={() => updates.install()} disabled={updates.phase === 'downloading'}>
               {updates.phase === 'downloading' ? 'Atualizando…' : `Atualizar para a v${updates.info.version}`}
             </button>
-          {:else if hasHost}
+          {:else if hasHost && updates.supported}
             · <button class="link" onclick={checkNow} disabled={updates.phase === 'checking'}>
               {updates.phase === 'checking' ? 'Procurando…' : 'Procurar atualizações'}
             </button>

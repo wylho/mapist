@@ -50,7 +50,17 @@
       }
       return
     }
-    if (typing(e) || doc.editing) return
+    if (typing(e)) return
+    // Um nó nascendo ou o campo abrindo: letras vão para ele (doc.type), o resto espera.
+    if (doc.creating || doc.editing) {
+      if (e.key.length === 1 && !e.altKey) {
+        e.preventDefault()
+        doc.type(e.key)
+      } else if (doc.creating) {
+        e.preventDefault()
+      }
+      return
+    }
 
     switch (e.key) {
       case 'Tab':
@@ -91,7 +101,7 @@
     // Qualquer letra, número ou símbolo com um nó selecionado começa a escrever nele, substituindo o texto (XMind).
     if (e.key.length === 1 && !e.altKey && doc.selectedNode) {
       e.preventDefault()
-      doc.startEdit(e.key)
+      doc.type(e.key)
     }
   }
 

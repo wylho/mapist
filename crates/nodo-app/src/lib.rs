@@ -545,6 +545,7 @@ pub fn run() {
             mcp_info,
             mcp_install,
             mcp_uninstall,
+            updates::update_supported,
             updates::update_check,
             updates::update_install
         ])

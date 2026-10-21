@@ -56,8 +56,8 @@
 <!-- macOS: a barra é também a barra de título (transparente) e arrasta a janela, como a do Ideario. -->
 <header class="topbar appbar" data-tauri-drag-region={overlayTitlebar ? 'deep' : undefined}>
   <div class="top-left">
-    <button class="icon-btn" aria-label="Novo mapa" title="Novo mapa ({mod}N)" onclick={() => doc.newMap()}><FilePlus2 size={20} /></button>
-    <button class="icon-btn" aria-label="Abrir" title="Abrir ({mod}O)" onclick={() => doc.openDialog()}><FolderOpen size={20} /></button>
+    <button class="icon-btn roomy" aria-label="Novo mapa" title="Novo mapa ({mod}N)" onclick={() => doc.newMap()}><FilePlus2 size={20} /></button>
+    <button class="icon-btn roomy" aria-label="Abrir" title="Abrir ({mod}O)" onclick={() => doc.openDialog()}><FolderOpen size={20} /></button>
     <button class="icon-btn" aria-label="Salvar" title="Salvar ({mod}S)" onclick={() => doc.saveDialog()}><Save size={20} /></button>
     <button class="icon-btn" aria-label="Tema do mapa" title="Tema do mapa" onclick={() => (themeOpen = true)}><Palette size={20} /></button>
     <span class="doc-title" title={doc.snapshot.path ?? title}>

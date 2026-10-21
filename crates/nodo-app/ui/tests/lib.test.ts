@@ -374,6 +374,38 @@ describe('edição estilo XMind', () => {
     doc.cancelEdit()
     expect(doc.editing).toBeNull()
   })
+
+  it('o que se digita enquanto o nó novo nasce vai para ele, e não para o que estava selecionado', async () => {
+    const { doc } = await import('../src/lib/document.svelte')
+    await doc.create('Raiz')
+    const root = doc.snapshot.nodes[0]
+
+    // Enter/Tab e já sair digitando: as letras chegam antes de o nó existir.
+    const creating = doc.addChild()
+    doc.type('O')
+    doc.type('i')
+    await creating
+    const child = doc.selectedNode!
+    expect(child.id).not.toBe(root.id)
+    expect(doc.editing).toMatchObject({ id: child.id, draft: 'Oi', selectAll: false })
+
+    // Campo já aberto, mas o foco ainda não chegou nele: a letra entra no rascunho.
+    doc.type('!')
+    expect(doc.editing!.draft).toBe('Oi!')
+    await doc.commitEdit()
+    expect(doc.node(child.id)!.text).toBe('Oi!')
+    expect(doc.node(root.id)!.text).toBe('Raiz')
+  })
+
+  it('sem nada digitado, o nó novo abre com o texto provisório selecionado', async () => {
+    const { doc } = await import('../src/lib/document.svelte')
+    await doc.create('Raiz')
+    await doc.addChild()
+    expect(doc.editing).toMatchObject({ draft: 'Nova ideia', selectAll: true })
+    doc.type('X')
+    expect(doc.editing).toMatchObject({ draft: 'X', selectAll: false })
+    doc.cancelEdit()
+  })
 })
 
 describe('temas de mapa', () => {

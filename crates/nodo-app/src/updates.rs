@@ -25,6 +25,12 @@ fn self_updating() -> bool {
     !cfg!(target_os = "linux") || std::env::var_os("APPIMAGE").is_some()
 }
 
+/// Este jeito de instalar se atualiza sozinho? A interface só oferece "Procurar atualizações" quando sim.
+#[tauri::command]
+pub fn update_supported() -> bool {
+    self_updating()
+}
+
 /// Há versão nova? `None` também quando este jeito de instalar não se atualiza sozinho.
 #[tauri::command]
 pub async fn update_check(

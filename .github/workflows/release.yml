@@ -104,7 +104,7 @@ jobs:
           tagName: v__VERSION__
           releaseName: Nodo v__VERSION__
           releaseBody: |
-            Instaladores do Nodo v__VERSION__. Quem já usa a 0.2 ou mais nova recebe esta versão sozinho: o app avisa ao abrir.
+            Instaladores do Nodo v__VERSION__. Desde a 0.2, o app avisa ao abrir quando sai versão nova e se atualiza sozinho (macOS, Windows e AppImage).
 
             - **macOS** (Apple Silicon e Intel): baixe o `.dmg`. Na primeira vez, clique com o botão direito no app → **Abrir** (o app ainda não é assinado pela Apple).
             - **Windows**: baixe o `-setup.exe` (ou o `.msi`).
