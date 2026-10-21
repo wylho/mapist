@@ -15,8 +15,8 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   vez, por `ctx.setTransform`. Misturar os dois espaços trunca texto — foi o defeito mais caro já corrigido aqui.
 - **Texto é medido no frontend**, com métricas de fonte reais, e enviado ao núcleo por `set_sizes`. O Rust só posiciona:
   duplicar a pilha de fontes lá daria medidas divergentes do que a tela desenha.
-- Fidelidade visual ao **Ideario** (`crates/nodo-app/ui/src/app.css` e `src/lib/palettes.ts` são a referência de tokens).
-  Quando o Ideario mudar uma cor, replicar aqui em vez de inventar.
+- Fidelidade visual ao **Ideario**: os tokens e o CSS vêm do Atrio (`@wylho/atrio/atrio.css`, D26); `src/lib/palettes.ts`
+  segue as paletas do Ideario. Mudança de visual compartilhado se faz no Atrio, e aqui sobe a tag.
 - UI em **português do Brasil**. Código e identificadores em inglês.
 - **Dados de exemplo sempre fictícios** (mock, testes, docs, prints do site/README): nunca nada da vida real do
   usuário. O repositório é público. Antes de publicar um print, olhar o print inteiro.
@@ -132,7 +132,7 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   macOS (`open-file`). Ícones de todas as plataformas em `icons/`, `bundle.targets = all`.
 - Interface (`ui/src/`): `App.svelte` (casca do Ideario, atalhos ⌘N/⌘O/⌘S/⌘⇧S/⌘F/⌘,/⌘0), `components/` (TopBar,
   Canvas, Inspector com lado do ramo, SettingsSheet, ConfirmDialog, Picker) e `lib/` (api, document, ui, prefs,
-  palettes, theme, render com `traceBranch` curvas/em ângulo, measure, font, preview). `ideario.css` + `map.css`.
+  palettes, theme, render com `traceBranch` curvas/em ângulo, measure, font, preview). `atrio.css` (do Atrio) + `map.css`.
 - **Preview** (`ui/src/lib/preview.ts`): espelha o núcleo (mesmo layout, recolhidos escondidos); `?preview`, e
   `?select=Texto` abre com o nó selecionado. Mapa de exemplo "Lançamento do app", inventado.
 - **Testes:** 91 Rust + 44 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
@@ -202,5 +202,6 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   (`Action::AddTopic`, comando `add_topic`, `add_node` do MCP aceita `note`), e "Copiar como card"/"Colar card"
   nos menus. A cor da nota vira a cor do ramo e volta.
 - **Próximo:** estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore);
-  componentes e formato de área de transferência compartilhados com o Ideario (decisão pendente com o usuário);
+  o card inteiro (editor, etiquetas, data, status, anexos) vindo do Atrio, com a categoria desligada no Nodo (rumo no
+  CLAUDE.md do Atrio);
   aba Estrutura na barra lateral com colar lista; abrir `.xmind`.
