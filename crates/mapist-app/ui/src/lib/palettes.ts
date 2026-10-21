@@ -8,7 +8,7 @@
    Este módulo é a fonte da verdade. Se o Ideario mudar as cores, replique aqui.
    ══════════════════════════════════════════════════════════════════════════ */
 
-export type PaletteId = "system" | "ideario" | "papel" | "grafite" | "floresta";
+export type PaletteId = "system" | "mapist" | "papel" | "grafite" | "floresta";
 export type Mode = "light" | "dark";
 export type DesktopId = "gnome" | "kde" | "windows" | "macos";
 
@@ -48,8 +48,9 @@ export const NOTES_LIGHT = ["#f6e9d6", "#e1eedd", "#dde8f8", "#f8e0e4", "#e9e2f6
 export const NOTES_DARK = ["#3a3125", "#26352a", "#22304a", "#3d262c", "#2f2842", "#39351e"];
 
 export const PALETTES: Record<Exclude<PaletteId, "system">, Palette> = {
-  ideario: {
-    label: "Ideario",
+  // A paleta-base do Ideario, com o nome do app.
+  mapist: {
+    label: "Mapist",
     hint: "Frio, destaque azul",
     light: {
       bg: "#eef1ef", stage: "#dfe4e1", surface: "#ffffff", raised: "#f7f9f8",

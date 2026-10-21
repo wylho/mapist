@@ -247,3 +247,44 @@ fn dirty_flag_clears_on_save() {
 
     let _ = std::fs::remove_file(&path);
 }
+
+#[test]
+fn set_side_and_fold_survive_later_edits() {
+    // Antes do Editor, set_side mexia numa cópia do mapa e a edição seguinte o apagava.
+    let mut s = fresh();
+    let a = call(&mut s, "add_node", json!({ "parent": 0, "text": "A" }))["id"]
+        .as_u64()
+        .unwrap();
+    call(&mut s, "add_node", json!({ "parent": a, "text": "A1" }));
+    call(&mut s, "set_side", json!({ "id": a, "side": "left" }));
+    call(&mut s, "toggle_fold", json!({ "id": a }));
+    call(&mut s, "add_node", json!({ "parent": 0, "text": "B" }));
+
+    let node = call(&mut s, "get_node", json!({ "id": a }));
+    assert_eq!(node["node"]["side"], "left");
+    assert_eq!(node["node"]["folded"], true);
+
+    // E tudo isso desfaz pelo mesmo histórico.
+    call(&mut s, "undo", json!({}));
+    call(&mut s, "undo", json!({}));
+    call(&mut s, "undo", json!({}));
+    assert_eq!(
+        call(&mut s, "get_node", json!({ "id": a }))["node"]["side"],
+        "right"
+    );
+}
+
+#[test]
+fn map_theme_is_set_read_back_and_validated() {
+    let mut s = fresh();
+    assert_eq!(call(&mut s, "get_map", json!({}))["theme"], "classico");
+    call(&mut s, "set_map_theme", json!({ "theme": "sublinhado" }));
+    assert_eq!(call(&mut s, "get_map", json!({}))["theme"], "sublinhado");
+    let params = json!({ "name": "set_map_theme", "arguments": { "theme": "neon" } });
+    assert!(
+        tools::call(&mut s, &params).is_err(),
+        "tema desconhecido é recusado"
+    );
+    call(&mut s, "undo", json!({}));
+    assert_eq!(call(&mut s, "get_map", json!({}))["theme"], "classico");
+}

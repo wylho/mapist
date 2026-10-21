@@ -4,35 +4,22 @@
 //! through commands. All mind-map semantics live in `mapist-core`; this layer
 //! only handles window concerns, file dialogs, and JSON shaping.
 
-use mapist_core::{layout, model::MindMap, undo};
+use mapist_core::{model::MindMap, model::NodeSide, undo::Action, Editor};
 use serde::Serialize;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
-use tauri::{Manager, State};
+use tauri::{Emitter, Manager, State, WebviewWindowBuilder};
 
 /// Application state shared across command invocations.
+#[derive(Default)]
 pub struct AppState {
-    inner: Mutex<Doc>,
+    inner: Mutex<Option<Editor>>,
+    /// Set once the person chose to quit without saving, so the exit that
+    /// follows is not stopped again.
+    quitting: AtomicBool,
 }
 
-struct Doc {
-    map: Option<MindMap>,
-    path: Option<String>,
-    dirty: bool,
-    history: Option<undo::History>,
-}
-
-impl Default for AppState {
-    fn default() -> Self {
-        Self {
-            inner: Mutex::new(Doc {
-                map: None,
-                path: None,
-                dirty: false,
-                history: None,
-            }),
-        }
-    }
-}
+type Doc = Option<Editor>;
 
 /// A node's measured box, reported by the renderer.
 #[derive(serde::Deserialize)]
@@ -71,6 +58,10 @@ pub struct Snapshot {
     title: String,
     can_undo: bool,
     can_redo: bool,
+    /// The file changed on disk since it was read or saved here (an agent saved it).
+    stale: bool,
+    /// The map's theme (`mapist_core::MAP_STYLES`), or `None` for the default.
+    style: Option<String>,
     bounds: Bounds,
 }
 
@@ -105,31 +96,29 @@ impl Default for Bounds {
 
 /// Flatten a laid-out map into renderer-friendly rows.
 fn snapshot(doc: &Doc) -> Snapshot {
-    let Some(map) = doc.map.as_ref() else {
+    let Some(ed) = doc.as_ref() else {
         return Snapshot {
             nodes: Vec::new(),
             connections: Vec::new(),
-            dirty: doc.dirty,
-            path: doc.path.clone(),
-            title: "Untitled".to_string(),
+            dirty: false,
+            path: None,
+            title: "Sem título".to_string(),
             can_undo: false,
             can_redo: false,
+            stale: false,
+            style: None,
             bounds: Bounds::default(),
         };
     };
-
+    let map: &MindMap = ed.map();
     let mut nodes = Vec::with_capacity(map.node_count());
-    let mut min_x = f64::MAX;
-    let mut min_y = f64::MAX;
-    let mut max_x = f64::MIN;
-    let mut max_y = f64::MIN;
 
-    // Pre-order walk carrying the parent id and depth.
+    // Pre-order walk carrying the parent id and depth. A folded node's
+    // descendants are hidden: they have no position until it unfolds.
     fn walk(
         node: &mapist_core::model::Node,
         parent: Option<u64>,
         depth: u32,
-        map: &MindMap,
         out: &mut Vec<FlatNode>,
     ) {
         out.push(FlatNode {
@@ -148,13 +137,19 @@ fn snapshot(doc: &Doc) -> Snapshot {
             parent,
             has_children: !node.children.is_empty(),
         });
-        let _ = map;
+        if node.folded {
+            return;
+        }
         for child in &node.children {
-            walk(child, Some(node.id), depth + 1, map, out);
+            walk(child, Some(node.id), depth + 1, out);
         }
     }
-    walk(&map.root, None, 0, map, &mut nodes);
+    walk(&map.root, None, 0, &mut nodes);
 
+    let mut min_x = f64::MAX;
+    let mut min_y = f64::MAX;
+    let mut max_x = f64::MIN;
+    let mut max_y = f64::MIN;
     for n in &nodes {
         min_x = min_x.min(n.x);
         min_y = min_y.min(n.y);
@@ -176,11 +171,13 @@ fn snapshot(doc: &Doc) -> Snapshot {
     Snapshot {
         nodes,
         connections,
-        dirty: doc.dirty,
-        path: doc.path.clone(),
+        dirty: ed.is_dirty(),
+        path: ed.path().map(|p| p.display().to_string()),
         title: map.root.text.clone(),
-        can_undo: doc.history.as_ref().map(|h| h.can_undo()).unwrap_or(false),
-        can_redo: doc.history.as_ref().map(|h| h.can_redo()).unwrap_or(false),
+        can_undo: ed.can_undo(),
+        can_redo: ed.can_redo(),
+        stale: ed.changed_on_disk(),
+        style: map.theme.style.clone(),
         bounds: Bounds {
             min_x: if min_x == f64::MAX { 0.0 } else { min_x },
             min_y: if min_y == f64::MAX { 0.0 } else { min_y },
@@ -190,79 +187,98 @@ fn snapshot(doc: &Doc) -> Snapshot {
     }
 }
 
+/// Lock the document. A poisoned lock means an earlier command panicked
+/// mid-edit; the map may be inconsistent, so refuse rather than guess.
+fn lock(state: &AppState) -> Result<std::sync::MutexGuard<'_, Doc>, String> {
+    state
+        .inner
+        .lock()
+        .map_err(|_| "estado interno corrompido; reabra o mapa".to_string())
+}
+
+fn editor(doc: &mut Doc) -> Result<&mut Editor, String> {
+    doc.as_mut().ok_or_else(|| "nenhum mapa aberto".to_string())
+}
+
 /// Return the current map, or an empty snapshot when nothing is open.
 #[tauri::command]
 fn get_snapshot(state: State<'_, AppState>) -> Result<Snapshot, String> {
-    let doc = state.inner.lock().map_err(|_| "state poisoned")?;
-    Ok(snapshot(&doc))
+    Ok(snapshot(&*lock(&state)?))
 }
 
 /// Create a new map, replacing any open document.
 #[tauri::command]
 fn new_map(state: State<'_, AppState>, title: String) -> Result<Snapshot, String> {
-    let mut doc = state.inner.lock().map_err(|_| "state poisoned")?;
-    let mut map = MindMap::new(if title.trim().is_empty() {
-        "Central Topic"
-    } else {
-        title.trim()
-    });
-    layout::layout(&mut map);
-    doc.history = Some(undo::History::new(map.clone()));
-    doc.map = Some(map);
-    doc.path = None;
-    doc.dirty = false;
+    let mut doc = lock(&state)?;
+    *doc = Some(Editor::new(&title));
     Ok(snapshot(&doc))
 }
 
 /// Open a map from disk.
 #[tauri::command]
 fn open_map(state: State<'_, AppState>, path: String) -> Result<Snapshot, String> {
-    let mut map = mapist_core::load(&path).map_err(|e| format!("could not open {path}: {e}"))?;
-    layout::layout(&mut map);
-    let mut doc = state.inner.lock().map_err(|_| "state poisoned")?;
-    doc.history = Some(undo::History::new(map.clone()));
-    doc.map = Some(map);
-    doc.path = Some(path);
-    doc.dirty = false;
+    let ed = Editor::open(&path).map_err(|e| format!("não foi possível abrir {path}: {e}"))?;
+    let mut doc = lock(&state)?;
+    *doc = Some(ed);
+    Ok(snapshot(&doc))
+}
+
+/// Read the open file again, for when an agent saved it through MCP.
+#[tauri::command]
+fn reload_map(state: State<'_, AppState>) -> Result<Snapshot, String> {
+    let mut doc = lock(&state)?;
+    let path = editor(&mut doc)?
+        .path()
+        .ok_or("o mapa ainda não foi salvo")?
+        .to_path_buf();
+    let ed =
+        Editor::open(&path).map_err(|e| format!("não foi possível ler {}: {e}", path.display()))?;
+    *doc = Some(ed);
     Ok(snapshot(&doc))
 }
 
 /// Save the open map, optionally to a new path.
 #[tauri::command]
 fn save_map(state: State<'_, AppState>, path: Option<String>) -> Result<Snapshot, String> {
-    let mut doc = state.inner.lock().map_err(|_| "state poisoned")?;
-    let target = path
-        .or_else(|| doc.path.clone())
-        .ok_or("no path to save to")?;
-    let map = doc.map.as_ref().ok_or("no document is open")?;
-    mapist_core::save(map, &target).map_err(|e| format!("could not save {target}: {e}"))?;
-    doc.path = Some(target);
-    doc.dirty = false;
+    let mut doc = lock(&state)?;
+    editor(&mut doc)?
+        .save(path.as_deref().map(std::path::Path::new))
+        .map_err(|e| match e {
+            mapist_core::Error::NoPath => "escolha onde salvar o mapa".to_string(),
+            e => format!("não foi possível salvar: {e}"),
+        })?;
     Ok(snapshot(&doc))
 }
 
-/// Add a child under an existing node and relayout.
+/// Apply an edit through the editor (undo history and positioning).
+fn mutate(state: State<'_, AppState>, action: Action) -> Result<Snapshot, String> {
+    let mut doc = lock(&state)?;
+    editor(&mut doc)?.apply(action).map_err(|e| e.to_string())?;
+    Ok(snapshot(&doc))
+}
+
+/// Add a child under an existing node.
 #[tauri::command]
 fn add_node(state: State<'_, AppState>, parent: u64, text: String) -> Result<Snapshot, String> {
-    mutate(state, undo::Action::AddChild { parent, text })
+    mutate(state, Action::AddChild { parent, text })
 }
 
 /// Remove a node and its subtree.
 #[tauri::command]
 fn remove_node(state: State<'_, AppState>, id: u64) -> Result<Snapshot, String> {
-    mutate(state, undo::Action::RemoveNode { id })
+    mutate(state, Action::RemoveNode { id })
 }
 
 /// Replace a node's text.
 #[tauri::command]
 fn set_text(state: State<'_, AppState>, id: u64, text: String) -> Result<Snapshot, String> {
-    mutate(state, undo::Action::SetText { id, text })
+    mutate(state, Action::SetText { id, text })
 }
 
 /// Replace a node's note.
 #[tauri::command]
 fn set_note(state: State<'_, AppState>, id: u64, note: String) -> Result<Snapshot, String> {
-    mutate(state, undo::Action::SetNote { id, note })
+    mutate(state, Action::SetNote { id, note })
 }
 
 /// Set or clear a node's branch colour.
@@ -272,52 +288,52 @@ fn set_color(
     id: u64,
     color: Option<String>,
 ) -> Result<Snapshot, String> {
-    mutate(state, undo::Action::SetColor { id, color })
+    mutate(state, Action::SetColor { id, color })
 }
 
-/// Toggle a node's folded state and relayout.
+/// Place a branch left or right of the root.
+#[tauri::command]
+fn set_side(state: State<'_, AppState>, id: u64, side: String) -> Result<Snapshot, String> {
+    let side = match side.as_str() {
+        "left" => NodeSide::Left,
+        "right" => NodeSide::Right,
+        other => return Err(format!("lado inválido: {other}")),
+    };
+    mutate(state, Action::SetSide { id, side })
+}
+
+/// Choose the map's theme; it is saved in the file and undoable.
+#[tauri::command]
+fn set_map_style(state: State<'_, AppState>, style: Option<String>) -> Result<Snapshot, String> {
+    mutate(state, Action::SetMapStyle { style })
+}
+
+/// Fold or unfold a node.
 #[tauri::command]
 fn toggle_fold(state: State<'_, AppState>, id: u64) -> Result<Snapshot, String> {
-    let mut doc = state.inner.lock().map_err(|_| "state poisoned")?;
-    let before = doc.map.clone().ok_or("no document is open")?;
-    {
-        let map = doc.map.as_mut().ok_or("no document is open")?;
-        let node = map
-            .find_mut(id)
-            .ok_or_else(|| format!("node {id} not found"))?;
-        node.folded = !node.folded;
-        layout::layout(map);
-    }
-    if let Some(h) = doc.history.as_mut() {
-        h.commit(before);
-    }
-    doc.dirty = true;
-    Ok(snapshot(&doc))
+    mutate(state, Action::ToggleFold { id })
+}
+
+/// Move a node to an absolute position. It stays there until the next edit
+/// that changes the tree's shape.
+#[tauri::command]
+fn move_node(state: State<'_, AppState>, id: u64, x: f64, y: f64) -> Result<Snapshot, String> {
+    mutate(state, Action::MoveNode { id, x, y })
 }
 
 /// Undo the last change.
 #[tauri::command]
 fn undo(state: State<'_, AppState>) -> Result<Snapshot, String> {
-    let mut doc = state.inner.lock().map_err(|_| "state poisoned")?;
-    if let Some(h) = doc.history.as_mut() {
-        if h.undo() {
-            doc.map = Some(h.current().clone());
-            doc.dirty = true;
-        }
-    }
+    let mut doc = lock(&state)?;
+    editor(&mut doc)?.undo();
     Ok(snapshot(&doc))
 }
 
 /// Redo the last undone change.
 #[tauri::command]
 fn redo(state: State<'_, AppState>) -> Result<Snapshot, String> {
-    let mut doc = state.inner.lock().map_err(|_| "state poisoned")?;
-    if let Some(h) = doc.history.as_mut() {
-        if h.redo() {
-            doc.map = Some(h.current().clone());
-            doc.dirty = true;
-        }
-    }
+    let mut doc = lock(&state)?;
+    editor(&mut doc)?.redo();
     Ok(snapshot(&doc))
 }
 
@@ -328,12 +344,13 @@ fn search_nodes(
     query: String,
     limit: usize,
 ) -> Result<Vec<u64>, String> {
-    let doc = state.inner.lock().map_err(|_| "state poisoned")?;
-    let Some(map) = doc.map.as_ref() else {
+    let doc = lock(&state)?;
+    let Some(ed) = doc.as_ref() else {
         return Ok(Vec::new());
     };
     let q = query.to_lowercase();
-    Ok(map
+    Ok(ed
+        .map()
         .nodes()
         .filter(|n| n.text.to_lowercase().contains(&q) || n.note.to_lowercase().contains(&q))
         .take(if limit == 0 { 50 } else { limit })
@@ -341,65 +358,23 @@ fn search_nodes(
         .collect())
 }
 
-/// Move a node to an absolute position, recording it for undo.
-///
-/// The renderer drags nodes freely, so positions are pinned rather than
-/// recomputed; call relayout to snap the tree back to a computed arrangement.
-#[tauri::command]
-fn move_node(state: State<'_, AppState>, id: u64, x: f64, y: f64) -> Result<Snapshot, String> {
-    let mut doc = state.inner.lock().map_err(|_| "state poisoned")?;
-    {
-        let hist = doc.history.as_mut().ok_or("no document is open")?;
-        hist.apply(undo::Action::MoveNode { id, x, y })
-            .map_err(|e| e.to_string())?;
-        let updated = hist.current().clone();
-        // Manual layout: the moved node keeps its chosen position. Do NOT call
-        // layout::reposition here — it recomputes every position from the root
-        // and would erase the move the user just made. Automatic layout reapplies
-        // on structural edits (relayout and the mutating commands).
-        doc.map = Some(updated);
-    }
-    doc.dirty = true;
-    Ok(snapshot(&doc))
-}
-
-/// Apply node dimensions measured by the frontend, then relayout.
+/// Apply node dimensions measured by the frontend, then reposition.
 ///
 /// The webview measures text with real font metrics, which the core cannot do
 /// without duplicating the font stack. So the renderer measures and reports
-/// back, and positioning stays here.
+/// back, and positioning stays in the core.
 #[tauri::command]
 fn set_sizes(state: State<'_, AppState>, sizes: Vec<NodeSize>) -> Result<Snapshot, String> {
-    let mut doc = state.inner.lock().map_err(|_| "state poisoned")?;
-    if doc.map.is_none() {
-        return Err("no document is open".into());
-    }
-    {
-        let map = doc.map.as_mut().ok_or("no document is open")?;
-        for s in &sizes {
-            if let Some(node) = map.find_mut(s.id) {
-                node.width = s.width;
-                node.height = s.height;
-            }
-        }
-        // Positions only; measuring already happened in the renderer.
-        layout::reposition(map);
-    }
+    let mut doc = lock(&state)?;
+    editor(&mut doc)?.set_sizes(sizes.iter().map(|s| (s.id, s.width, s.height)));
     Ok(snapshot(&doc))
 }
 
-/// Apply a mutating action through history, then relayout.
-fn mutate(state: State<'_, AppState>, action: undo::Action) -> Result<Snapshot, String> {
-    let mut doc = state.inner.lock().map_err(|_| "state poisoned")?;
-    {
-        let hist = doc.history.as_mut().ok_or("no document is open")?;
-        hist.apply(action).map_err(|e| e.to_string())?;
-        let mut updated = hist.current().clone();
-        layout::layout(&mut updated);
-        doc.map = Some(updated);
-    }
-    doc.dirty = true;
-    Ok(snapshot(&doc))
+/// Close without saving, after the person confirmed it in the window.
+#[tauri::command]
+fn quit_app(app: tauri::AppHandle, state: State<'_, AppState>) {
+    state.quitting.store(true, Ordering::SeqCst);
+    app.exit(0);
 }
 
 /// Describe the MCP registration state, for the settings page.
@@ -427,47 +402,74 @@ fn mcp_uninstall() -> Result<mapist_mcp::setup::McpInfo, String> {
     mapist_mcp::setup::info()
 }
 
-/// Ask before discarding unsaved work.
-///
-/// Returns `false` to let the window close. The dialog runs on the main thread
-/// because that is where the platform event loop lives.
-fn confirm_close(window: &tauri::Window) -> bool {
-    use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
+/// Tells the page the title bar is transparent (macOS): the app bar makes room
+/// for the window buttons in its corner and drags the window, as in Ideario.
+#[cfg(target_os = "macos")]
+const TITLEBAR_SCRIPT: &str = "document.documentElement.dataset.titlebar = 'overlay';";
+#[cfg(not(target_os = "macos"))]
+const TITLEBAR_SCRIPT: &str = "";
 
-    let state = window.state::<AppState>();
-    let (dirty, path) = match state.inner.lock() {
-        Ok(doc) => (
-            doc.dirty,
-            doc.path
-                .as_deref()
-                .map(|p| {
-                    std::path::Path::new(p)
-                        .file_name()
-                        .map(|n| n.to_string_lossy().into_owned())
-                        .unwrap_or_else(|| p.to_string())
-                })
-                .unwrap_or_else(|| "this map".to_string()),
-        ),
-        Err(_) => (false, String::new()),
-    };
-    if !dirty {
-        return true;
+/// macOS: width of the corner holding the three window buttons, with the same
+/// margin on both sides. Measured, because their size and spacing change between
+/// macOS versions. Not `async`: it runs on the main thread, as AppKit requires.
+#[tauri::command]
+fn mac_lights_width(window: tauri::WebviewWindow) -> Option<f64> {
+    #[cfg(target_os = "macos")]
+    {
+        use objc2_app_kit::{NSWindow, NSWindowButton};
+        let ptr = window.ns_window().ok()?.cast::<NSWindow>();
+        // SAFETY: Tauri hands back this window's live NSWindow; we only read it, on the main thread.
+        let ns = unsafe { ptr.as_ref() }?;
+        let close = ns
+            .standardWindowButton(NSWindowButton::CloseButton)?
+            .frame();
+        let zoom = ns.standardWindowButton(NSWindowButton::ZoomButton)?.frame();
+        let width = zoom.origin.x + zoom.size.width + close.origin.x;
+        (width > 0.0 && width < 200.0).then_some(width)
     }
-    let message = format!("{path} has unsaved changes.");
-    window
-        .dialog()
-        .message(message)
-        .title("Discard changes?")
-        .kind(MessageDialogKind::Warning)
-        .buttons(MessageDialogButtons::OkCancelCustom(
-            "Discard".into(),
-            "Keep editing".into(),
-        ))
-        .blocking_show()
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = window;
+        None
+    }
+}
+
+/// Whether closing now would lose unsaved work.
+fn has_unsaved(app: &tauri::AppHandle) -> bool {
+    let state = app.state::<AppState>();
+    if state.quitting.load(Ordering::SeqCst) {
+        return false;
+    }
+    let dirty = state
+        .inner
+        .lock()
+        .map(|d| d.as_ref().is_some_and(Editor::is_dirty))
+        .unwrap_or(false);
+    dirty
+}
+
+/// A `.minder` path among the program arguments (double-click on Windows and
+/// Linux, or `mapist arquivo.minder` in a terminal).
+fn file_from_args() -> Option<std::path::PathBuf> {
+    std::env::args_os()
+        .skip(1)
+        .map(std::path::PathBuf::from)
+        .find(|p| {
+            p.extension()
+                .is_some_and(|e| e.eq_ignore_ascii_case("minder"))
+        })
 }
 
 /// Run the application.
 pub fn run() {
+    // Opened with a file: it is the document from the first frame.
+    let state = AppState::default();
+    if let Some(path) = file_from_args() {
+        if let (Ok(ed), Ok(mut doc)) = (Editor::open(&path), state.inner.lock()) {
+            *doc = Some(ed);
+        }
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         // Opens links in the user's browser rather than inside the webview.
@@ -483,11 +485,40 @@ pub fn run() {
                 )
                 .build(),
         )
-        .manage(AppState::default())
+        .manage(state)
+        // The window is built here rather than from the config, so that macOS
+        // gets the transparent title bar with the buttons inside the app bar.
+        .setup(|app| {
+            let config = app
+                .config()
+                .app
+                .windows
+                .iter()
+                .find(|w| w.label == "main")
+                .cloned()
+                .ok_or("janela main ausente no tauri.conf.json")?;
+            #[allow(unused_mut)]
+            let mut window = WebviewWindowBuilder::from_config(app.handle(), &config)?
+                .initialization_script(TITLEBAR_SCRIPT);
+            #[cfg(target_os = "macos")]
+            {
+                window = window
+                    .title_bar_style(tauri::TitleBarStyle::Overlay)
+                    .hidden_title(true)
+                    // y is the height of the button area, not their top: 33 centres them
+                    // in the 64 px app bar (measured in Ideario on a macOS screenshot).
+                    .traffic_light_position(tauri::LogicalPosition::new(18.0, 33.0));
+            }
+            window.build()?;
+            Ok(())
+        })
+        // Unsaved work: the window asks, with the app's own confirmation dialog
+        // (a native dialog here would block the main thread that runs it).
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                if !confirm_close(window) {
+                if has_unsaved(window.app_handle()) {
                     api.prevent_close();
+                    let _ = window.emit("close-requested", ());
                 }
             }
         })
@@ -495,24 +526,41 @@ pub fn run() {
             get_snapshot,
             new_map,
             open_map,
+            reload_map,
             save_map,
             add_node,
             remove_node,
             set_text,
             set_note,
             set_color,
+            set_side,
+            set_map_style,
             toggle_fold,
+            move_node,
             undo,
             redo,
             search_nodes,
             set_sizes,
-            move_node,
+            quit_app,
+            mac_lights_width,
             mcp_info,
             mcp_install,
             mcp_uninstall
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running Mapist");
+        .build(tauri::generate_context!())
+        .expect("error while building Mapist")
+        .run(|app, event| {
+            // Cmd+Q on macOS quits the app without closing the window first.
+            if let tauri::RunEvent::ExitRequested {
+                api, code: None, ..
+            } = event
+            {
+                if has_unsaved(app) {
+                    api.prevent_exit();
+                    let _ = app.emit("close-requested", ());
+                }
+            }
+        });
 }
 
 #[cfg(test)]
@@ -520,22 +568,25 @@ mod tests {
     use super::*;
 
     fn doc_with_map() -> Doc {
-        let mut map = MindMap::new("Root");
-        let a = map.add_child(0, "A").unwrap();
-        map.add_child(a, "A1").unwrap();
-        layout::layout(&mut map);
-        Doc {
-            history: Some(undo::History::new(map.clone())),
-            map: Some(map),
-            path: None,
-            dirty: false,
-        }
+        let mut ed = Editor::new("Root");
+        let a = ed
+            .apply(Action::AddChild {
+                parent: 0,
+                text: "A".into(),
+            })
+            .unwrap()
+            .unwrap();
+        ed.apply(Action::AddChild {
+            parent: a,
+            text: "A1".into(),
+        })
+        .unwrap();
+        Some(ed)
     }
 
     #[test]
     fn snapshot_flattens_in_preorder() {
-        let doc = doc_with_map();
-        let snap = snapshot(&doc);
+        let snap = snapshot(&doc_with_map());
         assert_eq!(snap.nodes.len(), 3);
         assert_eq!(snap.nodes[0].text, "Root");
         assert_eq!(snap.nodes[0].depth, 0);
@@ -547,8 +598,7 @@ mod tests {
 
     #[test]
     fn snapshot_records_parent_links() {
-        let doc = doc_with_map();
-        let snap = snapshot(&doc);
+        let snap = snapshot(&doc_with_map());
         assert_eq!(snap.nodes[0].parent, None);
         assert_eq!(snap.nodes[1].parent, Some(0));
         assert_eq!(snap.nodes[2].parent, Some(1));
@@ -556,32 +606,40 @@ mod tests {
 
     #[test]
     fn snapshot_computes_bounds() {
-        let doc = doc_with_map();
-        let snap = snapshot(&doc);
+        let snap = snapshot(&doc_with_map());
         assert!(snap.bounds.max_x > snap.bounds.min_x);
         assert!(snap.bounds.max_y > snap.bounds.min_y);
     }
 
     #[test]
     fn empty_snapshot_is_safe() {
-        let doc = Doc {
-            map: None,
-            path: None,
-            dirty: false,
-            history: None,
-        };
-        let snap = snapshot(&doc);
+        let snap = snapshot(&None);
         assert!(snap.nodes.is_empty());
-        assert_eq!(snap.title, "Untitled");
+        assert_eq!(snap.title, "Sem título");
         assert_eq!(snap.bounds.min_x, 0.0);
     }
 
     #[test]
     fn child_ids_are_listed() {
-        let doc = doc_with_map();
-        let snap = snapshot(&doc);
+        let snap = snapshot(&doc_with_map());
         assert_eq!(snap.nodes[0].child_ids, vec![1]);
         assert_eq!(snap.nodes[1].child_ids, vec![2]);
         assert!(snap.nodes[2].child_ids.is_empty());
+    }
+
+    #[test]
+    fn folded_children_are_not_drawn() {
+        let mut doc = doc_with_map();
+        doc.as_mut()
+            .unwrap()
+            .apply(Action::ToggleFold { id: 1 })
+            .unwrap();
+        let snap = snapshot(&doc);
+        assert_eq!(
+            snap.nodes.len(),
+            2,
+            "o filho de um nó recolhido não aparece"
+        );
+        assert!(snap.nodes[1].folded && snap.nodes[1].has_children);
     }
 }

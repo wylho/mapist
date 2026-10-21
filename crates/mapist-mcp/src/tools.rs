@@ -5,7 +5,7 @@
 //! same mechanism a human's are.
 
 use crate::{new_into, open_into, save_from, Session};
-use mapist_core::{layout, model::NodeSide, undo::Action};
+use mapist_core::{model::NodeSide, undo::Action};
 use serde_json::{json, Value};
 
 /// The tools this server advertises, in `tools/list` order.
@@ -116,7 +116,7 @@ pub fn catalog() -> Vec<Value> {
         ),
         tool(
             "set_side",
-            "Place a node's branch on the left or right of the root.",
+            "Place a node's branch on the left or right of the root. Its whole subtree follows.",
             json!({
                 "type": "object",
                 "properties": {
@@ -127,8 +127,27 @@ pub fn catalog() -> Vec<Value> {
             }),
         ),
         tool(
+            "set_map_theme",
+            "Choose the map's look, as in XMind: classico (soft filled branches), contorno (outlined), sublinhado (text on a coloured line), vibrante (bold colours), pilulas (rounded pills) or mono (greys). Omit theme for the default.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "theme": { "type": "string", "enum": mapist_core::MAP_STYLES }
+                }
+            }),
+        ),
+        tool(
+            "toggle_fold",
+            "Fold a node (hide its children) or unfold it.",
+            json!({
+                "type": "object",
+                "properties": { "id": { "type": "integer" } },
+                "required": ["id"]
+            }),
+        ),
+        tool(
             "relayout",
-            "Recompute node positions after structural changes.",
+            "Discard positions placed by hand and lay the whole map out again. Positions are already recomputed after every edit.",
             json!({ "type": "object", "properties": {} }),
         ),
         tool(
@@ -191,7 +210,12 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
         }
         "get_map" => {
             let map = session.require()?;
-            json!({ "version": map.version, "nodes": map.node_count(), "tree": tree_json(&map.root) })
+            json!({
+                "version": map.version,
+                "theme": map.theme.style.as_deref().unwrap_or("classico"),
+                "nodes": map.node_count(),
+                "tree": tree_json(&map.root)
+            })
         }
         "get_node" => {
             let id = int_arg(&args, "id")?;
@@ -238,18 +262,34 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
                 "right" => NodeSide::Right,
                 other => return Err(format!("side must be left or right, got {other:?}")),
             };
-            let map = session.require_mut()?;
-            let node = map
-                .find_mut(id)
-                .ok_or_else(|| format!("node {id} not found"))?;
-            node.side = side;
-            session.dirty = true;
+            mutate(session, Action::SetSide { id, side })?;
             json!({ "ok": true, "id": id, "side": side.as_str() })
         }
+        "set_map_theme" => {
+            let style = args
+                .get("theme")
+                .and_then(|t| t.as_str())
+                .map(str::to_string);
+            mutate(
+                session,
+                Action::SetMapStyle {
+                    style: style.clone(),
+                },
+            )?;
+            json!({ "ok": true, "theme": style.unwrap_or_else(|| "classico".into()) })
+        }
+        "toggle_fold" => {
+            let id = int_arg(&args, "id")?;
+            mutate(session, Action::ToggleFold { id })?;
+            let folded = session
+                .require()?
+                .find(id)
+                .map(|n| n.folded)
+                .unwrap_or(false);
+            json!({ "ok": true, "id": id, "folded": folded })
+        }
         "relayout" => {
-            let map = session.require_mut()?;
-            layout::layout(map);
-            session.dirty = true;
+            mutate(session, Action::Relayout)?;
             json!({ "ok": true })
         }
         "search_nodes" => {
@@ -275,27 +315,17 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
             json!({ "query": query, "count": hits.len(), "results": hits })
         }
         "undo" => {
-            let hist = session
-                .history
-                .as_mut()
-                .ok_or_else(|| "no document is open".to_string())?;
-            if hist.undo() {
-                session.map = Some(hist.current().clone());
-                session.dirty = true;
-                json!({ "ok": true, "undo_depth": hist.undo_depth() })
+            let ed = session.editor_mut()?;
+            if ed.undo() {
+                json!({ "ok": true, "undo_depth": ed.undo_depth() })
             } else {
                 json!({ "ok": false, "message": "nothing to undo" })
             }
         }
         "redo" => {
-            let hist = session
-                .history
-                .as_mut()
-                .ok_or_else(|| "no document is open".to_string())?;
-            if hist.redo() {
-                session.map = Some(hist.current().clone());
-                session.dirty = true;
-                json!({ "ok": true, "redo_depth": hist.redo_depth() })
+            let ed = session.editor_mut()?;
+            if ed.redo() {
+                json!({ "ok": true, "redo_depth": ed.redo_depth() })
             } else {
                 json!({ "ok": false, "message": "nothing to redo" })
             }
@@ -310,9 +340,9 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
             json!({
                 "nodes": map.node_count(),
                 "max_depth": max_depth,
-                "dirty": session.dirty,
-                "path": session.path,
-                "undo_depth": session.history.as_ref().map(|h| h.undo_depth()).unwrap_or(0)
+                "dirty": session.editor.as_ref().is_some_and(|e| e.is_dirty()),
+                "path": session.editor.as_ref().and_then(|e| e.path()).map(|p| p.display().to_string()),
+                "undo_depth": session.editor.as_ref().map(|e| e.undo_depth()).unwrap_or(0)
             })
         }
         other => return Err(format!("unknown tool: {other}")),
@@ -323,19 +353,13 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
     }))
 }
 
-/// Apply a mutating action through the undo history and keep the session map in
-/// sync with it.
+/// Apply a mutating action through the editor's undo history.
 fn mutate(session: &mut Session, action: Action) -> Result<u64, String> {
-    let hist = session
-        .history
-        .as_mut()
-        .ok_or_else(|| "no document is open".to_string())?;
-    let id = hist.apply(action).map_err(|e| e.to_string())?.unwrap_or(0);
-    let mut updated = hist.current().clone();
-    layout::layout(&mut updated);
-    session.map = Some(updated);
-    session.dirty = true;
-    Ok(id)
+    let id = session
+        .editor_mut()?
+        .apply(action)
+        .map_err(|e| e.to_string())?;
+    Ok(id.unwrap_or(0))
 }
 
 fn node_json(n: &mapist_core::model::Node) -> Value {

@@ -39,6 +39,9 @@ let nextId = 1
 let rootId = 0
 let dirty = false
 let path: string | null = null
+/** Tema do mapa, como `theme.style` no núcleo. */
+let style: string | null = null
+const MAP_STYLES = ['classico', 'contorno', 'sublinhado', 'vibrante', 'pilulas', 'mono']
 const past: string[] = []
 const future: string[] = []
 
@@ -68,6 +71,7 @@ function snapshotState() {
     rootId,
     dirty,
     path,
+    style,
   })
 }
 
@@ -78,16 +82,26 @@ function restore(state: string) {
     rootId: number
     dirty: boolean
     path: string | null
+    style: string | null
   }
   nodes = new Map(o.nodes)
   nextId = o.nextId
   rootId = o.rootId
   dirty = o.dirty
   path = o.path
+  style = o.style
 }
 
 function snapshotOf(): Snapshot {
-  const list = [...nodes.values()]
+  // Como no núcleo: os descendentes de um nó recolhido não aparecem.
+  const list: PNode[] = []
+  const visit = (id: number) => {
+    const n = nodes.get(id)
+    if (!n) return
+    list.push(n)
+    if (!n.folded) n.children.forEach(visit)
+  }
+  visit(rootId)
   if (list.length === 0) {
     return {
       nodes: [],
@@ -97,6 +111,8 @@ function snapshotOf(): Snapshot {
       title: 'Sem título',
       can_undo: past.length > 0,
       can_redo: future.length > 0,
+      stale: false,
+      style,
       bounds: { min_x: 0, min_y: 0, max_x: 0, max_y: 0 },
     }
   }
@@ -140,6 +156,8 @@ function snapshotOf(): Snapshot {
     title: nodes.get(rootId)?.text ?? 'Sem título',
     can_undo: past.length > 0,
     can_redo: future.length > 0,
+    stale: false,
+    style,
     bounds: { min_x: minX, min_y: minY, max_x: maxX, max_y: maxY },
   }
 }
@@ -163,29 +181,45 @@ function measure(n: PNode) {
   n.height = Math.max(MIN_H, lines.length * 19 + 22)
 }
 
-function place(n: PNode, x: number, y: number): number {
-  n.x = x
-  n.y = y
+/** Altura de que uma sub-árvore precisa, para irmãos nunca se sobreporem (layout.rs: `extent`). */
+function extent(n: PNode): number {
   if (n.children.length === 0 || n.folded) return n.height
-
-  const dir = n.side === 'left' ? -1 : 1
-  const childX = x + dir * (n.width + H_GAP)
-  let cursor = y
-  const start = cursor
-  for (const cid of n.children) {
-    const c = nodes.get(cid)
-    if (c) cursor += place(c, childX, cursor) + V_GAP
-  }
-  const total = Math.max(cursor - V_GAP - start, n.height)
-  n.y = start + (total - n.height) / 2
-  return total
+  const band = (ids: number[]) =>
+    ids.length === 0 ? 0 : ids.reduce((a, id) => a + extent(nodes.get(id)!), 0) + V_GAP * (ids.length - 1)
+  const kids = n.children.filter((id) => nodes.has(id))
+  const left = kids.filter((id) => nodes.get(id)!.side === 'left')
+  const right = kids.filter((id) => nodes.get(id)!.side !== 'left')
+  return Math.max(n.height, band(left), band(right))
 }
 
+/** Posiciona `n` numa faixa que começa em `top`, com a borda próxima em `x` (layout.rs: `place`). */
+function place(n: PNode, x: number, top: number) {
+  const ext = extent(n)
+  n.x = x
+  n.y = top + (ext - n.height) / 2
+  if (n.children.length === 0 || n.folded) return
+  for (const left of [true, false]) {
+    const group = n.children.map((id) => nodes.get(id)!).filter((c) => c && (c.side === 'left') === left)
+    if (group.length === 0) continue
+    const total = group.reduce((a, c) => a + extent(c), 0) + V_GAP * (group.length - 1)
+    let cursor = top + (ext - total) / 2
+    for (const c of group) {
+      place(c, left ? n.x - H_GAP - c.width : n.x + n.width + H_GAP, cursor)
+      cursor += extent(c) + V_GAP
+    }
+  }
+}
+
+/** Mede tudo pela estimativa e posiciona (layout.rs: `layout`). */
 function relayout() {
-  const all = [...nodes.values()]
-  for (const n of all) measure(n)
+  for (const n of nodes.values()) measure(n)
+  reposition()
+}
+
+/** Só posiciona, com os tamanhos que já estão nos nós (layout.rs: `reposition`). */
+function reposition() {
   const root = nodes.get(rootId)
-  if (root) place(root, 0, 0)
+  if (root) place(root, 0, -extent(root) / 2)
 }
 
 // ── histórico ────────────────────────────────────────────────────────────
@@ -195,7 +229,8 @@ function commit(fn: () => void, relayoutAfter = true) {
   if (past.length > 200) past.shift()
   future.length = 0
   fn()
-  if (relayoutAfter) relayout()
+  // Como o Editor do núcleo: posiciona sem medir de novo; quem mediu foi a tela.
+  if (relayoutAfter) reposition()
   dirty = true
 }
 
@@ -208,43 +243,37 @@ export function seedDemo() {
   future.length = 0
   dirty = false
   path = 'exemplo.minder'
+  style = null
 
-  const root = makeNode('Product Roadmap', 'right', 'Planejamento Q4. **Owner:** plataforma.')
+  // Um mapa inventado (o repositório é público): o lançamento de um app fictício, com ramos dos dois lados.
+  const root = makeNode('Lançamento do app', 'right', 'Plano do trimestre. **Responsável:** time de produto.')
   rootId = root.id
   root.parent = null
   nodes.set(root.id, root)
 
-  const branch = (parent: PNode, text: string, token: string, children: string[] = []) => {
-    const n = makeNode(text, 'right', '', token)
+  const branch = (parent: PNode, text: string, token: string, children: string[] = [], side = parent.side) => {
+    // Sem cor fixa: quem pinta os ramos é o tema do mapa (a cor escolhida à mão continua valendo por cima).
+    void token
+    const n = makeNode(text, side, '', null)
     n.parent = parent.id
-    n.color = token
     parent.children.push(n.id)
     nodes.set(n.id, n)
     for (const c of children) branch(n, c, token)
     return n
   }
 
-  const discovery = branch(root, 'Discovery', '#6eb0f7', ['Entrevistas', 'Análise de mercado'])
-  discovery.children.length = 2
+  branch(root, 'Descoberta', '#6eb0f7', ['Entrevistas', 'Análise de mercado'])
   const design = branch(root, 'Design', '#b28ee6', ['Wireframes', 'Design system'])
   const ds = nodes.get(design.children[1])!
-  branch(ds, 'Tokens', '#b28ee6')
+  branch(ds, 'Cores', '#b28ee6')
   branch(ds, 'Componentes', '#b28ee6')
+  const build = branch(root, 'Construção', '#7fbf7f', ['Núcleo', 'Layout', 'Servidor MCP', 'Janela'])
+  branch(root, 'Lançamento', '#e8c547', ['Beta', 'Documentação', 'Versão 1.0'], 'left')
+  branch(root, 'Divulgação', '#f0a36b', ['Site', 'Vídeo curto', 'Comunidade'], 'left')
+  branch(root, 'Pesquisa', '#e5818d', ['Concorrentes', 'Artigos'], 'left')
 
-  branch(root, 'Build', '#7fbf7f', ['Core model', 'Layout engine', 'Servidor MCP', 'Shell desktop'])
-  branch(root, 'Lançamento', '#e8c547', ['Beta', 'Documentação', 'v1.0'])
-
-  const research = makeNode('Pesquisa', 'left', '', '#e5818d')
-  research.parent = root.id
-  research.color = '#e5818d'
-  root.children.push(research.id)
-  nodes.set(research.id, research)
-  branch(research, 'Concorrentes', '#e5818d')
-  branch(research, 'Artigos', '#e5818d')
-
-  // Uma nota e um nó dobrado, para os marcadores aparecerem.
-  const mcp = nodes.get(nodes.get(root.children.find((id) => nodes.get(id)?.text === 'Build')!)!.children[2])!
-  mcp.note = 'Dezesseis ferramentas.'
+  // Uma nota e um ramo recolhido, para os marcadores aparecerem.
+  nodes.get(build.children[2])!.note = 'Dezessete ferramentas, o mesmo desfazer da janela.'
   nodes.get(root.children[root.children.length - 1])!.folded = true
 
   relayout()
@@ -265,6 +294,7 @@ export const previewBackend = {
     nodes.set(root.id, root)
     dirty = false
     path = null
+    style = null
     relayout()
     return snapshotOf()
   },
@@ -289,8 +319,6 @@ export const previewBackend = {
       const n = makeNode(text)
       n.parent = parent
       n.side = parentNode.side
-      n.colorToken = parentNode.colorToken
-      n.color = parentNode.colorToken
       nodes.set(n.id, n)
       parentNode.children.push(n.id)
       newId = n.id
@@ -320,6 +348,7 @@ export const previewBackend = {
       const n = nodes.get(id)
       if (!n) throw new Error(`node ${id} not found`)
       n.text = text
+      measure(n)
     })
     return snapshotOf()
   },
@@ -342,6 +371,31 @@ export const previewBackend = {
     })
     return snapshotOf()
   },
+
+  set_side: ({ id, side }: { id: number; side: 'left' | 'right' }) => {
+    commit(() => {
+      const stack = [id]
+      while (stack.length) {
+        const n = nodes.get(stack.pop()!)
+        if (!n) continue
+        n.side = side
+        stack.push(...n.children)
+      }
+    })
+    return snapshotOf()
+  },
+
+  set_map_style: ({ style: next }: { style: string | null }) => {
+    if (next !== null && !MAP_STYLES.includes(next)) throw new Error(`unknown map theme "${next}"`)
+    commit(() => {
+      style = next
+    })
+    return snapshotOf()
+  },
+
+  reload_map: () => snapshotOf(),
+
+  quit_app: () => undefined,
 
   toggle_fold: ({ id }: { id: number }) => {
     commit(() => {
@@ -373,7 +427,7 @@ export const previewBackend = {
         n.height = s.height
       }
     }
-    relayout()
+    reposition() // como o núcleo: as medidas vieram da tela, não estimar de novo
     return snapshotOf()
   },
 

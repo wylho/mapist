@@ -1,180 +1,158 @@
-# Mapist
+<!-- Mesmo conteúdo da página inicial do site (site/index.html). Ao mudar um, mude o outro: skill /sync-site. -->
 
-A mind-mapping application in Rust and Tauri, derived from
-[Minder](https://github.com/phase1geo/Minder) by Trevor Williams.
+<p align="center">
+  <img src="site/favicon.svg" width="88" height="88" alt="Ícone do Mapist">
+</p>
 
-Mapist keeps Minder's file format so existing maps open unchanged, and adds a
-built-in Model Context Protocol server so that agents can read and edit maps
-directly.
+<h1 align="center">Mapist</h1>
 
-**Full specification: [`docs/SPEC.md`](docs/SPEC.md). Project rules: [`CLAUDE.md`](CLAUDE.md).**
-Design prototypes live in [`prototype/`](prototype/).
+<p align="center"><b>Pense em mapas.</b><br>
+Um app de mapas mentais que abre num instante, funciona sem internet e guarda cada mapa num arquivo seu. Abre os mapas
+do Minder sem perder nada. E o Claude pode trabalhar no mesmo mapa que você, pelas mesmas regras.</p>
 
-## Status
+<p align="center"><a href="https://github.com/wylho/mapist/releases/latest"><b>Versão 0.1: a primeira →</b></a></p>
 
-Phases 1 and 2 are done. The window opens, draws, and edits maps; the same
-binary serves MCP to an agent.
+<p align="center">
+  <b>Windows · macOS · Linux</b><br>
+  <a href="#baixar"><b>Baixar</b></a> ·
+  <a href="https://mapist.pages.dev">mapist.pages.dev</a> ·
+  <a href="https://mapist.pages.dev/privacidade/">Privacidade</a> ·
+  <a href="#english">English</a> ·
+  <a href="https://github.com/sponsors/wylho">♥ Apoiar</a>
+</p>
 
-| Component | State |
+<picture>
+  <source srcset="site/img/mapa-escuro.webp" media="(prefers-color-scheme: dark)">
+  <img src="site/img/mapa.webp" alt="Um mapa mental no Mapist: a raiz no centro, ramos coloridos dos dois lados e o painel com o texto, a nota e a cor do nó selecionado">
+</picture>
+
+## Feito para pensar rápido
+
+Tudo pelo teclado, nada de esperar. O mapa se arruma sozinho enquanto você escreve.
+
+| | |
 |---|---|
-| `mapist-core` — model, layout, document I/O, undo | Implemented, 15 tests |
-| `mapist-mcp` — MCP server over stdio, 16 tools | Implemented, 25 tests |
-| `mapist-app` — Tauri shell, 18 commands | Implemented, 5 tests |
-| `mapist-app/ui` — Svelte 5 interface | Implemented, 24 tests |
+| **Selecione e digite** | O texto entra direto no nó. Tab cria um filho, Enter um irmão, já prontos para escrever; as setas andam pelo mapa. |
+| **Dos dois lados** | Ramos à esquerda e à direita da raiz, como no Minder. Escolha o lado de cada um no painel. |
+| **Notas em cada nó** | Texto curto no mapa, detalhes na nota em Markdown, que fica guardada junto. |
+| **Desfazer de verdade** | Duzentos passos para trás e para a frente, sem perder o que você recolheu ou mudou de lado. |
+| **Busca no mapa** | Encontra pelo texto ou pela nota, e marca cada nó que bate. |
+| **Sem internet** | Nenhuma conta, nenhum servidor. O mapa é um arquivo no seu computador. |
 
-70 tests total. `cargo clippy --all-targets -- -D warnings` and `svelte-check`
-are both clean.
+## O Claude no mesmo mapa
 
-## Layout
+O Mapist traz um servidor MCP embutido. Ligue nas Configurações e peça ao Claude para ler, criar e reorganizar seus
+mapas. Ele usa o mesmo núcleo do app: cada edição dele segue as mesmas regras de uma feita à mão, e ele também desfaz
+o que fez.
+
+- Claude Desktop: um botão nas Configurações
+- Claude Code: um comando para colar no terminal
+- Quando o Claude salva, a janela recarrega o mapa ao voltar para ela
+
+<img src="site/img/claude.webp" alt="Configurações do Mapist com a aparência, o traçado das linhas e a seção Claude, com o botão Ligar e o comando do Claude Code">
+
+## Seus mapas do Minder abrem aqui
+
+O Mapist lê e grava o formato `.minder`, o mesmo do [Minder](https://github.com/phase1geo/Minder). Um mapa vai e volta
+sem perder texto, notas, cores, lados ou estilos. O arquivo continua seu, legível sem o app, e salvar nunca deixa um
+arquivo pela metade.
+
+<img src="site/img/busca.webp" alt="Mapa com a busca aberta na barra, marcando os nós que contêm a palavra Design">
+
+## Temas de mapa
+
+Seis temas, no espírito do XMind: cartões coloridos, contorno, texto sobre a linha, cores fortes, pílulas ou cinzas.
+Cada ramo principal ganha uma cor e os de baixo herdam. O tema fica salvo no próprio mapa.
+
+- Ramos em curva ou em ângulo, com cantos arredondados
+- Uma cor escolhida à mão continua valendo por cima do tema
+
+<img src="site/img/temas.webp" alt="A folha Tema do mapa, com seis mapinhas de exemplo: Clássico, Contorno, Sublinhado, Vibrante, Pílulas e Monocromático">
+
+## Com a cara do seu sistema
+
+Temas claro e escuro, e um tema Sistema que imita as cores do Windows, do macOS, do GNOME e do KDE. Funciona também numa
+janela estreita.
+
+<img src="site/img/janela-estreita.webp" width="300" alt="O Mapist numa janela estreita, no tema escuro, com o mapa inteiro na tela">
+
+## Baixar
+
+Grátis e de código aberto. Os instaladores ficam na página de
+[versões do GitHub](https://github.com/wylho/mapist/releases/latest).
+
+| | |
+|---|---|
+| **Windows** | O `-setup.exe` (ou o `.msi`). |
+| **macOS** | O `.dmg`, para Apple Silicon e Intel. Na primeira vez, clique com o botão direito no app e escolha **Abrir**: ele ainda não é assinado pela Apple. |
+| **Linux** | O `.AppImage`, que roda em qualquer distribuição, o `.deb` ou o `.rpm`. |
+
+**Privacidade:** sem anúncios, sem rastreamento, sem coleta de dados. Seus mapas ficam no seu computador. Leia a
+[Política de Privacidade](https://mapist.pages.dev/privacidade/).
+
+---
+
+## English
+
+Mapist is a free, open-source mind-mapping app for Windows, macOS and Linux. It opens instantly, works offline and keeps
+each map in a file on your computer, in the format of [Minder](https://github.com/phase1geo/Minder), so your existing
+Minder maps open without loss. A built-in MCP server lets Claude (Desktop and Code) read and edit the same map you are
+working on, through the same core as the window.
+
+- Select and type: Tab for a child, Enter for a sibling, both ready to write; arrows to move
+- Six map themes in the spirit of XMind, saved in the map
+- Branches on both sides of the root, notes in Markdown on every node, branch colours
+- Curved or angled links, light and dark themes, and a System theme that follows Windows, macOS, GNOME or KDE
+- 200 steps of undo; Claude can undo its own edits too
+
+[Download the latest version](https://github.com/wylho/mapist/releases/latest).
+
+---
+
+## Para desenvolver
+
+Especificação: [`docs/SPEC.md`](docs/SPEC.md). Regras do projeto: [`CLAUDE.md`](CLAUDE.md). Lançar uma versão:
+[`docs/RELEASE.md`](docs/RELEASE.md).
 
 ```
 crates/
-├── mapist-core/     model, layout, XML document I/O, undo — no UI
-├── mapist-mcp/      Model Context Protocol server over stdio
-└── mapist-app/      Tauri window, commands, and canvas UI
-    └── ui/          HTML/CSS/JS renderer
+├── mapist-core/   modelo, layout, .minder, Editor (histórico + arquivo), sem interface
+├── mapist-mcp/    servidor MCP sobre stdio (18 ferramentas)
+└── mapist-app/    janela Tauri; a interface Svelte 5 fica em ui/
+site/              mapist.pages.dev (Cloudflare Pages, sem build)
 ```
 
-`mapist-core` is deliberately UI-free. The desktop application and the MCP
-server embed exactly the same semantics, so an agent editing a map through MCP
-produces the same result as a person editing it in the window.
+O aplicativo e o MCP passam pelo mesmo `mapist_core::Editor`: um agente produz exatamente o mesmo resultado que uma
+pessoa na janela. Um binário, dois modos: `mapist` abre a janela, `mapist --mcp` fala o protocolo.
 
-## Building
-
-Requires Rust 1.80 or newer.
+Requer Rust 1.80+, Node 22 e pnpm. No Linux, as bibliotecas do WebKitGTK
+(`libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf`).
 
 ```bash
-cargo build --release
-cargo test
+pnpm --dir crates/mapist-app/ui install
+
+# Interface no navegador, sobre um backend simulado, com recarga instantânea: o caminho para qualquer mudança visual
+pnpm --dir crates/mapist-app/ui dev          # abrir http://localhost:1420/?preview
+
+# Verificação completa
+cargo fmt --all --check && cargo clippy --all-targets -- -D warnings && cargo test --workspace
+pnpm --dir crates/mapist-app/ui run check && pnpm --dir crates/mapist-app/ui run test
+
+# O app de verdade (cargo build sozinho não embute a interface e abre uma janela vazia)
+crates/mapist-app/ui/node_modules/.bin/tauri build
 ```
 
-The MCP server binary lands at `target/release/mapist-mcp`.
-
-### Preview in a browser
-
-The interface runs in a browser over a simulated backend, with hot reload. This
-is the fast path for any visual change — the Tauri build takes minutes and shows
-nothing during it.
-
-```bash
-cd crates/mapist-app/ui
-pnpm install
-pnpm dev
-```
-
-Then open `http://localhost:1420/?preview`. Edits to `.svelte` files appear
-immediately.
-
-### Run the desktop application
-
-```bash
-cargo tauri build --config crates/mapist-app/tauri.conf.json
-open target/release/bundle/macos/Mapist.app
-```
-
-> `cargo build` alone produces a binary with **no interface embedded** — the
-> `beforeBuildCommand` that generates the frontend only runs under the Tauri
-> CLI, and `cargo build` skips it. The window would open blank. Use
-> `cargo tauri build`.
-
-### Using the window
-
-| Input | Effect |
-|---|---|
-| Click | Select a node |
-| Double-click | Select and focus the text field |
-| Drag background | Pan |
-| Wheel | Zoom |
-| <kbd>Tab</kbd> | Add a child |
-| <kbd>Enter</kbd> | Add a sibling |
-| <kbd>Delete</kbd> | Delete the node and its subtree |
-| <kbd>Space</kbd> | Fold or unfold |
-| Arrow keys | Move the selection geometrically |
-| <kbd>Cmd</kbd>+<kbd>Z</kbd> / <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> | Undo / redo |
-| <kbd>Cmd</kbd>+<kbd>S</kbd> | Save |
-
-
-## File format
-
-Mapist reads and writes the `.minder` XML format used by Minder 2.0.9
-(`<minder version="1.15.0">`). Parsing ignores unknown attributes so that files
-from newer Minder releases still open.
-
-A round trip is lossless for the fields Mapist models: node text, notes,
-colours, sides, layouts, styles, theme, and viewport.
-
-```bash
-cargo run -p mapist-core --example parse_real /path/to/map.minder
-```
-
-## MCP server
-
-`mapist-mcp` speaks JSON-RPC 2.0 over stdio, line-delimited. Register it with
-any MCP client:
+### MCP fora do app
 
 ```json
-{
-  "mcpServers": {
-    "mapist": {
-      "command": "/absolute/path/to/mapist-mcp",
-      "args": []
-    }
-  }
-}
+{ "mcpServers": { "mapist": { "command": "/caminho/para/mapist", "args": ["--mcp"] } } }
 ```
 
-### Tools
+Ferramentas: `new_map`, `open_map`, `save_map`, `get_map`, `get_node`, `add_node`, `remove_node`, `set_text`,
+`set_note`, `set_color`, `set_side`, `set_map_theme`, `toggle_fold`, `relayout`, `search_nodes`, `undo`, `redo`,
+`map_stats`.
 
-| Tool | Purpose |
-|---|---|
-| `new_map` | Create an empty map with a root node |
-| `open_map` | Open a `.minder` file |
-| `save_map` | Save, optionally to a new path |
-| `get_map` | Return the whole tree |
-| `get_node` | Return one node and its child ids |
-| `add_node` | Add a child under a node |
-| `remove_node` | Remove a node and its subtree |
-| `set_text` | Replace a node's text |
-| `set_note` | Replace a node's note |
-| `set_color` | Set or clear a branch colour |
-| `set_side` | Place a branch left or right |
-| `relayout` | Recompute positions |
-| `search_nodes` | Find nodes by text or note |
-| `undo` / `redo` | Step through history |
-| `map_stats` | Node count, depth, dirty flag |
+## Licença
 
-Every mutating tool goes through the same undo history a person would use, so
-an agent's edits are reversible with `undo`.
-
-### Example session
-
-```bash
-printf '%s\n' \
-  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
-  '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"new_map","arguments":{"title":"Ideas"}}}' \
-  '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"add_node","arguments":{"parent":0,"text":"First"}}}' \
-  '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"map_stats","arguments":{}}}' \
-  | ./target/release/mapist-mcp
-```
-
-## Roadmap
-
-- **Phase 1** — core, MCP server *(done)*
-- **Phase 2** — Tauri shell: canvas rendering, keyboard editing, inspectors *(done)*
-- **Phase 3** — import/export: Markdown, OPML, FreeMind, Mermaid, SVG, PNG
-- **Phase 4** — themes, animations, focus mode, tabs, i18n
-
-### Known gaps
-
-- Save and open use a prompt for the path; native file dialogs are not wired.
-- Node widths are estimated from character counts, not measured with a real
-  font, so boxes can be slightly wide or narrow.
-- Connections parse and round-trip but cannot be drawn or edited yet.
-- The webview has no window-control or menu integration yet.
-
-## License
-
-GPL-3.0-or-later, inherited from Minder. See [LICENSE](LICENSE).
-
-Minder is copyright Trevor Williams and contributors. Mapist is a derivative
-work and carries the same licence.
+GPL-3.0-or-later, herdada do Minder. Veja [LICENSE](LICENSE). O Minder é de Trevor Williams e colaboradores; o Mapist
+é obra derivada e leva a mesma licença.

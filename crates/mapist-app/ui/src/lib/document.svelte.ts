@@ -6,6 +6,8 @@
 
 import { api, hasHost, isPreview, type Snapshot } from './api'
 import { measureAll } from './measure'
+import { mapTheme } from './maptheme'
+import { ui } from './ui.svelte'
 
 const EMPTY: Snapshot = {
   nodes: [],
@@ -15,6 +17,8 @@ const EMPTY: Snapshot = {
   title: 'Sem título',
   can_undo: false,
   can_redo: false,
+  stale: false,
+  style: null,
   bounds: { min_x: 0, min_y: 0, max_x: 0, max_y: 0 },
 }
 
@@ -27,6 +31,11 @@ class Document {
   /** Dimensões medidas no frontend, por id. */
   sizes = $state<Map<number, { width: number; height: number }>>(new Map())
   busy = $state(false)
+  /**
+   * Nó sendo editado no lugar, como no XMind. `draft` é o texto no campo; `selectAll` diz se ele abre com tudo
+   * selecionado (Espaço, F2, nó novo) ou com o cursor no fim (começou digitando uma letra).
+   */
+  editing = $state<{ id: number; draft: string; selectAll: boolean } | null>(null)
 
   get nodes() {
     return this.snapshot.nodes
@@ -48,10 +57,21 @@ class Document {
   /** Aplica um snapshot novo e reenvia as medições. */
   private async adopt(next: Snapshot) {
     this.snapshot = next
-    if (this.selected !== null && !next.nodes.some((n) => n.id === this.selected)) {
-      this.selected = next.nodes[0]?.id ?? null
-    }
+    this.syncTitle()
+    // Sempre há um nó selecionado quando há mapa: dá para começar a digitar sem clicar antes.
+    if (this.selected === null || !next.nodes.some((n) => n.id === this.selected)) this.selected = next.nodes[0]?.id ?? null
     await this.syncSizes()
+  }
+
+  /** Título da janela: o nome do arquivo (ou do mapa), com • quando há algo por salvar. */
+  private syncTitle() {
+    if (!hasHost) return
+    const s = this.snapshot
+    const name = s.path ? s.path.split(/[\\/]/).pop() : s.title || 'Sem título'
+    const title = `${s.dirty ? '• ' : ''}${name} — Mapist`
+    import('@tauri-apps/api/window')
+      .then(({ getCurrentWindow }) => getCurrentWindow().setTitle(title))
+      .catch(() => {})
   }
 
   /**
@@ -61,7 +81,7 @@ class Document {
    */
   async syncSizes() {
     if ((!hasHost && !isPreview) || this.snapshot.nodes.length === 0) return
-    const measured = measureAll(this.snapshot.nodes)
+    const measured = measureAll(this.snapshot.nodes, mapTheme(this.snapshot.style))
     let changed = false
     const next = new Map<number, { width: number; height: number }>()
     for (const m of measured) {
@@ -92,6 +112,7 @@ class Document {
       this.error = null
     } catch (e) {
       this.error = String(e)
+      ui.say(String(e instanceof Error ? e.message : e))
       console.error(e)
     } finally {
       this.busy = false
@@ -104,6 +125,9 @@ class Document {
       const snap = await api.snapshot()
       if (snap.nodes.length > 0) await this.adopt(snap)
       else await this.create('Tópico central')
+      // Prévia: `?select=Texto do nó` já abre com ele selecionado (prints do site, scripts/site-shots.mjs).
+      const pick = isPreview ? new URLSearchParams(location.search).get('select') : null
+      if (pick) this.selected = this.snapshot.nodes.find((n) => n.text === pick)?.id ?? null
     } catch (e) {
       this.error = String(e)
     }
@@ -117,21 +141,114 @@ class Document {
     return this.run(() => api.open(path))
   }
 
-  save(path?: string) {
-    return this.run(() => api.save(path))
+  async save(path?: string) {
+    await this.run(() => api.save(path))
+    if (!this.error) ui.say('Mapa salvo')
+  }
+
+  /**
+   * Pergunta antes de descartar alterações não salvas, no diálogo de
+   * confirmação do Ideario.
+   */
+  async confirmDiscard(): Promise<boolean> {
+    if (!this.snapshot.dirty) return true
+    return ui.ask({
+      title: 'Descartar alterações?',
+      text: 'Este mapa tem alterações que não foram salvas.',
+      confirm: 'Descartar',
+    })
+  }
+
+  /** Novo mapa (⌘N), depois de confirmar o descarte. */
+  async newMap() {
+    if (await this.confirmDiscard()) await this.create('Tópico central')
+  }
+
+  /** Abre um arquivo vindo de fora (Finder), depois de confirmar o descarte. */
+  async openPath(path: string) {
+    if (await this.confirmDiscard()) await this.open(path)
+  }
+
+  /** Abrir (⌘O): diálogo nativo do sistema; no preview, um prompt. */
+  async openDialog() {
+    if (!(await this.confirmDiscard())) return
+    let path: string | null = null
+    if (hasHost) {
+      const { open } = await import('@tauri-apps/plugin-dialog')
+      const picked = await open({ multiple: false, filters: [{ name: 'Mapa mental', extensions: ['minder'] }] })
+      path = typeof picked === 'string' ? picked : null
+    } else {
+      path = window.prompt('Caminho do arquivo .minder')
+    }
+    if (path) await this.open(path)
+  }
+
+  /** Salvar (⌘S): grava no arquivo atual; mapa novo ou `as` pede o caminho. */
+  async saveDialog(as = false) {
+    if (this.snapshot.path && !as) return this.save()
+    let path: string | null = null
+    if (hasHost) {
+      const { save } = await import('@tauri-apps/plugin-dialog')
+      path = await save({
+        defaultPath: `${(this.snapshot.title || 'mapa').replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'mapa'}.minder`,
+        filters: [{ name: 'Mapa mental', extensions: ['minder'] }],
+      })
+    } else {
+      path = window.prompt('Salvar como (caminho)')
+    }
+    if (path) await this.save(path.endsWith('.minder') ? path : `${path}.minder`)
+  }
+
+  /** Abre a edição no nó selecionado. Com `initial`, começa com esse texto (a letra que a pessoa digitou). */
+  startEdit(initial?: string) {
+    const n = this.selectedNode
+    if (!n) return
+    this.editing = initial === undefined
+      ? { id: n.id, draft: n.text, selectAll: true }
+      : { id: n.id, draft: initial, selectAll: false }
+  }
+
+  /** Grava o que está no campo. Texto vazio não apaga o nó: mantém o que havia. */
+  async commitEdit() {
+    const ed = this.editing
+    this.editing = null
+    if (!ed) return
+    const n = this.node(ed.id)
+    const next = ed.draft.trim()
+    if (!n || next === '' || next === n.text) return
+    await this.setText(ed.id, next)
+  }
+
+  cancelEdit() {
+    this.editing = null
+  }
+
+  /** Cria um nó, seleciona e já abre a edição com o texto provisório selecionado (como no XMind). */
+  private async addAndEdit(parent: number, text: string) {
+    const before = new Set(this.snapshot.nodes.map((n) => n.id))
+    await this.run(() => api.addNode(parent, text))
+    const created = this.snapshot.nodes.find((n) => !before.has(n.id))
+    if (!created) return
+    this.selected = created.id
+    this.editing = { id: created.id, draft: created.text, selectAll: true }
   }
 
   addChild(text = 'Nova ideia') {
     const id = this.selected
     if (id === null) return Promise.resolve()
-    return this.run(() => api.addNode(id, text))
+    // Filho de um nó recolhido ficaria escondido: abre o ramo antes.
+    if (this.selectedNode?.folded) {
+      return this.run(() => api.toggleFold(id)).then(() => this.addAndEdit(id, text))
+    }
+    return this.addAndEdit(id, text)
   }
 
   addSibling(text = 'Nova ideia') {
     const n = this.selectedNode
-    if (!n || n.parent === null) return Promise.resolve()
-    const parent = n.parent
-    return this.run(() => api.addNode(parent, text))
+    // Na raiz não há irmão: Enter cria um filho, como no XMind.
+    if (!n) return Promise.resolve()
+    if (n.parent === null) return this.addChild(text)
+    return this.addAndEdit(n.parent, text)
   }
 
   remove() {
@@ -156,6 +273,50 @@ class Document {
   /** Persiste a posição final de um nó arrastado. */
   move(id: number, x: number, y: number) {
     return this.run(() => api.moveNode(id, x, y))
+  }
+
+  /** Tema do mapa (fica no arquivo e desfaz como qualquer edição). */
+  setMapStyle(style: string | null) {
+    return this.run(() => api.setMapStyle(style))
+  }
+
+  setSide(id: number, side: 'left' | 'right') {
+    return this.run(() => api.setSide(id, side))
+  }
+
+  /**
+   * Um agente pode salvar o mesmo arquivo pelo MCP. Ao voltar para a janela, o mapa é relido: direto se não há
+   * nada por salvar aqui, ou depois de perguntar, porque reler descartaria o que foi feito na janela.
+   */
+  async checkDisk() {
+    if (!hasHost || this.busy || !this.snapshot.path) return
+    let snap: Snapshot
+    try {
+      snap = await api.snapshot()
+    } catch {
+      return
+    }
+    if (!snap.stale) return
+    if (snap.dirty) {
+      const ok = await ui.ask({
+        title: 'O arquivo mudou fora do Mapist',
+        text: 'Outro programa (talvez o Claude) salvou este mapa. Recarregar descarta as alterações feitas aqui.',
+        confirm: 'Recarregar',
+      })
+      if (!ok) return
+    }
+    await this.run(() => api.reload())
+    if (!this.error) ui.say('Mapa atualizado a partir do arquivo')
+  }
+
+  /** A janela pediu para fechar com alterações não salvas. */
+  async confirmQuit() {
+    const ok = await ui.ask({
+      title: 'Sair sem salvar?',
+      text: 'Este mapa tem alterações que não foram salvas. Para guardá-las, cancele e salve antes.',
+      confirm: 'Sair sem salvar',
+    })
+    if (ok) await api.quit()
   }
 
   toggleFold() {

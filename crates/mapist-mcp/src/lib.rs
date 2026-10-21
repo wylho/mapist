@@ -8,7 +8,7 @@
 //! fail with a clear message when none is open, rather than silently creating
 //! one.
 
-use mapist_core::{document, layout, model::MindMap, undo};
+use mapist_core::{model::MindMap, Editor};
 use serde_json::{json, Value};
 use std::io::{BufRead, Write};
 
@@ -24,47 +24,34 @@ pub const SERVER_NAME: &str = "mapist-mcp";
 /// Server version reported during initialisation.
 pub const SERVER_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-/// Session state shared by all tool calls.
+/// Session state shared by all tool calls: at most one open document, edited
+/// through the same [`Editor`] the window uses.
+#[derive(Default)]
 pub struct Session {
-    /// The open document, if any.
-    pub map: Option<MindMap>,
-    /// Path the open document was loaded from or last saved to.
-    pub path: Option<String>,
-    /// Whether the document has unsaved edits.
-    pub dirty: bool,
-    /// Undo history for the open document.
-    pub history: Option<undo::History>,
-}
-
-impl Default for Session {
-    fn default() -> Self {
-        Self::new()
-    }
+    pub editor: Option<Editor>,
 }
 
 impl Session {
     pub fn new() -> Self {
-        Self {
-            map: None,
-            path: None,
-            dirty: false,
-            history: None,
-        }
+        Self::default()
     }
 
     /// Borrow the open map or produce a protocol error.
     pub fn require(&self) -> Result<&MindMap, String> {
-        self.map
+        self.editor
             .as_ref()
-            .ok_or_else(|| "no document is open; call open_map or new_map first".to_string())
+            .map(Editor::map)
+            .ok_or_else(no_document)
     }
 
-    /// Borrow the open map mutably or produce a protocol error.
-    pub fn require_mut(&mut self) -> Result<&mut MindMap, String> {
-        self.map
-            .as_mut()
-            .ok_or_else(|| "no document is open; call open_map or new_map first".to_string())
+    /// Borrow the open document for editing or produce a protocol error.
+    pub fn editor_mut(&mut self) -> Result<&mut Editor, String> {
+        self.editor.as_mut().ok_or_else(no_document)
     }
+}
+
+fn no_document() -> String {
+    "no document is open; call open_map or new_map first".to_string()
 }
 
 pub fn success(id: Value, result: Value) -> Value {
@@ -84,45 +71,32 @@ pub fn write_msg(out: &mut impl Write, msg: &Value) -> std::io::Result<()> {
 
 /// Open a map from disk into the session.
 pub fn open_into(session: &mut Session, path: &str) -> Result<usize, String> {
-    let map = mapist_core::load(path).map_err(|e| format!("failed to open {path}: {e}"))?;
-    let count = map.node_count();
-    session.history = Some(undo::History::new(map.clone()));
-    session.map = Some(map);
-    session.path = Some(path.to_string());
-    session.dirty = false;
+    let ed = Editor::open(path).map_err(|e| format!("failed to open {path}: {e}"))?;
+    let count = ed.map().node_count();
+    session.editor = Some(ed);
     Ok(count)
 }
 
 /// Create a fresh map in the session.
 pub fn new_into(session: &mut Session, title: &str) -> usize {
-    let mut map = MindMap::new(title);
-    layout::layout(&mut map);
-    let count = map.node_count();
-    session.history = Some(undo::History::new(map.clone()));
-    session.map = Some(map);
-    session.path = None;
-    session.dirty = false;
+    let ed = Editor::new(title);
+    let count = ed.map().node_count();
+    session.editor = Some(ed);
     count
 }
 
 /// Save the open map, optionally to a new path.
 pub fn save_from(session: &mut Session, path: Option<&str>) -> Result<String, String> {
-    let target = match path {
-        Some(p) => p.to_string(),
-        None => session
-            .path
-            .clone()
-            .ok_or_else(|| "no path given and the document has never been saved".to_string())?,
-    };
-    let map = session.require()?;
-    document::to_xml(map)
-        .map_err(|e| format!("serialize failed: {e}"))
-        .and_then(|xml| {
-            std::fs::write(&target, xml).map_err(|e| format!("failed to write {target}: {e}"))
+    let ed = session.editor_mut()?;
+    let saved = ed
+        .save(path.map(std::path::Path::new))
+        .map_err(|e| match e {
+            mapist_core::Error::NoPath => {
+                "no path given and the document has never been saved".to_string()
+            }
+            e => format!("failed to write: {e}"),
         })?;
-    session.path = Some(target.clone());
-    session.dirty = false;
-    Ok(target)
+    Ok(saved.display().to_string())
 }
 
 /// Run the MCP server over stdio until the client closes its end.
@@ -198,8 +172,12 @@ with children, and branches drawn either side of the root. Every node has text \
 and an optional Markdown note.
 
 Read the map with get_map or map_stats first. Prefer the targeted tools \
-(add_node, set_text, set_note, set_color, set_side) over rewriting a whole map. \
-After changing structure, call relayout so positions are recomputed.
+(add_node, set_text, set_note, set_color, set_side, toggle_fold) over rewriting a \
+whole map. Positions are recomputed after every edit; relayout only discards \
+positions a person placed by hand.
+
+Save with save_map when done: the person sees the change when the app reloads \
+the file.
 
 Node ids are stable integers assigned in creation order; the root is always id 0 \
 and cannot be removed. Removing a node removes its whole subtree.

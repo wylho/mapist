@@ -375,6 +375,9 @@ pub struct ThemeRef {
     pub name: String,
     pub label: String,
     pub index: u32,
+    /// Mapist's map theme (one of [`crate::MAP_STYLES`]), kept in an extra
+    /// `mapist-style` attribute that Minder ignores. `None` is the default look.
+    pub style: Option<String>,
 }
 
 impl Default for ThemeRef {
@@ -383,6 +386,7 @@ impl Default for ThemeRef {
             name: "default".to_string(),
             label: "Light".to_string(),
             index: 1,
+            style: None,
         }
     }
 }

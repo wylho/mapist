@@ -53,22 +53,36 @@ Sete modos herdados do Minder: `Horizontal`, `Vertical`, `Up`, `Down`, `Left`, `
 espelha o do Minder: o pai se centra na extensão dos filhos, irmãos são separados por uma margem fixa, o lado decide o
 eixo de crescimento.
 
-### 3.3 Seleção e edição
-Seleção por clique; navegação por setas (vizinho geometricamente mais próximo na direção); edição no lugar por
-duplo-clique; painel lateral para texto, nota, cor e métricas.
+### 3.3 Seleção e edição (como no XMind)
+Sempre há um nó selecionado (a raiz, ao abrir). Com um nó selecionado, qualquer letra começa a escrever nele,
+substituindo o texto; Espaço, F2 ou duplo clique editam o texto atual. Tab cria um filho e Enter um irmão, já em
+edição com "Nova ideia" selecionado; na edição, Enter confirma, Tab confirma e cria um filho, Esc cancela. Setas andam
+para o vizinho geometricamente mais próximo; ⌘/ (Ctrl+/) recolhe. Uma dica no canto mostra o que o teclado faz agora.
+Painel lateral para texto, nota, cor, lado do ramo e métricas.
 
 ### 3.4 Desfazer
-Toda edição entra num histórico de instantâneos, com limite de 200 passos. Arrastar só conta como edição depois de 2 px
-de movimento, para um clique não poluir o histórico. O agente que edita por MCP usa o mesmo histórico.
+Toda edição entra num histórico de instantâneos, com limite de 200 passos: texto, nota, cor, lado, recolher, mover e
+rearranjar. Medidas vindas da tela não são edição (não entram no histórico nem marcam o mapa como alterado). Desfazer
+até o estado salvo deixa o mapa sem nada por salvar. Arrastar só conta como edição depois de 2 px de movimento. O agente
+que edita por MCP usa o mesmo `Editor`, com o mesmo histórico dentro da sessão dele.
 
-### 3.5 Temas
-Quatro paletas nomeadas (Ideario, Papel, Grafite, Floresta) e um tema **Sistema** que imita GNOME, KDE, Windows ou macOS,
+### 3.5 Temas e linhas
+Quatro paletas nomeadas (Mapist, Papel, Grafite, Floresta; a primeira é a paleta-base do Ideario com o nome do app) e um tema **Sistema** que imita GNOME, KDE, Windows ou macOS,
 cada uma em claro e escuro. As cores de nó saem da própria paleta, então trocar de tema troca os ramos junto.
 `fitAccent` ajusta um destaque do sistema até ele ter contraste suficiente contra a superfície.
+As linhas entre nós podem ser **curvas** (Bézier) ou **em ângulo** (degrau com cantos arredondados), nas Configurações.
+
+**Temas de mapa** (como os do XMind, `ui/src/lib/maptheme.ts`): Clássico, Contorno, Sublinhado, Vibrante, Pílulas,
+Monocromático. Cada um define forma, recheio, contorno, texto e tamanho por nível (raiz, ramos principais, sub-ramos),
+a paleta dos ramos e a espessura das linhas. Cada ramo principal recebe uma cor da paleta e os filhos herdam; a cor
+escolhida no painel vale por cima. O tema é do mapa: fica no `.minder` como atributo `mapist-style` do `<theme>`
+(ausente no Clássico, para o arquivo continuar igual ao do Minder), muda pelo histórico (`Action::SetMapStyle`) e o
+núcleo só aceita os nomes de `MAP_STYLES`. Pelo MCP: `set_map_theme`.
 
 ### 3.6 Servidor MCP
-`mapist --mcp` fala JSON-RPC sobre stdio e oferece 16 ferramentas (criar, abrir, salvar, ler, adicionar, remover,
-editar texto e nota, cor, lado, rearranjar, buscar, desfazer, refazer, estatísticas). Negocia a versão do protocolo e
+`mapist --mcp` fala JSON-RPC sobre stdio e oferece 18 ferramentas (criar, abrir, salvar, ler, adicionar, remover,
+editar texto e nota, cor, lado, tema do mapa, recolher, rearranjar, buscar, desfazer, refazer, estatísticas). Quando o agente salva o
+arquivo que está aberto na janela, a janela relê ao voltar o foco (perguntando antes, se houver algo não salvo nela). Negocia a versão do protocolo e
 envia `instructions` descrevendo o modelo de dados. O registro no Claude Desktop é feito pela própria interface, com as
 garantias da §4.4.
 
@@ -90,8 +104,14 @@ crates/
 
 ### 4.1 Um núcleo, duas portas
 
-`mapist-core` não conhece janela, fonte ou canvas. O aplicativo e o agente chamam as mesmas funções; a única diferença é
-por onde a chamada entra. Isso é o que garante que uma edição por MCP seja indistinguível de uma feita à mão.
+`mapist-core` não conhece janela, fonte ou canvas. O aplicativo e o agente usam o mesmo `mapist_core::Editor`, que é o
+dono do mapa, do histórico, do arquivo e do estado salvo; a única diferença é por onde a chamada entra. Isso é o que
+garante que uma edição por MCP seja indistinguível de uma feita à mão. Nenhuma das portas guarda uma cópia do mapa ao
+lado do histórico: foi assim que recolher, mudar de lado e medidas se perdiam antes do `Editor`.
+
+O layout reserva uma faixa para cada sub-árvore, põe cada ramo da raiz do lado dele e não posiciona descendentes de nó
+recolhido. Propriedades com dados gerados (`mapist-core/tests/layout_props.rs`): nós visíveis nunca se sobrepõem, cada
+ramo cresce para o seu lado, o XML vai e volta, desfazer tudo volta ao início.
 
 ### 4.2 Um binário, dois modos
 
@@ -138,7 +158,7 @@ O `.minder` é XML do Minder 2.0.9 (`<minder version="1.15.0">`). O que o Mapist
 | Elemento | Campos |
 |---|---|
 | `<minder>` | `version` |
-| `<theme>` | `name`, `label`, `index` |
+| `<theme>` | `name`, `label`, `index`; `mapist-style` (tema do mapa, só do Mapist) |
 | `<styles><style>` | 20 atributos por nível (margens, raios, fontes, larguras, traços, setas) |
 | `<drawarea>` | `x`, `y`, `scale` |
 | `<nodes><node>` | `id`, `posx`, `posy`, `width`, `height`, `side`, `fold`, `treesize`, `layout`, `group`, `color`, `colorroot` |
@@ -159,7 +179,16 @@ vira gaveta inferior.
 ### 6.2 Tokens
 
 Os tokens são os do Ideario, copiados de `src/lib/palettes.ts`. Aplicados como variáveis inline no `<html>`, cerca de
-25 no total. `app.css` mantém só o design system e as regras próprias do mapa.
+25 no total. O design system é `ui/src/ideario.css`, **cópia literal** do `app.css` do Ideario (não editar; copiar de
+novo quando o Ideario mudar); `ui/src/map.css` tem só o que é de mapa (canvas, zoom, inspetor).
+
+### 6.2.1 Estrutura (padrão dos nossos apps)
+
+A casca segue a do Ideario: barra superior (`TopBar`) com o que é do documento à esquerda e, ancorado à direita, o que
+está sempre lá (busca que abre a partir do ícone, painel, Configurações); as ações do nó selecionado ficam à esquerda
+disso e só aparecem com seleção. Configurações numa folha (`SettingsSheet`, bits-ui) com Aparência, Mapa e Claude.
+Avisos no `toast` e confirmação no `ConfirmDialog` do Ideario; ícones do `@lucide/svelte`. O menu de contexto do
+navegador fica bloqueado fora de campos de texto.
 
 ### 6.3 Preview
 
@@ -173,13 +202,22 @@ compilar o Tauri, que leva minutos e não deixa inspecionar nada.
 
 | Plataforma | Instalador | Estado |
 |---|---|---|
-| macOS | `.app`, `.dmg` | Funciona, verificado |
-| Linux | `.deb`, `.rpm`, `.AppImage` | Workflow escrito, não executado |
-| Windows | `.msi`, `.exe` | Workflow escrito, não executado |
+| macOS | `.dmg` (universal) | Funciona; sem assinatura da Apple (P4) |
+| Linux | `.deb`, `.rpm`, `.AppImage` | `.deb` e `.AppImage` compilados e abertos no Linux |
+| Windows | `-setup.exe`, `.msi` | Pelo workflow; ainda não executado |
+
+Os instaladores associam a extensão `.minder` ao Mapist: dois cliques abrem o mapa (argumento no Windows e no Linux,
+evento de abertura no macOS). Guia de lançamento: `docs/RELEASE.md`.
 
 ---
 
-## 8. Protótipo de design
+## 8. Site
+
+`site/` é publicado em **mapist.pages.dev** pelo Cloudflare Pages (pasta estática, sem build), com a mesma estrutura e
+o mesmo `style.css` do site do Ideario. O `README.md` tem o mesmo conteúdo (skill `sync-site`); os prints saem da
+prévia por `crates/mapist-app/ui/scripts/site-shots.mjs`, com o mapa de exemplo inventado.
+
+## 8.1 Protótipo de design
 
 `prototype/` guarda os protótipos em HTML que antecederam a migração para Svelte, incluindo `theme.js`, o porte das
 paletas. Servem de referência histórica; a implementação viva é `crates/mapist-app/ui/src/`.
@@ -209,6 +247,8 @@ Cada fase termina com algo verificável.
   se a Fase 3 mostrar atrito.)
 - **P4 — Assinatura de código.** Sem certificado, o macOS avisa "desenvolvedor não identificado". Assinar exige conta
   Apple paga; decidir antes de publicar instalador para terceiros.
+- **P5 — Atualização automática.** Como no Ideario (`tauri-plugin-updater`). Precisa de uma chave de assinatura guardada
+  pelo usuário; quem instalar uma versão sem o atualizador terá de baixar a seguinte à mão.
 
 ---
 

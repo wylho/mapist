@@ -9,13 +9,11 @@
 
 import type { FlatNode } from './api'
 
-import { nodeFont } from './font'
+import { levelFont } from './font'
+import { levelStyle, mapTheme, type MapTheme } from './maptheme'
 
-const PAD_X = 36 // padding horizontal + folga da borda
-const PAD_Y = 22 // padding vertical
-const MIN_W = 84
-const MIN_H = 44
-const LINE_H = 19
+/** Altura de linha, proporcional ao tamanho do texto do nível. */
+const LINE_RATIO = 1.4
 
 let ctx: CanvasRenderingContext2D | null = null
 
@@ -36,10 +34,10 @@ function context(): CanvasRenderingContext2D {
  * quanto ele está ampliado na tela. O desenho escala tudo junto com
  * `ctx.scale()`, então medir e desenhar usam sempre a mesma referência.
  */
-export function measureNode(node: FlatNode): { width: number; height: number } {
+export function measureNode(node: FlatNode, theme: MapTheme = mapTheme(null)): { width: number; height: number } {
   const c = context()
-  const isRoot = node.parent === null
-  c.font = nodeFont(isRoot)
+  const style = levelStyle(theme, node.depth)
+  c.font = levelFont(style)
 
   const lines = node.text.split('\n')
   let widest = 0
@@ -49,20 +47,20 @@ export function measureNode(node: FlatNode): { width: number; height: number } {
   }
 
   return {
-    width: Math.max(MIN_W, widest + PAD_X),
-    height: Math.max(MIN_H, lines.length * LINE_H + PAD_Y),
+    width: Math.max(style.minW, widest + style.padX),
+    height: Math.max(style.minH, lines.length * style.size * LINE_RATIO + style.padY),
   }
 }
 
-/** Mede todos os nós de um snapshot, em unidades de mundo. */
-export function measureAll(nodes: FlatNode[]): { id: number; width: number; height: number }[] {
-  return nodes.map((n) => ({ id: n.id, ...measureNode(n) }))
+/** Mede todos os nós de um snapshot, em unidades de mundo, no tema do mapa. */
+export function measureAll(nodes: FlatNode[], theme: MapTheme = mapTheme(null)): { id: number; width: number; height: number }[] {
+  return nodes.map((n) => ({ id: n.id, ...measureNode(n, theme) }))
 }
 
-/** Trunca um texto para caber em `maxWidth`, com reticências. Tudo em unidades de mundo. */
-export function fitText(text: string, maxWidth: number, isRoot: boolean): string {
+/** Trunca um texto para caber em `maxWidth`, com reticências, na fonte do nível. Tudo em unidades de mundo. */
+export function fitText(text: string, maxWidth: number, style: { size: number; weight: number }): string {
   const c = context()
-  c.font = nodeFont(isRoot)
+  c.font = levelFont(style)
   if (c.measureText(text).width <= maxWidth) return text
   let out = text
   while (out.length > 1 && c.measureText(out + '…').width > maxWidth) {

@@ -5,6 +5,7 @@
   import { theme } from '../lib/theme.svelte'
   import { draw, hitTest, readThemeColors, type Viewport } from '../lib/render'
   import { prefs } from '../lib/prefs.svelte'
+  import { levelStyle, mapTheme } from '../lib/maptheme'
 
   import type { Snippet } from 'svelte'
 
@@ -14,9 +15,6 @@
   let stageEl: HTMLDivElement
   let editorEl = $state<HTMLInputElement | undefined>(undefined)
 
-  /** Nó sendo editado no lugar, se houver. */
-  let editing = $state<{ id: number; x: number; y: number; w: number; h: number } | null>(null)
-  let draft = $state('')
 
   const view = $state<Viewport>({ x: 0, y: 0, scale: 1 })
   let colors = $state(readThemeColors())
@@ -40,7 +38,8 @@
     const b = doc.snapshot.bounds
     const r = stageEl.getBoundingClientRect()
     if (!doc.hasDocument) return
-    const pad = 110
+    // Margem proporcional: 110 px fixos numa tela de celular deixavam o mapa em 16%.
+    const pad = Math.min(110, Math.max(16, Math.min(r.width, r.height) * 0.08))
     const w = b.max_x - b.min_x || 1
     const h = b.max_y - b.min_y || 1
     const target = Math.max(0.12, Math.min((r.width - pad * 2) / w, (r.height - pad * 2) / h, 1.35))
@@ -85,6 +84,8 @@
     if (!ctx) return
     draw({
       snapshot: doc.snapshot,
+      linkStyle: prefs.linkStyle,
+      mode: theme.mode,
       colors,
       view,
       selected: doc.selected,
@@ -106,6 +107,7 @@
     void theme.palette
     void theme.pref
     void theme.simDesktop
+    void prefs.linkStyle
     colors = readThemeColors()
     render()
   })
@@ -179,51 +181,51 @@
     const hit = hitTest(doc.snapshot, view, e.clientX, e.clientY, r)
     if (hit === null) return
     doc.selected = hit
-    const n = doc.node(hit)
-    if (!n) return
-    draft = n.text
-    editing = { id: hit, x: n.x, y: n.y, w: n.width, h: n.height }
-    // O input é posicionado em coordenadas de tela, então acompanha o zoom.
-    requestAnimationFrame(() => {
-      editorEl?.focus()
-      editorEl?.select()
-    })
+    doc.startEdit()
   }
 
-  function commitEdit() {
-    const ed = editing
-    editing = null
+  // Abre o campo no lugar do nó sempre que o documento pede (tecla, Tab/Enter, duplo clique).
+  $effect(() => {
+    const ed = doc.editing
     if (!ed) return
-    const n = doc.node(ed.id)
-    const next = draft.trim()
-    if (!n || next === '' || next === n.text) return
-    doc.setText(ed.id, next)
-  }
-
-  function cancelEdit() {
-    editing = null
-  }
+    requestAnimationFrame(() => {
+      if (!editorEl) return
+      editorEl.focus()
+      if (ed.selectAll) editorEl.select()
+      else editorEl.setSelectionRange(editorEl.value.length, editorEl.value.length)
+    })
+  })
 
   function onEditorKey(e: KeyboardEvent) {
+    // Nada do que se digita aqui chega aos atalhos do mapa.
+    e.stopPropagation()
+    if (e.isComposing) return
     if (e.key === 'Enter') {
       e.preventDefault()
-      commitEdit()
+      void doc.commitEdit()
+    } else if (e.key === 'Tab') {
+      // Como no XMind: confirma e já cria o próximo (Tab filho, Shift+Tab irmão).
+      e.preventDefault()
+      void doc.commitEdit().then(() => (e.shiftKey ? doc.addSibling() : doc.addChild()))
     } else if (e.key === 'Escape') {
       e.preventDefault()
-      cancelEdit()
+      doc.cancelEdit()
     }
-    // Impede que Tab/Delete cheguem aos atalhos globais enquanto se digita.
-    e.stopPropagation()
   }
 
-  /** Onde o editor fica, em coordenadas de tela. */
+  /** Onde o campo fica, em coordenadas de tela, com o texto no mesmo tamanho que o nó tem na tela. */
   const editorBox = $derived.by(() => {
-    if (!editing) return null
+    const ed = doc.editing
+    const n = ed ? doc.node(ed.id) : null
+    if (!n) return null
+    const style = levelStyle(mapTheme(doc.snapshot.style), n.depth)
     return {
-      left: editing.x * view.scale + view.x,
-      top: editing.y * view.scale + view.y,
-      width: Math.max(60, editing.w * view.scale),
-      height: Math.max(28, editing.h * view.scale),
+      left: n.x * view.scale + view.x,
+      top: n.y * view.scale + view.y,
+      width: Math.max(60, n.width * view.scale),
+      height: Math.max(24, n.height * view.scale),
+      font: style.size * view.scale,
+      weight: style.weight,
     }
   })
 
@@ -271,18 +273,21 @@
   aria-label="Mapa mental"
 >
   <canvas bind:this={canvas}></canvas>
-  {#if editing && editorBox}
+  {#if doc.editing && editorBox}
     <input
       class="inline-editor"
       bind:this={editorEl}
-      bind:value={draft}
+      bind:value={doc.editing.draft}
       style:left="{editorBox.left}px"
       style:top="{editorBox.top}px"
       style:width="{editorBox.width}px"
       style:height="{editorBox.height}px"
+      style:font-size="{editorBox.font}px"
+      style:font-weight={editorBox.weight}
       onkeydown={onEditorKey}
-      onblur={commitEdit}
-      aria-label="Editar texto do nó"
+      onblur={() => void doc.commitEdit()}
+      onpointerdown={(e) => e.stopPropagation()}
+      aria-label="Texto do nó"
     />
   {/if}
 
@@ -310,8 +315,6 @@
     margin: 0;
     padding: 0 8px;
     font-family: var(--font-body);
-    font-size: 13.5px;
-    font-weight: 600;
     text-align: center;
     color: var(--fg);
     background: var(--surface);

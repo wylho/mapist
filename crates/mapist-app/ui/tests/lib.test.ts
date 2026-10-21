@@ -15,7 +15,7 @@ import {
   resolveNodeColor,
   systemColors,
 } from '../src/lib/palettes'
-import { hitTest, resolveColor } from '../src/lib/render'
+import { hitTest, resolveColor, traceBranch } from '../src/lib/render'
 import type { Snapshot } from '../src/lib/api'
 
 describe('mix', () => {
@@ -113,7 +113,7 @@ describe('palettes', () => {
 
 describe('cssVars', () => {
   it('emits every variable app.css expects', () => {
-    const v = cssVars(PALETTES.ideario.light, 'light')
+    const v = cssVars(PALETTES.mapist.light, 'light')
     for (const key of [
       '--bg',
       '--stage',
@@ -140,7 +140,7 @@ describe('cssVars', () => {
   })
 
   it('derives accent-soft when the palette omits it', () => {
-    const noSoft = { ...PALETTES.ideario.light, accentSoft: undefined }
+    const noSoft = { ...PALETTES.mapist.light, accentSoft: undefined }
     const v = cssVars(noSoft, 'light')
     expect(v['--accent-soft']).toBeTruthy()
     expect(v['--accent-soft']).not.toBe(noSoft.accent)
@@ -152,7 +152,7 @@ describe('cssVars', () => {
   })
 
   it('gives dark mode a dark shadow', () => {
-    const v = cssVars(PALETTES.ideario.dark, 'dark')
+    const v = cssVars(PALETTES.mapist.dark, 'dark')
     expect(v['--shadow']).toContain('rgb(0 0 0')
   })
 })
@@ -238,20 +238,20 @@ describe('hitTest', () => {
 
 describe('cor de nó: token vira hex, nunca o contrário', () => {
   it('resolve cada token para um hex válido do tema', () => {
-    const c = PALETTES.ideario.light
+    const c = PALETTES.mapist.light
     for (const t of NODE_COLOR_TOKENS) {
       expect(resolveNodeColor(t, c), t).toMatch(/^#[0-9a-f]{6}$/i)
     }
   })
 
   it('resolve o token para o primeiro valor de notes, na ordem certa', () => {
-    const c = PALETTES.ideario.light
+    const c = PALETTES.mapist.light
     expect(resolveNodeColor('--n-sand', c)).toBe(NOTES_FIRST)
     expect(resolveNodeColor('--n-sand', c)).toBe(c.notes[0])
   })
 
   it('passa hex direto, como um .minder carregaria', () => {
-    const c = PALETTES.ideario.light
+    const c = PALETTES.mapist.light
     expect(resolveNodeColor('#c6262e', c)).toBe('#c6262e')
   })
 
@@ -266,14 +266,139 @@ describe('cor de nó: token vira hex, nunca o contrário', () => {
       accent: '',
       onAccent: '',
       cardEdge: '',
-      nodeColors: PALETTES.ideario.light.notes,
+      nodeColors: PALETTES.mapist.light.notes,
     }
     for (const t of NODE_COLOR_TOKENS) {
-      expect(resolveColor(t, colors)).toBe(resolveNodeColor(t, PALETTES.ideario.light))
+      expect(resolveColor(t, colors)).toBe(resolveNodeColor(t, PALETTES.mapist.light))
     }
     expect(resolveColor('#c6262e', colors)).toBe('#c6262e')
     expect(resolveColor(null, colors)).toBe('#ffffff')
   })
 })
 
-const NOTES_FIRST = PALETTES.ideario.light.notes[0]
+const NOTES_FIRST = PALETTES.mapist.light.notes[0]
+
+describe('traceBranch', () => {
+  function recorder() {
+    const calls: string[] = []
+    return {
+      calls,
+      ctx: {
+        moveTo: (x: number, y: number) => calls.push(`M ${x} ${y}`),
+        lineTo: (x: number, y: number) => calls.push(`L ${x} ${y}`),
+        bezierCurveTo: (...a: number[]) => calls.push(`C ${a.join(' ')}`),
+        arcTo: (...a: number[]) => calls.push(`A ${a.join(' ')}`),
+      },
+    }
+  }
+
+  it('curvas: uma Bézier com controles no meio', () => {
+    const r = recorder()
+    traceBranch(r.ctx, 'curved', 0, 0, 100, 60)
+    expect(r.calls).toEqual(['M 0 0', 'C 50 0 50 60 100 60'])
+  })
+
+  it('em ângulo: degrau com dois cantos arredondados que termina no filho', () => {
+    const r = recorder()
+    traceBranch(r.ctx, 'orthogonal', 0, 0, 100, 60)
+    expect(r.calls).toEqual(['M 0 0', 'A 50 0 50 60 14', 'A 50 60 100 60 14', 'L 100 60'])
+  })
+
+  it('em ângulo: o canto encolhe com desnível pequeno e vira reta quando alinhado', () => {
+    const small = recorder()
+    traceBranch(small.ctx, 'orthogonal', 0, 0, 100, 10)
+    expect(small.calls[1]).toBe('A 50 0 50 10 5')
+
+    const flat = recorder()
+    traceBranch(flat.ctx, 'orthogonal', 0, 20, 100, 20)
+    expect(flat.calls).toEqual(['M 0 20', 'L 100 20'])
+  })
+
+  it('em ângulo: funciona para o lado esquerdo (x decrescente)', () => {
+    const r = recorder()
+    traceBranch(r.ctx, 'orthogonal', 0, 0, -100, -60)
+    expect(r.calls.at(-1)).toBe('L -100 -60')
+  })
+})
+
+describe('preview: layout espelha o núcleo', () => {
+  it('ramo da esquerda fica à esquerda da raiz, sem nós sobrepostos, e recolhido esconde os filhos', async () => {
+    const { seedDemo, previewBackend } = await import('../src/lib/preview')
+    seedDemo()
+    let snap = previewBackend.get_snapshot()
+    const research = snap.nodes.find((n) => n.text === 'Pesquisa')!
+    expect(research.folded).toBe(true)
+    expect(snap.nodes.some((n) => n.parent === research.id)).toBe(false)
+
+    snap = previewBackend.toggle_fold({ id: research.id })
+    const root = snap.nodes[0]
+    const kids = snap.nodes.filter((n) => n.parent === research.id)
+    expect(kids.length).toBe(2)
+    const r = snap.nodes.find((n) => n.id === research.id)!
+    expect(r.x + r.width).toBeLessThanOrEqual(root.x)
+    for (const k of kids) expect(k.x + k.width).toBeLessThanOrEqual(r.x)
+
+    for (const a of snap.nodes)
+      for (const b of snap.nodes) {
+        if (a.id >= b.id) continue
+        const overlap = a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height
+        expect(overlap, `${a.text} × ${b.text}`).toBe(false)
+      }
+  })
+})
+
+describe('edição estilo XMind', () => {
+  it('raiz selecionada ao abrir, Tab cria filho já em edição, Enter na raiz cria filho, texto vazio não apaga', async () => {
+    const { doc } = await import('../src/lib/document.svelte')
+    await doc.create('Raiz')
+    const root = doc.snapshot.nodes[0]
+    expect(doc.selected).toBe(root.id)
+
+    doc.startEdit('P')
+    expect(doc.editing).toMatchObject({ id: root.id, draft: 'P', selectAll: false })
+    doc.editing!.draft = 'Plano'
+    await doc.commitEdit()
+    expect(doc.snapshot.nodes[0].text).toBe('Plano')
+
+    await doc.addChild()
+    const child = doc.selectedNode!
+    expect(child.parent).toBe(root.id)
+    expect(doc.editing).toMatchObject({ id: child.id, draft: 'Nova ideia', selectAll: true })
+    doc.editing!.draft = '   '
+    await doc.commitEdit()
+    expect(doc.node(child.id)!.text).toBe('Nova ideia')
+
+    doc.selected = root.id
+    await doc.addSibling()
+    expect(doc.selectedNode!.parent).toBe(root.id)
+    doc.cancelEdit()
+    expect(doc.editing).toBeNull()
+  })
+})
+
+describe('temas de mapa', () => {
+  it('cada ramo principal ganha uma cor, os filhos herdam, e a cor escolhida à mão manda', async () => {
+    const { branchColors, mapTheme, MAP_THEMES } = await import('../src/lib/maptheme')
+    const node = (id: number, depth: number, parent: number | null, color: string | null = null) =>
+      ({ id, depth, parent, color, text: '', note: '', side: 'right', x: 0, y: 0, width: 0, height: 0, folded: false, child_ids: [], has_children: false }) as never
+    const nodes = [node(0, 0, null), node(1, 1, 0), node(2, 2, 1), node(3, 1, 0, '#123456'), node(4, 2, 3), node(5, 1, 0)]
+    const colors = branchColors(nodes, MAP_THEMES.vibrante, 'light', [], (c) => c)
+    expect(colors.has(0)).toBe(false)
+    expect(colors.get(2)).toBe(colors.get(1))
+    expect(colors.get(3)).toBe('#123456')
+    expect(colors.get(4)).toBe('#123456')
+    expect(new Set([colors.get(1), colors.get(3), colors.get(5)]).size).toBe(3)
+    expect(mapTheme('nao-existe').id).toBe('classico')
+    expect(mapTheme(null).id).toBe('classico')
+  })
+
+  it('os nomes batem com os do núcleo (mapist_core::MAP_STYLES)', async () => {
+    const { MAP_THEME_IDS } = await import('../src/lib/maptheme')
+    const fs = await import('node:fs')
+    const path = await import('node:path')
+    // Os testes rodam a partir de crates/mapist-app/ui.
+    const core = fs.readFileSync(path.resolve(process.cwd(), '../../mapist-core/src/lib.rs'), 'utf8')
+    const list = /MAP_STYLES: \[&str; \d+\] = \[([^\]]*)\]/.exec(core)![1]
+    expect([...list.matchAll(/"([^"]+)"/g)].map((m) => m[1])).toEqual(MAP_THEME_IDS)
+  })
+})

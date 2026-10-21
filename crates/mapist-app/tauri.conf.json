@@ -22,7 +22,7 @@
         "label": "main",
         "center": true,
         "backgroundColor": "#eef1ef",
-        "create": true
+        "create": false
       }
     ],
     "security": {
@@ -31,16 +31,30 @@
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "app",
-      "dmg"
-    ],
+    "targets": "all",
     "icon": [
-      "icons/icon.png"
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
     ],
     "category": "Productivity",
-    "shortDescription": "Mind mapping",
-    "longDescription": "Mapist is a mind-mapping application with a built-in MCP server, derived from Minder."
+    "shortDescription": "Mapas mentais, local-first",
+    "longDescription": "Mapist é um aplicativo de mapas mentais local-first, compatível com o formato do Minder, com servidor MCP embutido.",
+    "copyright": "GPL-3.0-or-later",
+    "license": "GPL-3.0-or-later",
+    "fileAssociations": [
+      {
+        "ext": [
+          "minder"
+        ],
+        "name": "Mapa mental",
+        "description": "Mapa mental (formato do Minder)",
+        "role": "Editor",
+        "mimeType": "application/x-minder"
+      }
+    ]
   },
   "mainBinaryName": "mapist"
 }

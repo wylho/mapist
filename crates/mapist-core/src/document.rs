@@ -45,6 +45,7 @@ pub fn from_xml(xml: &str) -> Result<MindMap, Error> {
                                 name: attr(e, "name").unwrap_or_else(|| "default".into()),
                                 label: attr(e, "label").unwrap_or_else(|| "Light".into()),
                                 index: attr(e, "index").and_then(|v| v.parse().ok()).unwrap_or(1),
+                                style: attr(e, "mapist-style").filter(|s| !s.is_empty()),
                             };
                         }
                     }
@@ -152,11 +153,20 @@ pub fn to_xml(map: &MindMap) -> Result<String, Error> {
     let mut out = String::with_capacity(4096);
     out.push_str("<?xml version=\"1.0\"?>\n");
     out.push_str(&format!("<minder version=\"{}\">\n", esc(&map.version)));
+    // The map theme rides on an extra attribute, absent when unset, so a map
+    // without one stays byte-for-byte what Minder writes.
+    let style = map
+        .theme
+        .style
+        .as_deref()
+        .map(|s| format!(" mapist-style=\"{}\"", esc(s)))
+        .unwrap_or_default();
     out.push_str(&format!(
-        "  <theme name=\"{}\" label=\"{}\" index=\"{}\"/>\n",
+        "  <theme name=\"{}\" label=\"{}\" index=\"{}\"{}/>\n",
         esc(&map.theme.name),
         esc(&map.theme.label),
-        map.theme.index
+        map.theme.index,
+        style
     ));
     out.push_str("  <styles>\n");
     for (i, s) in map.styles.iter().enumerate() {

@@ -1,116 +1,126 @@
 <script lang="ts">
-  // Raiz da aplicação: barra, canvas, inspetor e atalhos globais.
+  // Raiz da aplicação, com a casca do Ideario: barra superior, corpo (canvas + inspetor), aviso, confirmação e
+  // configurações. Os atalhos globais ficam aqui.
   import { onMount } from 'svelte'
-  import Toolbar from './components/Toolbar.svelte'
+  import { Maximize, Minus, Plus } from '@lucide/svelte'
+  import TopBar from './components/TopBar.svelte'
   import Canvas from './components/Canvas.svelte'
   import Inspector from './components/Inspector.svelte'
-  import ThemeSheet from './components/ThemeSheet.svelte'
+  import SettingsSheet from './components/SettingsSheet.svelte'
+  import ConfirmDialog from './components/ConfirmDialog.svelte'
   import { doc } from './lib/document.svelte'
   import { hasHost, isPreview } from './lib/api'
   import { prefs } from './lib/prefs.svelte'
+  import { ui } from './lib/ui.svelte'
 
   let canvasRef = $state<Canvas | undefined>(undefined)
   // O nível de zoom vive no canvas; espelhamos aqui para o rótulo reagir.
   let zoom = $state(prefs.zoom)
-
   const zoomPct = $derived(Math.round(zoom * 100))
 
-  function onKeydown(e: KeyboardEvent) {
-    const target = e.target as HTMLElement | null
-    const typing =
-      target &&
-      (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || target.isContentEditable)
-    const mod = e.metaKey || e.ctrlKey
+  const typing = (e: KeyboardEvent) => !!(e.target as Element | null)?.closest?.('input, textarea, [contenteditable="true"]')
 
-    if (mod && e.key.toLowerCase() === 'z') {
-      e.preventDefault()
-      e.shiftKey ? doc.redo() : doc.undo()
+  function onKeydown(e: KeyboardEvent) {
+    // Com uma folha ou confirmação aberta, as teclas são dela.
+    if (ui.settingsOpen || ui.confirmRequest) return
+    const mod = e.metaKey || e.ctrlKey
+    const key = e.key.toLowerCase()
+
+    if (mod && !e.altKey) {
+      const action: Record<string, () => void> = {
+        z: () => (e.shiftKey ? doc.redo() : doc.undo()),
+        y: () => doc.redo(),
+        s: () => doc.saveDialog(e.shiftKey),
+        o: () => doc.openDialog(),
+        n: () => doc.newMap(),
+        f: () => {
+          ui.searchOpen = true
+          document.getElementById('busca')?.focus()
+        },
+        ',': () => (ui.settingsOpen = true),
+        '0': () => canvasRef?.fit(true),
+        // Recolher/expandir, como no XMind (o Espaço agora edita).
+        '/': () => doc.toggleFold(),
+      }
+      // Desfazer dentro de um campo de texto é do campo.
+      if (key in action && !(typing(e) && (key === 'z' || key === 'y'))) {
+        e.preventDefault()
+        action[key]()
+      }
       return
     }
-    if (mod && e.key.toLowerCase() === 's') {
-      e.preventDefault()
-      doc.save(doc.snapshot.path ?? undefined)
-      return
-    }
-    if (mod && e.key.toLowerCase() === 'n') {
-      e.preventDefault()
-      doc.create('Tópico central')
-      return
-    }
-    if (typing) return
+    if (typing(e) || doc.editing) return
 
     switch (e.key) {
       case 'Tab':
         e.preventDefault()
-        doc.addChild()
-        break
+        void doc.addChild()
+        return
       case 'Enter':
         e.preventDefault()
-        doc.addSibling()
-        break
+        void doc.addSibling()
+        return
+      case ' ':
+      case 'F2':
+        e.preventDefault()
+        doc.startEdit()
+        return
       case 'Backspace':
       case 'Delete':
         e.preventDefault()
-        doc.remove()
-        break
-      case ' ':
-        e.preventDefault()
-        doc.toggleFold()
-        break
+        void doc.remove()
+        return
       case 'ArrowUp':
         e.preventDefault()
         doc.moveSelection(0, -1)
-        break
+        return
       case 'ArrowDown':
         e.preventDefault()
         doc.moveSelection(0, 1)
-        break
+        return
       case 'ArrowLeft':
         e.preventDefault()
         doc.moveSelection(-1, 0)
-        break
+        return
       case 'ArrowRight':
         e.preventDefault()
         doc.moveSelection(1, 0)
-        break
+        return
+    }
+    // Qualquer letra, número ou símbolo com um nó selecionado começa a escrever nele, substituindo o texto (XMind).
+    if (e.key.length === 1 && !e.altKey && doc.selectedNode) {
+      e.preventDefault()
+      doc.startEdit(e.key)
     }
   }
 
   onMount(() => {
     doc.load()
+    if (!hasHost) return
+    // Fechar (ou Cmd+Q) com alterações não salvas: o núcleo segura e pergunta aqui.
+    const unlisten: (() => void)[] = []
+    void import('@tauri-apps/api/event').then(async ({ listen }) => {
+      unlisten.push(await listen('close-requested', () => void doc.confirmQuit()))
+      // macOS: um .minder aberto pelo Finder com o app já aberto.
+      unlisten.push(await listen<string>('open-file', (e) => void doc.openPath(e.payload)))
+    })
+    return () => unlisten.forEach((u) => u())
   })
 </script>
 
-<svelte:window onkeydown={onKeydown} />
+<!-- Ao voltar para a janela, confere se um agente salvou o arquivo pelo MCP. -->
+<svelte:window onkeydown={onKeydown} onfocus={() => void doc.checkDisk()} />
 
-<div class="map-shell">
-  <Toolbar />
+<div class="shell map-shell">
+  <TopBar />
 
   <div class="map-body">
     <Canvas bind:this={canvasRef} onzoom={(z) => { zoom = z; prefs.setZoom(z) }}>
-      <ThemeSheet />
-
-      <div class="scope-bar">
-        <span class="scope-pill">
-          <span class="dot"></span>
-          <span class="grow">{doc.snapshot.title || 'Sem título'}{doc.snapshot.dirty ? ' •' : ''}</span>
-          <button title="Limpar seleção" onclick={() => (doc.selected = null)}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
-          </button>
-        </span>
-      </div>
-
       <div class="zoombar">
-        <button title="Diminuir" onclick={() => canvasRef?.zoomBy(1 / 1.2)}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14" /></svg>
-        </button>
+        <button aria-label="Diminuir zoom" title="Diminuir" onclick={() => canvasRef?.zoomBy(1 / 1.2)}><Minus size={17} /></button>
         <span class="zoomlevel">{zoomPct}%</span>
-        <button title="Aumentar" onclick={() => canvasRef?.zoomBy(1.2)}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
-        </button>
-        <button title="Ajustar à tela" onclick={() => canvasRef?.fit(true)}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M16 21h3a2 2 0 0 0 2-2v-3M8 21H5a2 2 0 0 1-2-2v-3" /></svg>
-        </button>
+        <button aria-label="Aumentar zoom" title="Aumentar" onclick={() => canvasRef?.zoomBy(1.2)}><Plus size={17} /></button>
+        <button aria-label="Ajustar à tela" title="Ajustar à tela" onclick={() => canvasRef?.fit(true)}><Maximize size={17} /></button>
       </div>
     </Canvas>
 
@@ -119,19 +129,29 @@
     {/if}
   </div>
 
-  {#if doc.error}
-    <div class="banner" role="alert" style="position:absolute;bottom:16px;left:16px;max-width:420px;z-index:9">
-      {doc.error}
+  <!-- O que dá para fazer agora: tira a dúvida de "já posso digitar?". Só com teclado, então não no celular. -->
+  {#if doc.hasDocument}
+    <div class="key-hint" aria-live="polite">
+      {#if doc.editing}
+        <span><kbd>Enter</kbd> confirma</span><span><kbd>Tab</kbd> confirma e cria filho</span><span><kbd>Esc</kbd> cancela</span>
+      {:else if doc.selectedNode}
+        <span>Digite para escrever</span><span><kbd>Tab</kbd> filho</span><span><kbd>Enter</kbd> irmão</span><span><kbd>Espaço</kbd> editar</span>
+      {/if}
     </div>
   {/if}
 
   {#if isPreview}
     <div class="preview-tag" title="Backend simulado em memória; nenhum arquivo é lido ou gravado">
-      <span class="dot"></span> Preview — dados de exemplo
+      <span class="dot"></span> Prévia: dados de exemplo
     </div>
   {:else if !hasHost}
-    <div class="banner" style="position:absolute;top:76px;left:50%;transform:translateX(-50%);z-index:9">
-      Rodando fora do Tauri — sem acesso ao documento
-    </div>
+    <div class="preview-tag">Rodando fora do app: sem acesso ao documento</div>
   {/if}
+
+  <div class="toast" class:show={!!ui.toast} role="status" aria-live="polite">
+    <span>{ui.toast}</span>
+  </div>
+
+  <SettingsSheet />
+  <ConfirmDialog />
 </div>

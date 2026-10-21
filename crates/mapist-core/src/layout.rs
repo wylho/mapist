@@ -50,60 +50,120 @@ pub fn layout(map: &mut MindMap) {
 /// must not overwrite those sizes with its own estimate.
 pub fn reposition(map: &mut MindMap) {
     let mut root = std::mem::replace(&mut map.root, Node::new(0, ""));
-    place(&mut root, 0.0, 0.0);
+    let top = match axis(root.layout) {
+        Axis::Horizontal => -extent(&root, &Axis::Horizontal) / 2.0,
+        Axis::Vertical => -extent(&root, &Axis::Vertical) / 2.0,
+    };
+    place(&mut root, 0.0, top);
     map.root = root;
 }
 
-/// Position `node` so its top-left is near (`x`, `y`), then recurse.
-///
-/// Returns the total extent consumed along the growth axis.
-fn place(node: &mut Node, x: f64, y: f64) -> f64 {
-    node.pos = Point { x, y };
-
+/// Extent of a subtree across the growth axis: how much room it needs, so
+/// siblings never overlap. A folded node only needs its own box.
+fn extent(node: &Node, axis: &Axis) -> f64 {
+    let own = match axis {
+        Axis::Horizontal => node.height,
+        Axis::Vertical => node.width,
+    };
     if node.children.is_empty() || node.folded {
-        return match axis(node.layout) {
-            Axis::Horizontal => node.height,
-            Axis::Vertical => node.width,
-        };
+        return own;
     }
-
-    match axis(node.layout) {
-        Axis::Horizontal => {
-            let dir = match node.side {
-                NodeSide::Left => -1.0,
-                _ => 1.0,
-            };
-            let child_x = x + dir * (node.width + H_GAP);
-            let mut cursor = y;
-            let start = cursor;
-            for child in node.children.iter_mut() {
-                let h = place(child, child_x, cursor);
-                cursor += h + V_GAP;
-            }
-            let total = (cursor - V_GAP - start).max(node.height);
-            // Centre this node on its children.
-            node.pos.y = start + (total - node.height) / 2.0;
-            total
+    let (before, after) = split(node);
+    let band = |group: &[&Node]| -> f64 {
+        if group.is_empty() {
+            return 0.0;
         }
+        group.iter().map(|c| extent(c, axis)).sum::<f64>() + V_GAP * (group.len() - 1) as f64
+    };
+    own.max(band(&before)).max(band(&after))
+}
+
+/// Children split by the side they grow towards: `Left` (or `Up`) first.
+///
+/// Horizontal layouts use each child's own side, so a root can carry branches
+/// on both sides as in Minder. Vertical layouts grow one way only.
+fn split(node: &Node) -> (Vec<&Node>, Vec<&Node>) {
+    match axis(node.layout) {
+        Axis::Horizontal => node.children.iter().partition(|c| c.side == NodeSide::Left),
         Axis::Vertical => {
-            let dir = match node.layout {
-                LayoutKind::Up => -1.0,
-                _ => 1.0,
-            };
-            let child_y = y + dir * (node.height + H_GAP);
-            let mut cursor = x;
-            let start = cursor;
-            for child in node.children.iter_mut() {
-                let w = place(child, cursor, child_y);
-                cursor += w + V_GAP;
+            if node.layout == LayoutKind::Up {
+                (node.children.iter().collect(), Vec::new())
+            } else {
+                (Vec::new(), node.children.iter().collect())
             }
-            let total = (cursor - V_GAP - start).max(node.width);
-            node.pos.x = start + (total - node.width) / 2.0;
-            total
         }
     }
 }
 
+/// Position `node` inside a band that starts at `top` (across the growth
+/// axis) with its near edge at `x` (along it), then place its children.
+fn place(node: &mut Node, x: f64, top: f64) {
+    let ax = axis(node.layout);
+    let ext = extent(node, &ax);
+    match ax {
+        Axis::Horizontal => {
+            node.pos = Point {
+                x,
+                y: top + (ext - node.height) / 2.0,
+            }
+        }
+        Axis::Vertical => {
+            node.pos = Point {
+                x: top + (ext - node.width) / 2.0,
+                y: x,
+            }
+        }
+    }
+    if node.children.is_empty() || node.folded {
+        return;
+    }
+
+    // Each side is a column of subtrees centred on the parent.
+    let (w, h) = (node.width, node.height);
+    let (px, py) = (node.pos.x, node.pos.y);
+    let before: Vec<bool> = node
+        .children
+        .iter()
+        .map(|c| match ax {
+            Axis::Horizontal => c.side == NodeSide::Left,
+            Axis::Vertical => node.layout == LayoutKind::Up,
+        })
+        .collect();
+    for want_before in [true, false] {
+        let total: f64 = {
+            let group: Vec<&Node> = node
+                .children
+                .iter()
+                .zip(&before)
+                .filter(|(_, b)| **b == want_before)
+                .map(|(c, _)| c)
+                .collect();
+            if group.is_empty() {
+                continue;
+            }
+            group.iter().map(|c| extent(c, &ax)).sum::<f64>() + V_GAP * (group.len() - 1) as f64
+        };
+        let mut cursor = top + (ext - total) / 2.0;
+        for (child, _) in node
+            .children
+            .iter_mut()
+            .zip(&before)
+            .filter(|(_, b)| **b == want_before)
+        {
+            let child_ext = extent(child, &ax);
+            let near = match (&ax, want_before) {
+                (Axis::Horizontal, true) => px - H_GAP - child.width,
+                (Axis::Horizontal, false) => px + w + H_GAP,
+                (Axis::Vertical, true) => py - H_GAP - child.height,
+                (Axis::Vertical, false) => py + h + H_GAP,
+            };
+            place(child, near, cursor);
+            cursor += child_ext + V_GAP;
+        }
+    }
+}
+
+/// The direction a subtree grows in.
 enum Axis {
     Horizontal,
     Vertical,

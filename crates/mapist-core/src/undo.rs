@@ -10,7 +10,7 @@
 //! correctness obvious. A command-inverse scheme can replace this later without
 //! changing the public surface.
 
-use crate::model::{MindMap, Node};
+use crate::model::{MindMap, Node, NodeSide};
 
 /// A user-visible edit.
 #[derive(Debug, Clone, PartialEq)]
@@ -27,6 +27,14 @@ pub enum Action {
     MoveNode { id: u64, x: f64, y: f64 },
     /// Set a node's branch colour, or clear it with `None`.
     SetColor { id: u64, color: Option<String> },
+    /// Place a branch on one side of the root; its whole subtree follows.
+    SetSide { id: u64, side: NodeSide },
+    /// Fold or unfold a node's children.
+    ToggleFold { id: u64 },
+    /// Discard hand-placed positions and lay the whole map out again.
+    Relayout,
+    /// Choose the map's theme (one of [`crate::MAP_STYLES`]), or the default with `None`.
+    SetMapStyle { style: Option<String> },
 }
 
 impl Action {
@@ -73,6 +81,29 @@ impl Action {
                 let node = map.find_mut(*id).ok_or(crate::Error::NodeNotFound(*id))?;
                 node.color = color.clone();
                 Ok(Some(*id))
+            }
+            Action::SetSide { id, side } => {
+                let node = map.find_mut(*id).ok_or(crate::Error::NodeNotFound(*id))?;
+                crate::layout::for_each_mut(node, &mut |n| n.side = *side);
+                Ok(Some(*id))
+            }
+            Action::ToggleFold { id } => {
+                let node = map.find_mut(*id).ok_or(crate::Error::NodeNotFound(*id))?;
+                node.folded = !node.folded;
+                Ok(Some(*id))
+            }
+            Action::Relayout => {
+                crate::layout::layout(map);
+                Ok(None)
+            }
+            Action::SetMapStyle { style } => {
+                if let Some(s) = style {
+                    if !crate::MAP_STYLES.contains(&s.as_str()) {
+                        return Err(crate::Error::UnknownStyle(s.clone()));
+                    }
+                }
+                map.theme.style = style.clone();
+                Ok(None)
             }
         }
     }
