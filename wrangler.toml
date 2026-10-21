@@ -1,0 +1,5 @@
+# Cloudflare Pages (projeto "nodo", publicado em nodo-1c7.pages.dev): publica a pasta site/ do main, sem build.
+# Este arquivo é a fonte da verdade da pasta publicada; vale por cima do que estiver no painel.
+name = "nodo"
+pages_build_output_dir = "site"
+compatibility_date = "2026-10-01"
