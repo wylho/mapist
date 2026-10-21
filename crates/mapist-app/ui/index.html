@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mapist</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header id="toolbar">
+    <button id="btn-new" title="New map (Cmd+N)">New</button>
+    <button id="btn-open" title="Open (Cmd+O)">Open</button>
+    <button id="btn-save" title="Save (Cmd+S)">Save</button>
+    <span class="sep"></span>
+    <button id="btn-add" title="Add child (Tab)">Add child</button>
+    <button id="btn-remove" title="Delete node (Del)">Delete</button>
+    <span class="sep"></span>
+    <button id="btn-undo" title="Undo (Cmd+Z)">Undo</button>
+    <button id="btn-redo" title="Redo (Cmd+Shift+Z)">Redo</button>
+    <span class="sep"></span>
+    <button id="btn-fold" title="Fold / unfold (Space)">Fold</button>
+    <button id="btn-color" title="Cycle branch colour">Colour</button>
+    <span class="sep"></span>
+    <input id="search" type="search" placeholder="Search nodes…" />
+    <span class="spacer"></span>
+    <span id="status"></span>
+  </header>
+
+  <main id="stage">
+    <canvas id="canvas"></canvas>
+    <aside id="inspector">
+      <label class="field">
+        <span>Text</span>
+        <textarea id="node-text" rows="3"></textarea>
+      </label>
+      <label class="field">
+        <span>Note</span>
+        <textarea id="node-note" rows="6"></textarea>
+      </label>
+      <div class="field">
+        <span>Node</span>
+        <div id="node-meta" class="meta"></div>
+      </div>
+      <div id="hint" class="hint">
+        <strong>Keys</strong>
+        <ul>
+          <li><kbd>Tab</kbd> add child</li>
+          <li><kbd>Enter</kbd> add sibling</li>
+          <li><kbd>Del</kbd> delete node</li>
+          <li><kbd>Space</kbd> fold / unfold</li>
+          <li><kbd>Arrows</kbd> navigate</li>
+          <li><kbd>Cmd</kbd>+<kbd>Z</kbd> undo</li>
+        </ul>
+      </div>
+    </aside>
+  </main>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
