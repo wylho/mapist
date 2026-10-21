@@ -7,8 +7,8 @@
 <h1 align="center">Nodo</h1>
 
 <p align="center"><b>Pense em mapas.</b><br>
-Um app de mapas mentais que abre num instante, funciona sem internet e guarda cada mapa num arquivo seu. Abre os mapas
-do Minder sem perder nada. E o Claude pode trabalhar no mesmo mapa que você, pelas mesmas regras.</p>
+Um app de mapas mentais que abre num instante, funciona sem internet e guarda cada mapa num arquivo seu,
+legível sem o app. E o Claude pode trabalhar no mesmo mapa que você, pelas mesmas regras.</p>
 
 <p align="center"><a href="https://github.com/wylho/nodo/releases/latest"><b>Versão 0.2: atualização automática e edição mais rápida →</b></a></p>
 
@@ -33,7 +33,7 @@ Tudo pelo teclado, nada de esperar. O mapa se arruma sozinho enquanto você escr
 | | |
 |---|---|
 | **Selecione e digite** | O texto entra direto no nó. Tab cria um filho, Enter um irmão, já prontos para escrever; as setas andam pelo mapa. |
-| **Dos dois lados** | Ramos à esquerda e à direita da raiz, como no Minder. Escolha o lado de cada um no painel. |
+| **Dos dois lados** | Ramos à esquerda e à direita da raiz. Escolha o lado de cada um no painel. |
 | **Notas em cada nó** | Texto curto no mapa, detalhes na nota em Markdown, que fica guardada junto. |
 | **Desfazer de verdade** | Duzentos passos para trás e para a frente, sem perder o que você recolheu ou mudou de lado. |
 | **Busca no mapa** | Encontra pelo texto ou pela nota, e marca cada nó que bate. |
@@ -51,11 +51,10 @@ o que fez.
 
 <img src="site/img/claude.webp" alt="Configurações do Nodo com a aparência, o traçado das linhas e a seção Claude, com o botão Ligar e o comando do Claude Code">
 
-## Seus mapas do Minder abrem aqui
+## O arquivo é seu
 
-O Nodo lê e grava o formato `.minder`, o mesmo do [Minder](https://github.com/phase1geo/Minder). Um mapa vai e volta
-sem perder texto, notas, cores, lados ou estilos. O arquivo continua seu, legível sem o app, e salvar nunca deixa um
-arquivo pela metade.
+Cada mapa é um arquivo `.nodo`: texto legível (JSON), que abre sem o app e cabe num controle de versão. Salvar nunca
+deixa um arquivo pela metade. Mapas `.minder`, Markdown e OPML abrem como mapa novo, e o original fica como está.
 
 <img src="site/img/busca.webp" alt="Mapa com a busca aberta na barra, marcando os nós que contêm a palavra Design">
 
@@ -113,8 +112,7 @@ sudo dnf install nodo
 ## English
 
 Nodo is a free, open-source mind-mapping app for Windows, macOS and Linux. It opens instantly, works offline and keeps
-each map in a file on your computer, in the format of [Minder](https://github.com/phase1geo/Minder), so your existing
-Minder maps open without loss. A built-in MCP server lets Claude (Desktop and Code) read and edit the same map you are
+each map in a readable `.nodo` file on your computer; Minder, Markdown and OPML maps open as new maps. A built-in MCP server lets Claude (Desktop and Code) read and edit the same map you are
 working on, through the same core as the window.
 
 - Select and type: Tab for a child, Enter for a sibling, both ready to write; arrows to move
@@ -135,7 +133,7 @@ Especificação: [`docs/SPEC.md`](docs/SPEC.md). Regras do projeto: [`CLAUDE.md`
 
 ```
 crates/
-├── nodo-core/   modelo, layout, .minder, Editor (histórico + arquivo), sem interface
+├── nodo-core/   modelo, layout, .nodo (e leitura de .minder), Editor (histórico + arquivo), sem interface
 ├── nodo-mcp/    servidor MCP sobre stdio (24 ferramentas)
 └── nodo-app/    janela Tauri; a interface Svelte 5 fica em ui/
 site/              nodo-1c7.pages.dev (Cloudflare Pages, sem build)

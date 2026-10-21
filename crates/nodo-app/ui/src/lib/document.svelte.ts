@@ -146,12 +146,12 @@ class Document {
     return this.run(() => api.newMap(title))
   }
 
-  /** Abre um .minder, ou importa um Markdown/OPML como mapa novo (que pergunta onde salvar). */
+  /** Abre um .nodo, ou importa um .minder antigo, Markdown ou OPML como mapa novo (que pergunta onde salvar). */
   async open(path: string) {
     await this.run(() => api.open(path))
     const name = path.split(/[\\/]/).pop() ?? path
-    if (!this.error && /\.(md|markdown|txt|opml)$/i.test(path)) {
-      ui.say(`${name} virou um mapa. Salve para guardá-lo como .minder.`, 5200)
+    if (!this.error && /\.(md|markdown|txt|opml|minder)$/i.test(path)) {
+      ui.say(`${name} virou um mapa. Salve para guardá-lo como .nodo; o original fica como está.`, 5200)
     }
   }
 
@@ -192,15 +192,15 @@ class Document {
       const picked = await open({
         multiple: false,
         filters: [
-          { name: 'Mapas e listas', extensions: ['minder', 'md', 'markdown', 'opml', 'txt'] },
-          { name: 'Mapa mental', extensions: ['minder'] },
+          { name: 'Mapas e listas', extensions: ['nodo', 'minder', 'md', 'markdown', 'opml', 'txt'] },
+          { name: 'Mapa do Nodo', extensions: ['nodo'] },
           { name: 'Markdown', extensions: ['md', 'markdown', 'txt'] },
           { name: 'OPML', extensions: ['opml'] },
         ],
       })
       path = typeof picked === 'string' ? picked : null
     } else {
-      path = window.prompt('Caminho do arquivo (.minder, .md ou .opml)')
+      path = window.prompt('Caminho do arquivo (.nodo, .minder, .md ou .opml)')
     }
     if (path) await this.open(path)
   }
@@ -212,13 +212,13 @@ class Document {
     if (hasHost) {
       const { save } = await import('@tauri-apps/plugin-dialog')
       path = await save({
-        defaultPath: `${(this.snapshot.title || 'mapa').replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'mapa'}.minder`,
-        filters: [{ name: 'Mapa mental', extensions: ['minder'] }],
+        defaultPath: `${(this.snapshot.title || 'mapa').replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'mapa'}.nodo`,
+        filters: [{ name: 'Mapa do Nodo', extensions: ['nodo'] }],
       })
     } else {
       path = window.prompt('Salvar como (caminho)')
     }
-    if (path) await this.save(path.endsWith('.minder') ? path : `${path}.minder`)
+    if (path) await this.save(path.endsWith('.nodo') ? path : `${path}.nodo`)
   }
 
   /** Abre a edição no nó selecionado. Com `initial`, começa com esse texto (a letra que a pessoa digitou). */

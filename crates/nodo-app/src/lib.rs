@@ -274,8 +274,8 @@ fn reload_map(state: State<'_, AppState>) -> Result<Snapshot, String> {
         .path()
         .ok_or("o mapa ainda não foi salvo")?
         .to_path_buf();
-    let ed =
-        Editor::open(&path).map_err(|e| format!("não foi possível ler {}: {e}", path.display()))?;
+    let ed = Editor::open_or_import(&path)
+        .map_err(|e| format!("não foi possível ler {}: {e}", path.display()))?;
     *doc = Some(ed);
     Ok(snapshot(&doc))
 }
@@ -588,15 +588,15 @@ fn has_unsaved(app: &tauri::AppHandle) -> bool {
     dirty
 }
 
-/// A `.minder` path among the program arguments (double-click on Windows and
-/// Linux, or `nodo arquivo.minder` in a terminal).
+/// A map path among the program arguments (double-click on Windows and Linux, or `nodo mapa.nodo` in a terminal):
+/// a `.nodo`, or a `.minder` from the early versions, which opens as an import.
 fn file_from_args() -> Option<std::path::PathBuf> {
     std::env::args_os()
         .skip(1)
         .map(std::path::PathBuf::from)
         .find(|p| {
             p.extension()
-                .is_some_and(|e| e.eq_ignore_ascii_case("minder"))
+                .is_some_and(|e| e.eq_ignore_ascii_case("nodo") || e.eq_ignore_ascii_case("minder"))
         })
 }
 
@@ -605,7 +605,7 @@ pub fn run() {
     // Opened with a file: it is the document from the first frame.
     let state = AppState::default();
     if let Some(path) = file_from_args() {
-        if let (Ok(ed), Ok(mut doc)) = (Editor::open(&path), state.inner.lock()) {
+        if let (Ok(ed), Ok(mut doc)) = (Editor::open_or_import(&path), state.inner.lock()) {
             *doc = Some(ed);
         }
     }

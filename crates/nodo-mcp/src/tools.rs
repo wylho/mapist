@@ -24,7 +24,7 @@ pub fn catalog() -> Vec<Value> {
         ),
         tool(
             "open_map",
-            "Open a mind map from a .minder XML file on disk. A .md (Markdown) or .opml file is imported as a new, unsaved map: headings and list items become topics, other text becomes notes; save_map then needs a .minder path.",
+            "Open a Nodo map (.nodo) from disk. A .minder (older maps), .md (Markdown) or .opml file is imported as a new, unsaved map: headings and list items become topics, other text becomes notes; save_map then needs a path, and writes .nodo.",
             json!({
                 "type": "object",
                 "properties": {

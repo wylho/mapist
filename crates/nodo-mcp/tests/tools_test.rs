@@ -195,7 +195,7 @@ fn unknown_tool_is_rejected() {
 fn save_then_open_round_trips() {
     let dir = std::env::temp_dir().join("nodo-mcp-test");
     std::fs::create_dir_all(&dir).unwrap();
-    let path = dir.join("roundtrip.minder");
+    let path = dir.join("roundtrip.nodo");
     let path_str = path.to_str().unwrap();
 
     let mut s = fresh();
@@ -236,7 +236,7 @@ fn open_missing_file_reports_path() {
 fn dirty_flag_clears_on_save() {
     let dir = std::env::temp_dir().join("nodo-mcp-test");
     std::fs::create_dir_all(&dir).unwrap();
-    let path = dir.join("dirty.minder");
+    let path = dir.join("dirty.nodo");
     let path_str = path.to_str().unwrap();
 
     let mut s = fresh();
@@ -409,4 +409,24 @@ fn loose_notes_are_added_edited_and_removed_like_in_the_window() {
     assert_eq!(notes(&mut s)[0]["text"], "Prazo: sexta");
     let params = json!({ "name": "remove_free_note", "arguments": { "id": 99 } });
     assert!(tools::call(&mut s, &params).is_err());
+}
+
+#[test]
+fn save_map_always_writes_nodo_and_says_where() {
+    let dir = std::env::temp_dir().join(format!("nodo-mcp-ext-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let asked = dir.join("plano.minder");
+    let mut s = fresh();
+    call(&mut s, "add_node", json!({ "parent": 0, "text": "A" }));
+    let r = call(
+        &mut s,
+        "save_map",
+        json!({ "path": asked.to_str().unwrap() }),
+    );
+    let saved = dir.join("plano.nodo");
+    assert_eq!(r["path"], saved.to_str().unwrap());
+    assert!(saved.exists() && !asked.exists());
+    let text = std::fs::read_to_string(&saved).unwrap();
+    assert!(text.contains("\"format\": \"nodo\""), "{text}");
+    let _ = std::fs::remove_dir_all(&dir);
 }

@@ -180,7 +180,7 @@
     const unlisten: (() => void)[] = []
     void import('@tauri-apps/api/event').then(async ({ listen }) => {
       unlisten.push(await listen('close-requested', () => void doc.confirmQuit()))
-      // macOS: um .minder aberto pelo Finder com o app já aberto.
+      // macOS: um mapa aberto pelo Finder com o app já aberto.
       unlisten.push(await listen<string>('open-file', (e) => void doc.openPath(e.payload)))
     })
     return () => unlisten.forEach((u) => u())

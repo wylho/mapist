@@ -23,7 +23,7 @@ Os mesmos instaladores saem a cada push nos "Artifacts" do workflow **Build**, p
 
 - Abrir o instalador do Build no sistema principal (macOS) e conferir: abre, cria, salva, reabre o arquivo salvo.
 - Configurações → Claude → Ligar, reiniciar o Claude Desktop e pedir para ele ler o mapa aberto.
-- Um `.minder` feito no Minder abre e volta sem perda (`cargo run -p nodo-core --example parse_real arquivo.minder`).
+- Um `.nodo` salvo abre igual; um `.minder` antigo abre como importação e salva como `.nodo` sem mexer no original.
 
 ## Atualização automática
 

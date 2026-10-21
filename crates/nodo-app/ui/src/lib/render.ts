@@ -64,7 +64,7 @@ export interface DrawOptions {
  *
  * A fonte da verdade da ordem dos tokens é `NODE_COLOR_TOKENS` em palettes.ts;
  * aqui só se consulta, para que a lista não exista em dois lugares e divirja.
- * Cores hex passam direto, exatamente como vieram de um `.minder`.
+ * Cores hex passam direto, exatamente como vieram do arquivo.
  */
 export function resolveColor(token: string | null, colors: ThemeColors): string {
   if (!token) return colors.surface

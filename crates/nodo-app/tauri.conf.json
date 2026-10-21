@@ -53,11 +53,20 @@
     "fileAssociations": [
       {
         "ext": [
+          "nodo"
+        ],
+        "name": "Mapa do Nodo",
+        "description": "Mapa mental do Nodo",
+        "role": "Editor",
+        "mimeType": "application/x-nodo"
+      },
+      {
+        "ext": [
           "minder"
         ],
-        "name": "Mapa mental",
-        "description": "Mapa mental (formato do Minder)",
-        "role": "Editor",
+        "name": "Mapa mental (Minder)",
+        "description": "Mapa mental antigo, aberto como importação",
+        "role": "Viewer",
         "mimeType": "application/x-minder"
       }
     ]

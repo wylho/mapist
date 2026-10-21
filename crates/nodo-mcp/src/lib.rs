@@ -184,8 +184,8 @@ Node ids are stable integers assigned in creation order; the root is always id 0
 and cannot be removed. Removing a node removes its whole subtree.
 
 Every mutating tool goes through the same undo history a person uses, so undo \
-reverts the last change regardless of who made it. Files are the Minder XML \
-format (.minder), so maps stay portable.";
+reverts the last change regardless of who made it. Maps are saved as .nodo \
+(readable JSON); save_map with another extension writes .nodo beside it and says where.";
 
 /// The `initialize` result, including the instructions above.
 fn initialize_result(params: &Value) -> Value {

@@ -125,6 +125,23 @@ proptest! {
     }
 
     #[test]
+    fn nodo_round_trip_keeps_everything_modelled(steps in edits(), text in "\\PC{0,24}", note in "\\PC{0,40}") {
+        let mut ed = build(&steps);
+        let _ = ed.apply(Action::SetText { id: 0, text: text.clone() });
+        let _ = ed.apply(Action::SetNote { id: 0, note: note.clone() });
+        let map = ed.map();
+        let back = nodo_core::nodofile::from_nodo(&nodo_core::nodofile::to_nodo(map).map_err(|e| TestCaseError::fail(e.to_string()))?)
+            .map_err(|e| TestCaseError::fail(e.to_string()))?;
+        prop_assert_eq!(back.node_count(), map.node_count());
+        prop_assert_eq!(&back.root.note, &note);
+        prop_assert_eq!(&back.theme.structure, &map.theme.structure);
+        prop_assert_eq!(&back.theme.spacing, &map.theme.spacing);
+        for (a, b) in map.nodes().zip(back.nodes()) {
+            prop_assert_eq!((a.id, a.side, a.folded, &a.text, &a.note, &a.color), (b.id, b.side, b.folded, &b.text, &b.note, &b.color));
+        }
+    }
+
+    #[test]
     fn undo_everything_returns_to_the_start(steps in edits()) {
         let mut ed = build(&steps);
         while ed.undo() {}

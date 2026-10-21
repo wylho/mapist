@@ -46,7 +46,7 @@ impl Editor {
         ed
     }
 
-    /// Open a `.minder` file.
+    /// Open a `.nodo` file.
     pub fn open(path: impl AsRef<Path>) -> crate::Result<Self> {
         let path = path.as_ref();
         let mut map = crate::load(path)?;
@@ -57,8 +57,9 @@ impl Editor {
         Ok(ed)
     }
 
-    /// Open a `.minder` map, or import a Markdown (`.md`, `.markdown`, `.txt`) or OPML (`.opml`) file as a new map.
-    /// An import has no path: saving asks where, so the original file is never overwritten with map XML.
+    /// Open a `.nodo` map, or import anything else Nodo reads as a new map: a `.minder` from the early versions
+    /// (D27), Markdown (`.md`, `.markdown`, `.txt`) or OPML (`.opml`). An import has no path: saving asks where, so the
+    /// original file is never overwritten.
     pub fn open_or_import(path: impl AsRef<Path>) -> crate::Result<Self> {
         let path = path.as_ref();
         let ext = path
@@ -78,7 +79,20 @@ impl Editor {
                 let text = std::fs::read_to_string(path)?;
                 Ok(Self::imported(crate::import::from_opml(&text, &stem)?))
             }
-            _ => Self::open(path),
+            "minder" => {
+                let text = std::fs::read_to_string(path)?;
+                Ok(Self::imported(crate::document::from_xml(&text)?))
+            }
+            "nodo" => Self::open(path),
+            // Sem extensão conhecida: decide pelo conteúdo (o XML antigo começa com `<`).
+            _ => {
+                let text = std::fs::read_to_string(path)?;
+                if text.trim_start().starts_with('<') {
+                    Ok(Self::imported(crate::document::from_xml(&text)?))
+                } else {
+                    Self::open(path)
+                }
+            }
         }
     }
 
@@ -199,13 +213,20 @@ impl Editor {
         true
     }
 
-    /// Save to `path`, or to the current file when `None`. The write is atomic:
+    /// Save to `path`, or to the current file when `None`, always as `.nodo` (another extension is swapped, so a
+    /// `.minder` or a Markdown is never overwritten with a Nodo map). Returns where it went. The write is atomic:
     /// a crash mid-save leaves the old file intact, never half a map.
     pub fn save(&mut self, path: Option<&Path>) -> crate::Result<PathBuf> {
-        let target = path
+        let mut target = path
             .map(Path::to_path_buf)
             .or_else(|| self.path.clone())
             .ok_or(crate::Error::NoPath)?;
+        if !target
+            .extension()
+            .is_some_and(|e| e.eq_ignore_ascii_case(crate::EXTENSION))
+        {
+            target.set_extension(crate::EXTENSION);
+        }
         crate::save(self.map(), &target)?;
         self.disk_mtime = mtime(&target);
         self.path = Some(target.clone());
@@ -646,10 +667,36 @@ mod tests {
     }
 
     #[test]
+    fn an_old_minder_opens_as_an_import_and_is_never_overwritten() {
+        let dir = std::env::temp_dir().join(format!("nodo-minder-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let old = dir.join("antigo.minder");
+        let mut map = crate::MindMap::new("Plano");
+        map.add_child(0, "Ideia").unwrap();
+        let xml = crate::document::to_xml(&map).unwrap();
+        std::fs::write(&old, &xml).unwrap();
+
+        let mut ed = Editor::open_or_import(&old).unwrap();
+        assert_eq!(ed.map().root.children[0].text, "Ideia");
+        assert!(ed.path().is_none(), "import: salvar pergunta onde");
+        assert!(ed.is_dirty());
+
+        // Mesmo pedindo para salvar em cima do .minder, vai para um .nodo ao lado.
+        let saved = ed.save(Some(&old)).unwrap();
+        assert_eq!(saved, dir.join("antigo.nodo"));
+        assert_eq!(std::fs::read_to_string(&old).unwrap(), xml);
+        let reopened = Editor::open_or_import(&saved).unwrap();
+        assert_eq!(reopened.path(), Some(saved.as_path()));
+        assert!(!reopened.is_dirty());
+        assert_eq!(reopened.map().root.children[0].text, "Ideia");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
     fn dirty_follows_undo_back_to_the_saved_state() {
         let dir = std::env::temp_dir().join(format!("nodo-editor-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
-        let file = dir.join("mapa.minder");
+        let file = dir.join("mapa.nodo");
         let mut ed = Editor::new("Raiz");
         assert!(
             !ed.is_dirty(),

@@ -306,7 +306,7 @@ export function seedDemo() {
   past.length = 0
   future.length = 0
   dirty = false
-  path = 'exemplo.minder'
+  path = 'exemplo.nodo'
   style = null
   freeNotes = []
 

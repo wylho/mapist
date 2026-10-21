@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nodo — mapas mentais no seu computador</title>
-<meta name="description" content="Nodo: mapas mentais para Windows, macOS e Linux. Abre na hora, funciona sem internet, guarda no formato do Minder e deixa o Claude editar o mesmo mapa que você.">
+<meta name="description" content="Nodo: mapas mentais para Windows, macOS e Linux. Abre na hora, funciona sem internet, guarda cada mapa num arquivo seu e deixa o Claude editar o mesmo mapa que você.">
 <meta property="og:title" content="Nodo — mapas mentais no seu computador">
 <meta property="og:description" content="Mapas mentais que abrem na hora, funcionam sem internet e guardam tudo num arquivo seu. O Claude edita o mesmo mapa que você.">
 <meta property="og:image" content="https://nodo-1c7.pages.dev/img/mapa.webp">
@@ -58,7 +58,7 @@
     </div>
     <div class="grid">
       <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h.01"/><path d="M12 12h.01"/><path d="M14 8h.01"/><path d="M16 12h.01"/><path d="M18 8h.01"/><path d="M6 8h.01"/><path d="M7 16h10"/><path d="M8 12h.01"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg></span><h3>Selecione e digite</h3><p>O texto entra direto no nó. Tab cria um filho, Enter um irmão, já prontos para escrever; as setas andam pelo mapa.</p></div>
-      <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9v2c0 .6-.4 1-1 1H7c-.6 0-1-.4-1-1V9"/><path d="M12 12v3"/></svg></span><h3>Dos dois lados</h3><p>Ramos à esquerda e à direita da raiz, como no Minder. Escolha o lado de cada um no painel.</p></div>
+      <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9v2c0 .6-.4 1-1 1H7c-.6 0-1-.4-1-1V9"/><path d="M12 12v3"/></svg></span><h3>Dos dois lados</h3><p>Ramos à esquerda e à direita da raiz. Escolha o lado de cada um no painel.</p></div>
       <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg></span><h3>Notas em cada nó</h3><p>Texto curto no mapa, detalhes na nota em Markdown, que fica guardada junto.</p></div>
       <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></svg></span><h3>Desfazer de verdade</h3><p>Duzentos passos para trás e para a frente, sem perder o que você recolheu ou mudou de lado.</p></div>
       <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg></span><h3>Busca no mapa</h3><p>Encontra pelo texto ou pela nota, e marca cada nó que bate.</p></div>
@@ -107,9 +107,9 @@
         <div class="media"><img src="/img/temas.webp" width="2880" height="1800" loading="lazy" alt="A folha Tema do mapa, com seis mapinhas de exemplo: Clássico, Contorno, Sublinhado, Vibrante, Pílulas e Monocromático"></div>
       </div>
       <div class="card">
-        <h3>Seus mapas do Minder abrem aqui</h3>
-        <p>O Nodo lê e grava o formato <code>.minder</code>, o mesmo do <a href="https://github.com/phase1geo/Minder">Minder</a>.
-        Um mapa vai e volta sem perder texto, notas, cores, lados ou estilos, e salvar nunca deixa um arquivo pela metade.</p>
+        <h3>O arquivo é seu</h3>
+        <p>Cada mapa é um arquivo <code>.nodo</code>: texto legível, que abre sem o app e cabe num controle de versão.
+        Salvar nunca deixa um arquivo pela metade. Mapas <code>.minder</code>, Markdown e OPML abrem como mapa novo.</p>
         <div class="media"><img src="/img/busca.webp" width="2880" height="1800" loading="lazy" alt="Mapa com a busca aberta na barra, marcando os nós que contêm a palavra Design"></div>
       </div>
       <div class="card wide">
@@ -174,8 +174,7 @@ sudo dnf install nodo</code></pre>
   <div class="wrap english">
     <h2>Nodo, in English</h2>
     <p>Nodo is a free, open-source mind-mapping app for Windows, macOS and Linux. It opens instantly, works offline and
-    keeps each map in a file on your computer, in the format of <a href="https://github.com/phase1geo/Minder">Minder</a>, so
-    your existing Minder maps open without loss. A built-in MCP server lets Claude (Desktop and Code) read and edit the same
+    keeps each map in a readable <code>.nodo</code> file on your computer; Minder, Markdown and OPML maps open as new maps. A built-in MCP server lets Claude (Desktop and Code) read and edit the same
     map you are working on, through the same core as the window.</p>
     <ul>
       <li>Select and type: Tab for a child, Enter for a sibling, both ready to write; arrows to move</li>
