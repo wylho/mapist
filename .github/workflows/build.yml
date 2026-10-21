@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: crates/mapist-app/ui/pnpm-lock.yaml
+          cache-dependency-path: crates/nodo-app/ui/pnpm-lock.yaml
       - name: Dependências do sistema (WebKitGTK)
         run: |
           sudo apt-get update
@@ -34,7 +34,7 @@ jobs:
         with:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
-      - run: pnpm --dir crates/mapist-app/ui install --frozen-lockfile
+      - run: pnpm --dir crates/nodo-app/ui install --frozen-lockfile
       - name: Versões iguais (Cargo, tauri.conf, package.json)
         run: scripts/check-version.sh
       - name: Formato
@@ -44,9 +44,9 @@ jobs:
       - name: Testes do núcleo, MCP e app
         run: cargo test --workspace
       - name: Tipos da interface
-        run: pnpm --dir crates/mapist-app/ui run check
+        run: pnpm --dir crates/nodo-app/ui run check
       - name: Testes da interface
-        run: pnpm --dir crates/mapist-app/ui run test
+        run: pnpm --dir crates/nodo-app/ui run test
 
   bundle:
     name: Instalador (${{ matrix.name }})
@@ -78,7 +78,7 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: crates/mapist-app/ui/pnpm-lock.yaml
+          cache-dependency-path: crates/nodo-app/ui/pnpm-lock.yaml
       - name: Dependências do sistema (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -88,13 +88,13 @@ jobs:
         with:
           targets: ${{ matrix.rust-targets }}
       - uses: Swatinem/rust-cache@v2
-      - run: pnpm --dir crates/mapist-app/ui install --frozen-lockfile
+      - run: pnpm --dir crates/nodo-app/ui install --frozen-lockfile
       # Pela CLI do Tauri: é ela que roda o beforeBuildCommand e embute a interface (cargo build sozinho abre vazio).
-      - run: crates/mapist-app/ui/node_modules/.bin/tauri build ${{ matrix.args }}
+      - run: crates/nodo-app/ui/node_modules/.bin/tauri build ${{ matrix.args }}
         shell: bash
       - uses: actions/upload-artifact@v4
         with:
-          name: Mapist-${{ matrix.name }}
+          name: Nodo-${{ matrix.name }}
           if-no-files-found: error
           path: |
             target/**/release/bundle/dmg/*.dmg

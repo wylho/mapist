@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Mapist — protótipo visual (design Ideario)</title>
+<title>Nodo — protótipo visual (design Ideario)</title>
 <style>
 /* ══════════════════════════════════════════════════════════════════════════
-   Mapist — protótipo visual alinhado ao Ideario.
+   Nodo — protótipo visual alinhado ao Ideario.
 
    Os tokens abaixo são COPIADOS de ideario/src/app.css (v0.4.4) para garantir
    paridade visual. Não invente valores aqui: se o Ideario mudar, replique.
 
    Diferença de contexto: o Ideario é uma coluna de celular (máx. 440px) com
-   cards; o Mapist é uma tela larga com canvas. Então reaproveito os tokens e
+   cards; o Nodo é uma tela larga com canvas. Então reaproveito os tokens e
    os componentes (icon-btn, chip, pill, seg, card, drawer), mas o esqueleto
    é próprio.
    ══════════════════════════════════════════════════════════════════════════ */
@@ -54,7 +54,7 @@ input, textarea, [contenteditable="true"], [contenteditable="true"] * { -webkit-
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* ── esqueleto do Mapist ──────────────────────────────────────────────── */
+/* ── esqueleto do Nodo ──────────────────────────────────────────────── */
 .shell { position: relative; height: 100%; display: flex; flex-direction: column; background: var(--bg); overflow: hidden; }
 
 /* barra superior: mesma altura (64px) e mesmo respiro da appbar do Ideario */
@@ -263,7 +263,7 @@ kbd {
           <path d="M12 9V4M12 15v5M9 12H4M15 12h5"/>
         </svg>
       </div>
-      <span class="brand-name">Mapist</span>
+      <span class="brand-name">Nodo</span>
     </div>
 
     <div class="top-left">
@@ -455,7 +455,7 @@ import { PALETTES, DESKTOPS, paletteColors, systemColors, cssVars } from "./them
 /* ══════════════════════════════════════════════════════════════════════════
    Renderer do protótipo.
 
-   O layout espelha crates/mapist-core/src/layout.rs (H_GAP=68, V_GAP=16),
+   O layout espelha crates/nodo-core/src/layout.rs (H_GAP=68, V_GAP=16),
    então o que você aprova aqui é o que o app Rust desenha.
 
    Cores de nó: uso os tokens --n-* do Ideario (as cores dos cards dele), não
@@ -539,7 +539,7 @@ const root = node("Product Roadmap", {
   ],
 });
 
-/* ── layout (espelha mapist-core) ─────────────────────────────────────── */
+/* ── layout (espelha nodo-core) ─────────────────────────────────────── */
 const CHAR_W = 7.6;
 const MIN_W = 84;
 const MIN_H = 44;
@@ -881,9 +881,9 @@ document.getElementById("zoom-fit").onclick = () => fitView(true);
 
 /* ── tema: 5 paletas + Sistema, claro/escuro, como o Ideario ──────────── */
 
-const MODE_KEY = "mapist.theme";
-const PALETTE_KEY = "mapist.palette";
-const SIM_KEY = "mapist.simDesktop";
+const MODE_KEY = "nodo.theme";
+const PALETTE_KEY = "nodo.palette";
+const SIM_KEY = "nodo.simDesktop";
 
 const load = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const store = (k, v) => { try { localStorage.setItem(k, v); } catch {} };

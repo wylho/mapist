@@ -2056,44 +2056,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 
 [[package]]
-name = "mapist-app"
-version = "0.1.0"
-dependencies = [
- "mapist-core",
- "mapist-mcp",
- "objc2-app-kit",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-opener",
- "tauri-plugin-window-state",
-]
-
-[[package]]
-name = "mapist-core"
-version = "0.1.0"
-dependencies = [
- "proptest",
- "quick-xml 0.36.2",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "uuid",
-]
-
-[[package]]
-name = "mapist-mcp"
-version = "0.1.0"
-dependencies = [
- "mapist-core",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
-]
-
-[[package]]
 name = "markup5ever"
 version = "0.39.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2212,6 +2174,44 @@ name = "new_debug_unreachable"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
+
+[[package]]
+name = "nodo-app"
+version = "0.2.0"
+dependencies = [
+ "nodo-core",
+ "nodo-mcp",
+ "objc2-app-kit",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-opener",
+ "tauri-plugin-window-state",
+]
+
+[[package]]
+name = "nodo-core"
+version = "0.2.0"
+dependencies = [
+ "proptest",
+ "quick-xml 0.36.2",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "uuid",
+]
+
+[[package]]
+name = "nodo-mcp"
+version = "0.2.0"
+dependencies = [
+ "nodo-core",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
 
 [[package]]
 name = "num-conv"

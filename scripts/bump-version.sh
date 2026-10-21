@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 v="${1:?uso: scripts/bump-version.sh X.Y.Z}"
 [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "versão inválida: $v" >&2; exit 1; }
 sed -i.bak "0,/^version = \".*\"/s//version = \"$v\"/" Cargo.toml && rm Cargo.toml.bak
-for f in crates/mapist-app/tauri.conf.json crates/mapist-app/ui/package.json; do
+for f in crates/nodo-app/tauri.conf.json crates/nodo-app/ui/package.json; do
   node -e "const f='$f',j=require('./'+f);j.version='$v';require('fs').writeFileSync(f,JSON.stringify(j,null,2)+'\n')"
 done
 cargo update --workspace --quiet

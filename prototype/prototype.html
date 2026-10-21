@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Mapist — visual prototype</title>
+<title>Nodo — visual prototype</title>
 <style>
 /* ══════════════════════════════════════════════════════════════════════════
-   Mapist visual prototype.
+   Nodo visual prototype.
 
    This file is the design sandbox. It renders a real mind map with the same
-   layout maths as mapist-core, using hard-coded sample data, so the visual
+   layout maths as nodo-core, using hard-coded sample data, so the visual
    language can be iterated without rebuilding the Rust app.
 
    Design tokens live in :root. Change them there, not inline.
@@ -502,7 +502,7 @@ kbd {
           <path d="M12 9V4M12 15v5M9 12H4M15 12h5"/>
         </svg>
       </div>
-      <span>Mapist</span>
+      <span>Nodo</span>
     </div>
 
     <button class="tbtn" title="New map">
@@ -649,7 +649,7 @@ kbd {
 /* ══════════════════════════════════════════════════════════════════════════
    Prototype renderer.
 
-   Mirrors the layout maths in crates/mapist-core/src/layout.rs so what you
+   Mirrors the layout maths in crates/nodo-core/src/layout.rs so what you
    see here is what the Rust app draws. Sample data stands in for the file.
    ══════════════════════════════════════════════════════════════════════════ */
 
@@ -735,7 +735,7 @@ const leftBranch = node("Research", {
 });
 root.children.push(leftBranch);
 
-/* ── layout (mirrors mapist-core) ─────────────────────────────────────── */
+/* ── layout (mirrors nodo-core) ─────────────────────────────────────── */
 
 const CHAR_W = 7.4;
 const MIN_W = 63;

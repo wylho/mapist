@@ -1,6 +1,6 @@
 ---
 name: sync-site
-description: Mantém o site do Mapist (site/, publicado em mapist.pages.dev pelo Cloudflare Pages) e a página do GitHub (README.md) com o mesmo conteúdo e prints atualizados. Use ao mudar o texto ou os prints de um dos dois, ao lançar uma versão nova, ao mudar um recurso que aparece na página inicial, ou quando o usuário pedir para atualizar o site ou o README.
+description: Mantém o site do Nodo (site/, publicado em nodo.pages.dev pelo Cloudflare Pages) e a página do GitHub (README.md) com o mesmo conteúdo e prints atualizados. Use ao mudar o texto ou os prints de um dos dois, ao lançar uma versão nova, ao mudar um recurso que aparece na página inicial, ou quando o usuário pedir para atualizar o site ou o README.
 ---
 
 # Site e README sincronizados
@@ -13,7 +13,7 @@ site do Ideario: quando o Ideario mudar o estilo, copiar o `style.css` de novo.
 ## Regra que não pode falhar: só dados fictícios
 
 O repositório e o site são **públicos**. Os prints vêm da prévia do app, com o mapa de exemplo de
-`crates/mapist-app/ui/src/lib/preview.ts` (`seedDemo`), que é inventado. Nunca:
+`crates/nodo-app/ui/src/lib/preview.ts` (`seedDemo`), que é inventado. Nunca:
 
 - tirar print de um mapa do usuário, de um arquivo `.minder` dele ou do app instalado dele;
 - pôr nos dados de exemplo nomes de clientes, empresas, pessoas ou qualquer coisa da vida do usuário;
@@ -34,10 +34,10 @@ Se aparecer algo que pareça real, pare e pergunte ao usuário antes de publicar
 ## Quando os prints precisam mudar
 
 ```sh
-pnpm --dir crates/mapist-app/ui build && pnpm --dir crates/mapist-app/ui site-shots
+pnpm --dir crates/nodo-app/ui build && pnpm --dir crates/nodo-app/ui site-shots
 ```
 
-O script (`crates/mapist-app/ui/scripts/site-shots.mjs`) sobe a prévia e salva os prints em WebP em `site/img`
+O script (`crates/nodo-app/ui/scripts/site-shots.mjs`) sobe a prévia e salva os prints em WebP em `site/img`
 (precisa do `convert` do ImageMagick; o Chromium pode vir de `CHROMIUM=/caminho`). Para um print novo, acrescente uma
 chamada `shot(...)` no script (não tire à mão). A prévia aceita `?select=Texto do nó` para abrir com um nó
 selecionado. Depois **abra cada imagem** (reduzida, se preciso) e leia tudo.

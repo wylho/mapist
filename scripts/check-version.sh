@@ -4,8 +4,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 cargo=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
-tauri=$(node -p "require('./crates/mapist-app/tauri.conf.json').version")
-ui=$(node -p "require('./crates/mapist-app/ui/package.json').version")
+tauri=$(node -p "require('./crates/nodo-app/tauri.conf.json').version")
+ui=$(node -p "require('./crates/nodo-app/ui/package.json').version")
 if [[ "$cargo" != "$tauri" || "$tauri" != "$ui" ]]; then
   echo "Versões diferentes: Cargo.toml=$cargo tauri.conf.json=$tauri package.json=$ui" >&2
   echo "Use scripts/bump-version.sh X.Y.Z" >&2

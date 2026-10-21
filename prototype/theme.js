@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   Temas do Mapist — porte fiel de ideario/src/lib/palettes.ts (v0.4.4).
+   Temas do Nodo — porte fiel de ideario/src/lib/palettes.ts (v0.4.4).
 
    O Ideario não tem "claro/escuro": tem 5 paletas nomeadas + um tema Sistema
    que imita GNOME, KDE, Windows ou macOS, cada um com versão clara e escura.

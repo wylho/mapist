@@ -1,4 +1,4 @@
-# Mapist — Especificação do projeto
+# Nodo — Especificação do projeto
 
 Derivado do [Minder](https://github.com/phase1geo/Minder) 2.0.9 (GPL-3.0-or-later) por Trevor Williams.
 Este documento é a fonte da verdade do projeto; `CLAUDE.md` resume as regras do dia a dia.
@@ -20,7 +20,7 @@ mesmo mapa que a pessoa — pelas mesmas regras, com o mesmo desfazer.
    exatamente o que estava salvo.
 2. **Compatibilidade com o Minder.** Um mapa feito no Minder abre aqui e volta sem perda. Isso limita escolhas de
    formato e é intencional: os mapas das pessoas valem mais que a nossa conveniência.
-3. **Um núcleo, duas portas.** Interface e MCP não podem divergir. Toda regra de negócio vive em `mapist-core`; tanto o
+3. **Um núcleo, duas portas.** Interface e MCP não podem divergir. Toda regra de negócio vive em `nodo-core`; tanto o
    app quanto o agente passam por ela.
 4. **Nada que não funcione aparece.** Sem botão decorativo, sem menu vazio.
 5. **A tela não mente sobre o modelo.** Se o núcleo mede de um jeito e desenha de outro, o defeito é do código, não do
@@ -67,7 +67,7 @@ até o estado salvo deixa o mapa sem nada por salvar. Arrastar só conta como ed
 que edita por MCP usa o mesmo `Editor`, com o mesmo histórico dentro da sessão dele.
 
 ### 3.5 Temas e linhas
-Quatro paletas nomeadas (Mapist, Papel, Grafite, Floresta; a primeira é a paleta-base do Ideario com o nome do app) e um tema **Sistema** que imita GNOME, KDE, Windows ou macOS,
+Quatro paletas nomeadas (Nodo, Papel, Grafite, Floresta; a primeira é a paleta-base do Ideario com o nome do app) e um tema **Sistema** que imita GNOME, KDE, Windows ou macOS,
 cada uma em claro e escuro. As cores de nó saem da própria paleta, então trocar de tema troca os ramos junto.
 `fitAccent` ajusta um destaque do sistema até ele ter contraste suficiente contra a superfície.
 As linhas entre nós podem ser **curvas** (Bézier) ou **em ângulo** (degrau com cantos arredondados), nas Configurações.
@@ -75,12 +75,12 @@ As linhas entre nós podem ser **curvas** (Bézier) ou **em ângulo** (degrau co
 **Temas de mapa** (como os do XMind, `ui/src/lib/maptheme.ts`): Clássico, Contorno, Sublinhado, Vibrante, Pílulas,
 Monocromático. Cada um define forma, recheio, contorno, texto e tamanho por nível (raiz, ramos principais, sub-ramos),
 a paleta dos ramos e a espessura das linhas. Cada ramo principal recebe uma cor da paleta e os filhos herdam; a cor
-escolhida no painel vale por cima. O tema é do mapa: fica no `.minder` como atributo `mapist-style` do `<theme>`
+escolhida no painel vale por cima. O tema é do mapa: fica no `.minder` como atributo `nodo-style` do `<theme>`
 (ausente no Clássico, para o arquivo continuar igual ao do Minder), muda pelo histórico (`Action::SetMapStyle`) e o
 núcleo só aceita os nomes de `MAP_STYLES`. Pelo MCP: `set_map_theme`.
 
 ### 3.6 Servidor MCP
-`mapist --mcp` fala JSON-RPC sobre stdio e oferece 18 ferramentas (criar, abrir, salvar, ler, adicionar, remover,
+`nodo --mcp` fala JSON-RPC sobre stdio e oferece 18 ferramentas (criar, abrir, salvar, ler, adicionar, remover,
 editar texto e nota, cor, lado, tema do mapa, recolher, rearranjar, buscar, desfazer, refazer, estatísticas). Quando o agente salva o
 arquivo que está aberto na janela, a janela relê ao voltar o foco (perguntando antes, se houver algo não salvo nela). Negocia a versão do protocolo e
 envia `instructions` descrevendo o modelo de dados. O registro no Claude Desktop é feito pela própria interface, com as
@@ -96,21 +96,21 @@ não por paridade.
 
 ```
 crates/
-├── mapist-core/     modelo, layout, I/O do .minder, desfazer — sem interface
-├── mapist-mcp/      protocolo MCP sobre stdio
-└── mapist-app/      janela Tauri + interface Svelte
+├── nodo-core/     modelo, layout, I/O do .minder, desfazer — sem interface
+├── nodo-mcp/      protocolo MCP sobre stdio
+└── nodo-app/      janela Tauri + interface Svelte
     └── ui/          HTML/CSS/JS
 ```
 
 ### 4.1 Um núcleo, duas portas
 
-`mapist-core` não conhece janela, fonte ou canvas. O aplicativo e o agente usam o mesmo `mapist_core::Editor`, que é o
+`nodo-core` não conhece janela, fonte ou canvas. O aplicativo e o agente usam o mesmo `nodo_core::Editor`, que é o
 dono do mapa, do histórico, do arquivo e do estado salvo; a única diferença é por onde a chamada entra. Isso é o que
 garante que uma edição por MCP seja indistinguível de uma feita à mão. Nenhuma das portas guarda uma cópia do mapa ao
 lado do histórico: foi assim que recolher, mudar de lado e medidas se perdiam antes do `Editor`.
 
 O layout reserva uma faixa para cada sub-árvore, põe cada ramo da raiz do lado dele e não posiciona descendentes de nó
-recolhido. Propriedades com dados gerados (`mapist-core/tests/layout_props.rs`): nós visíveis nunca se sobrepõem, cada
+recolhido. Propriedades com dados gerados (`nodo-core/tests/layout_props.rs`): nós visíveis nunca se sobrepõem, cada
 ramo cresce para o seu lado, o XML vai e volta, desfazer tudo volta ao início.
 
 ### 4.2 Um binário, dois modos
@@ -118,9 +118,9 @@ ramo cresce para o seu lado, o XML vai e volta, desfazer tudo volta ao início.
 ```rust
 fn main() {
     if std::env::args().skip(1).any(|a| a == "--mcp") {
-        std::process::exit(mapist_mcp::serve());
+        std::process::exit(nodo_mcp::serve());
     }
-    mapist_app::run()
+    nodo_app::run()
 }
 ```
 
@@ -142,23 +142,23 @@ crate de fontes no núcleo divergiria do que a tela desenha.
 
 ### 4.4 I/O de arquivo alheio
 
-Ao registrar-se na configuração de um cliente MCP, o Mapist:
+Ao registrar-se na configuração de um cliente MCP, o Nodo:
 - **recusa** um arquivo que não seja JSON válido, deixando-o intacto (e diz isso a quem chamou);
 - escreve num arquivo temporário e renomeia por cima, para a configuração nunca ser lida pela metade;
 - preserva todas as outras chaves.
 
-Ambas as regras têm teste (`mapist-mcp/src/setup.rs`).
+Ambas as regras têm teste (`nodo-mcp/src/setup.rs`).
 
 ---
 
 ## 5. Modelo de dados
 
-O `.minder` é XML do Minder 2.0.9 (`<minder version="1.15.0">`). O que o Mapist modela:
+O `.minder` é XML do Minder 2.0.9 (`<minder version="1.15.0">`). O que o Nodo modela:
 
 | Elemento | Campos |
 |---|---|
 | `<minder>` | `version` |
-| `<theme>` | `name`, `label`, `index`; `mapist-style` (tema do mapa, só do Mapist) |
+| `<theme>` | `name`, `label`, `index`; `nodo-style` (tema do mapa, só do Nodo) |
 | `<styles><style>` | 20 atributos por nível (margens, raios, fontes, larguras, traços, setas) |
 | `<drawarea>` | `x`, `y`, `scale` |
 | `<nodes><node>` | `id`, `posx`, `posy`, `width`, `height`, `side`, `fold`, `treesize`, `layout`, `group`, `color`, `colorroot` |
@@ -206,21 +206,21 @@ compilar o Tauri, que leva minutos e não deixa inspecionar nada.
 | Linux | `.deb`, `.rpm`, `.AppImage` | `.deb` e `.AppImage` compilados e abertos no Linux |
 | Windows | `-setup.exe`, `.msi` | Pelo workflow; ainda não executado |
 
-Os instaladores associam a extensão `.minder` ao Mapist: dois cliques abrem o mapa (argumento no Windows e no Linux,
+Os instaladores associam a extensão `.minder` ao Nodo: dois cliques abrem o mapa (argumento no Windows e no Linux,
 evento de abertura no macOS). Guia de lançamento: `docs/RELEASE.md`.
 
 ---
 
 ## 8. Site
 
-`site/` é publicado em **mapist.pages.dev** pelo Cloudflare Pages (pasta estática, sem build), com a mesma estrutura e
+`site/` é publicado em **nodo.pages.dev** pelo Cloudflare Pages (pasta estática, sem build), com a mesma estrutura e
 o mesmo `style.css` do site do Ideario. O `README.md` tem o mesmo conteúdo (skill `sync-site`); os prints saem da
-prévia por `crates/mapist-app/ui/scripts/site-shots.mjs`, com o mapa de exemplo inventado.
+prévia por `crates/nodo-app/ui/scripts/site-shots.mjs`, com o mapa de exemplo inventado.
 
 ## 8.1 Protótipo de design
 
 `prototype/` guarda os protótipos em HTML que antecederam a migração para Svelte, incluindo `theme.js`, o porte das
-paletas. Servem de referência histórica; a implementação viva é `crates/mapist-app/ui/src/`.
+paletas. Servem de referência histórica; a implementação viva é `crates/nodo-app/ui/src/`.
 
 ---
 

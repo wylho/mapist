@@ -1,0 +1,29 @@
+[package]
+name = "nodo-app"
+description = "Nodo desktop application: Tauri shell over nodo-core."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+name = "nodo_app"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+nodo-core = { path = "../nodo-core" }
+nodo-mcp = { path = "../nodo-mcp" }
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-window-state = "2"
+tauri-plugin-opener = "2"
+serde.workspace = true
+serde_json.workspace = true
+
+# macOS: onde ficam os botões da janela (NSWindow.standardWindowButton), para a barra do app abrir o espaço certo
+# para eles. Mesma dependência do Ideario.
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSWindow", "NSButton", "NSControl", "NSView", "NSResponder", "objc2-core-foundation"] }
