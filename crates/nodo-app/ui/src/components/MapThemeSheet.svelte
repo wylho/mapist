@@ -2,7 +2,9 @@
   // Tema do mapa, como no XMind: escolhe a forma de cada nível e as cores dos ramos. Fica no arquivo e desfaz como
   // qualquer edição. Cada opção é um mapinha desenhado pelo próprio renderizador, então a prévia é o que vai sair.
   import { Dialog } from 'bits-ui'
-  import { X } from '@lucide/svelte'
+  import { ToggleGroup } from 'bits-ui'
+  import { WandSparkles, X } from '@lucide/svelte'
+  import { SPACINGS, STRUCTURES, sketch, spacingOf, structureOf } from '../lib/structures'
   import { tick } from 'svelte'
   import { doc } from '../lib/document.svelte'
   import { theme } from '../lib/theme.svelte'
@@ -15,6 +17,8 @@
   let { open = $bindable(false) }: { open?: boolean } = $props()
 
   const current = $derived(mapTheme(doc.snapshot.style).id)
+  const structure = $derived(structureOf(doc.snapshot.structure))
+  const spacing = $derived(spacingOf(doc.snapshot.spacing))
   const canvases: Record<string, HTMLCanvasElement | undefined> = $state({})
 
   /** Um mapa pequeno (raiz, três ramos, dois sub-ramos) posicionado à mão, medido no tema que vai mostrar. */
@@ -50,7 +54,7 @@
     const maxX = Math.max(...nodes.map((n) => n.x + n.width))
     return {
       nodes, connections: [], dirty: false, path: null, title: '', can_undo: false, can_redo: false, stale: false,
-      style: id, bounds: { min_x: 0, min_y: -20, max_x: maxX, max_y: 140 },
+      style: id, structure: null, spacing: null, bounds: { min_x: 0, min_y: -20, max_x: maxX, max_y: 140 },
     }
   }
 
@@ -93,10 +97,39 @@
     <Dialog.Overlay class="overlay" />
     <Dialog.Content class="sheet" aria-describedby={undefined}>
       <div class="sheet-head">
-        <Dialog.Title class="sheet-title">Tema do mapa</Dialog.Title>
+        <Dialog.Title class="sheet-title">Mapa</Dialog.Title>
         <Dialog.Close class="icon-btn" aria-label="Fechar"><X size={20} /></Dialog.Close>
       </div>
       <div class="sheet-scroll">
+        <section class="set-group">
+          <h3>Estrutura</h3>
+          <div class="structure-grid" role="radiogroup" aria-label="Estrutura do mapa">
+            {#each STRUCTURES as st (st.id)}
+              {@const sk = sketch(st.id)}
+              <button class="theme-tile structure-tile" role="radio" aria-checked={structure === st.id}
+                onclick={() => structure !== st.id && doc.setStructure(st.id)}>
+                <svg class="structure-sketch" viewBox="0 0 96 56" aria-hidden="true">
+                  {#each sk.lines as d (d)}<path {d} />{/each}
+                  {#each sk.boxes as [x, y, w, h], i (i)}<rect {x} {y} width={w} height={h} rx="3" class:root={i === 0} />{/each}
+                </svg>
+                <span class="theme-name">{st.label}</span>
+                <small>{st.hint}</small>
+              </button>
+            {/each}
+          </div>
+          <div class="set-row">
+            <span class="grow"><b>Espaçamento</b><small>Quanto espaço fica entre os nós.</small></span>
+            <ToggleGroup.Root type="single" value={spacing} onValueChange={(v) => v && v !== spacing && doc.setSpacing(v)} class="seg tight" aria-label="Espaçamento">
+              {#each SPACINGS as sp (sp.id)}<ToggleGroup.Item value={sp.id} class="seg-item">{sp.label}</ToggleGroup.Item>{/each}
+            </ToggleGroup.Root>
+          </div>
+          <div class="set-row">
+            <span class="grow"><b>Arrumar posições</b><small>Desfaz os arrastos à mão e põe tudo no lugar da estrutura.</small></span>
+            <button class="btn soft sm" onclick={() => doc.relayout()}><WandSparkles size={15} />Arrumar</button>
+          </div>
+        </section>
+
+        <h3 class="sheet-sub">Tema</h3>
         <p class="map-theme-note">Fica salvo neste mapa. As cores dos ramos saem do tema; uma cor escolhida no painel continua valendo.</p>
         <div class="map-theme-grid" role="radiogroup" aria-label="Tema do mapa">
           {#each MAP_THEME_IDS as id (id)}

@@ -58,7 +58,7 @@
     <button class="icon-btn roomy" aria-label="Novo mapa" title="Novo mapa ({mod}N)" onclick={() => doc.newMap()}><FilePlus2 size={20} /></button>
     <button class="icon-btn roomy" aria-label="Abrir" title="Abrir ({mod}O)" onclick={() => doc.openDialog()}><FolderOpen size={20} /></button>
     <button class="icon-btn" aria-label="Salvar" title="Salvar ({mod}S)" onclick={() => doc.saveDialog()}><Save size={20} /></button>
-    <button class="icon-btn" aria-label="Tema do mapa" title="Tema do mapa" onclick={() => (ui.themeOpen = true)}><Palette size={20} /></button>
+    <button class="icon-btn" aria-label="Estrutura e tema do mapa" title="Estrutura e tema do mapa" onclick={() => (ui.themeOpen = true)}><Palette size={20} /></button>
     <span class="doc-title" title={doc.snapshot.path ?? title}>
       <span class="grow">{title}</span>
       {#if doc.snapshot.dirty}<i class="dirty" aria-label="Alterações não salvas" title="Alterações não salvas"></i>{/if}

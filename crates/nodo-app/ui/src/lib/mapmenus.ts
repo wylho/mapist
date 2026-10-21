@@ -18,8 +18,11 @@ import {
   Spline,
   Trash2,
   Undo2,
+  WandSparkles,
+  Network,
   ZoomIn,
 } from '@lucide/svelte'
+import { SPACINGS, STRUCTURES, spacingOf, structureOf } from './structures'
 import type { MenuEntry } from './menu'
 import { SEP } from './menu'
 import { doc } from './document.svelte'
@@ -118,6 +121,25 @@ export function backgroundMenu(view: ViewActions): MenuEntry[] {
     { label: 'Ver o mapa inteiro', icon: Maximize, hint: '⇧1', onSelect: view.fit },
     { label: 'Tamanho real', icon: ZoomIn, hint: `${mod}0`, onSelect: view.actualSize },
     SEP,
+    {
+      label: 'Estrutura',
+      icon: Network,
+      sub: [
+        ...STRUCTURES.map((st): MenuEntry => ({
+          label: st.label,
+          hint: st.hint,
+          checked: structureOf(doc.snapshot.structure) === st.id,
+          onSelect: () => void doc.setStructure(st.id),
+        })),
+        SEP,
+        ...SPACINGS.map((sp): MenuEntry => ({
+          label: `Espaçamento ${sp.label.toLowerCase()}`,
+          checked: spacingOf(doc.snapshot.spacing) === sp.id,
+          onSelect: () => void doc.setSpacing(sp.id),
+        })),
+      ],
+    },
+    { label: 'Arrumar posições', icon: WandSparkles, onSelect: () => void doc.relayout() },
     { label: 'Tema do mapa…', icon: Palette, onSelect: () => (ui.themeOpen = true) },
     {
       label: 'Linhas',

@@ -439,6 +439,43 @@ describe('atalhos de estrutura', () => {
   })
 })
 
+describe('estruturas do mapa', () => {
+  it('a prévia arruma como o núcleo: organograma para baixo, lógico à direita, árvore em ordem de leitura', async () => {
+    const { doc } = await import('../src/lib/document.svelte')
+    await doc.create('Raiz')
+    const root = doc.snapshot.nodes[0].id
+    for (const t of ['A', 'B', 'C']) {
+      doc.selected = root
+      await doc.addChild(t)
+      doc.cancelEdit()
+    }
+    const byText = (t: string) => doc.snapshot.nodes.find((n) => n.text === t)!
+    await doc.setSide(byText('B').id, 'left')
+
+    await doc.setStructure('organograma')
+    const r = byText('Raiz')
+    for (const t of ['A', 'B', 'C']) expect(byText(t).y).toBeGreaterThanOrEqual(r.y + r.height)
+    expect(byText('A').y).toBe(byText('B').y)
+
+    await doc.setStructure('logico')
+    for (const t of ['A', 'B', 'C']) expect(byText(t).x).toBeGreaterThanOrEqual(byText('Raiz').x + byText('Raiz').width)
+
+    await doc.setStructure('arvore')
+    const ys = ['Raiz', 'A', 'B', 'C'].map((t) => byText(t).y)
+    expect([...ys].sort((a, b) => a - b)).toEqual(ys)
+    expect(doc.snapshot.structure).toBe('arvore')
+
+    const gap = () => byText('B').y - (byText('A').y + byText('A').height)
+    const normal = gap()
+    await doc.setSpacing('largo')
+    expect(gap()).toBeGreaterThan(normal)
+
+    await doc.setStructure('mapa')
+    expect(doc.snapshot.structure).toBeNull()
+    expect(byText('B').x + byText('B').width).toBeLessThanOrEqual(byText('Raiz').x)
+  })
+})
+
 describe('temas de mapa', () => {
   it('cada ramo principal ganha uma cor, os filhos herdam, e a cor escolhida à mão manda', async () => {
     const { branchColors, mapTheme, MAP_THEMES } = await import('../src/lib/maptheme')

@@ -49,6 +49,11 @@ pub fn from_xml(xml: &str) -> Result<MindMap, Error> {
                                 style: attr(e, "nodo-style")
                                     .or_else(|| attr(e, "mapist-style"))
                                     .filter(|s| !s.is_empty()),
+                                // Só nomes conhecidos: um valor estranho no arquivo vale como o padrão.
+                                structure: attr(e, "nodo-structure")
+                                    .filter(|s| crate::STRUCTURES.contains(&s.as_str())),
+                                spacing: attr(e, "nodo-spacing")
+                                    .filter(|s| crate::SPACINGS.contains(&s.as_str())),
                             };
                         }
                     }
@@ -158,12 +163,15 @@ pub fn to_xml(map: &MindMap) -> Result<String, Error> {
     out.push_str(&format!("<minder version=\"{}\">\n", esc(&map.version)));
     // The map theme rides on an extra attribute, absent when unset, so a map
     // without one stays byte-for-byte what Minder writes.
-    let style = map
-        .theme
-        .style
-        .as_deref()
-        .map(|s| format!(" nodo-style=\"{}\"", esc(s)))
-        .unwrap_or_default();
+    let extra = |name: &str, value: &Option<String>| {
+        value
+            .as_deref()
+            .map(|s| format!(" {name}=\"{}\"", esc(s)))
+            .unwrap_or_default()
+    };
+    let style = extra("nodo-style", &map.theme.style)
+        + &extra("nodo-structure", &map.theme.structure)
+        + &extra("nodo-spacing", &map.theme.spacing);
     out.push_str(&format!(
         "  <theme name=\"{}\" label=\"{}\" index=\"{}\"{}/>\n",
         esc(&map.theme.name),

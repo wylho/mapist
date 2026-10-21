@@ -219,6 +219,111 @@ mod tests {
             .collect()
     }
 
+    fn tree(ed: &mut Editor) -> (u64, u64, u64) {
+        let a = add(ed, 0, "A");
+        let b = add(ed, 0, "B");
+        let a1 = add(ed, a, "A1");
+        add(ed, a, "A2");
+        add(ed, b, "B1");
+        ed.apply(Action::SetSide {
+            id: b,
+            side: NodeSide::Left,
+        })
+        .unwrap();
+        (a, b, a1)
+    }
+
+    fn node(ed: &Editor, id: u64) -> &crate::model::Node {
+        ed.map().find(id).unwrap()
+    }
+
+    #[test]
+    fn logic_structure_grows_everything_to_the_right_and_keeps_the_sides() {
+        let mut ed = Editor::new("Raiz");
+        let (_, b, _) = tree(&mut ed);
+        ed.apply(Action::SetStructure {
+            structure: Some("logico".into()),
+        })
+        .unwrap();
+        let root = node(&ed, 0).clone();
+        for n in ed.map().nodes().filter(|n| n.id != 0) {
+            assert!(
+                n.pos.x > root.pos.x + root.width - 1e-6,
+                "{} não está à direita",
+                n.text
+            );
+        }
+        // O lado escolhido continua guardado: voltar para Mapa devolve B à esquerda.
+        assert_eq!(node(&ed, b).side, NodeSide::Left);
+        ed.apply(Action::SetStructure { structure: None }).unwrap();
+        assert!(node(&ed, b).pos.x + node(&ed, b).width <= root.pos.x + 1e-6);
+    }
+
+    #[test]
+    fn org_chart_puts_children_below_their_parent_on_one_row() {
+        let mut ed = Editor::new("Raiz");
+        let (a, b, _) = tree(&mut ed);
+        ed.apply(Action::SetStructure {
+            structure: Some("organograma".into()),
+        })
+        .unwrap();
+        let root = node(&ed, 0).clone();
+        let (na, nb) = (node(&ed, a).clone(), node(&ed, b).clone());
+        assert!(na.pos.y >= root.pos.y + root.height);
+        assert!((na.pos.y - nb.pos.y).abs() < 1e-6, "irmãos na mesma linha");
+        assert!(na.pos.x + na.width <= nb.pos.x + 1e-6 || nb.pos.x + nb.width <= na.pos.x + 1e-6);
+        for c in &na.children {
+            assert!(c.pos.y >= na.pos.y + na.height);
+        }
+    }
+
+    #[test]
+    fn tree_structure_is_an_indented_list_in_reading_order() {
+        let mut ed = Editor::new("Raiz");
+        let (a, _, a1) = tree(&mut ed);
+        ed.apply(Action::SetStructure {
+            structure: Some("arvore".into()),
+        })
+        .unwrap();
+        let order: Vec<_> = ed.map().nodes().map(|n| (n.id, n.pos.y)).collect();
+        for w in order.windows(2) {
+            assert!(w[0].1 < w[1].1, "a ordem de leitura desce na tela");
+        }
+        assert!(node(&ed, a1).pos.x > node(&ed, a).pos.x);
+        assert!(node(&ed, a).pos.x > node(&ed, 0).pos.x);
+    }
+
+    #[test]
+    fn spacing_widens_the_gaps_and_undoes() {
+        let mut ed = Editor::new("Raiz");
+        let (a, _, _) = tree(&mut ed);
+        let gap = |ed: &Editor| node(ed, a).pos.x - (node(ed, 0).pos.x + node(ed, 0).width);
+        let normal = gap(&ed);
+        ed.apply(Action::SetSpacing {
+            spacing: Some("largo".into()),
+        })
+        .unwrap();
+        assert!(gap(&ed) > normal);
+        ed.apply(Action::SetSpacing {
+            spacing: Some("compacto".into()),
+        })
+        .unwrap();
+        assert!(gap(&ed) < normal);
+        ed.undo();
+        ed.undo();
+        assert!((gap(&ed) - normal).abs() < 1e-6);
+        assert!(ed
+            .apply(Action::SetSpacing {
+                spacing: Some("enorme".into())
+            })
+            .is_err());
+        assert!(ed
+            .apply(Action::SetStructure {
+                structure: Some("espiral".into())
+            })
+            .is_err());
+    }
+
     #[test]
     fn reorder_moves_a_topic_among_its_siblings_and_undoes() {
         let mut ed = Editor::new("Raiz");

@@ -19,6 +19,8 @@ const EMPTY: Snapshot = {
   can_redo: false,
   stale: false,
   style: null,
+  structure: null,
+  spacing: null,
   bounds: { min_x: 0, min_y: 0, max_x: 0, max_y: 0 },
 }
 
@@ -324,6 +326,21 @@ class Document {
   }
 
   /** Tema do mapa (fica no arquivo e desfaz como qualquer edição). */
+  /** Estrutura do mapa ("mapa" grava como o padrão). */
+  setStructure(structure: string) {
+    return this.run(() => api.setStructure(structure === 'mapa' ? null : structure))
+  }
+
+  /** Espaçamento ("normal" grava como o padrão). */
+  setSpacing(spacing: string) {
+    return this.run(() => api.setSpacing(spacing === 'normal' ? null : spacing))
+  }
+
+  /** Arruma tudo de novo pela estrutura, desfazendo os arrastos à mão. */
+  relayout() {
+    return this.run(() => api.relayout())
+  }
+
   setMapStyle(style: string | null) {
     return this.run(() => api.setMapStyle(style))
   }

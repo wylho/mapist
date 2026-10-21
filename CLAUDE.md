@@ -96,6 +96,9 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   usuário, no Ideario dele.
 - **D21:** **atalhos de zoom como XMind/MindNode e Figma** (pesquisa do usuário pedida): ⌘0 = 100% (antes era
   ajustar), ⌘=/⌘- , ⇧1 tudo, ⇧2 seleção (pelo `e.code`, independente do teclado). ⌥↑/⌥↓ do XMind para reordenar.
+- **D22:** **organizar automaticamente por estrutura** (pedido do usuário, pesquisa XMind/MindNode): mapa, lógico,
+  organograma e árvore, mais espaçamento; ficam no arquivo e desfazem. Espinha de peixe, matriz e linha do tempo
+  ficaram para depois.
 - **D18:** **o canvas redesenha no máximo uma vez por quadro**, e o que o desenho lê não pode ser `$state` escrito no
   mesmo efeito. Motivo: um laço assim (`colors`) fazia centenas de redesenhos por tecla e deixava a edição travando.
 
@@ -109,9 +112,9 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   `Relayout`), **`Editor`** (`editor.rs`: histórico + arquivo + revisões; sujo segue o desfazer até o salvo; salvar é
   atômico; `changed_on_disk` para ver o que o agente salvou). Testes em `editor.rs`, `lib.rs` e
   `tests/layout_props.rs` (proptest).
-- `nodo-mcp`: `Session` = `Option<Editor>`; 19 ferramentas (`toggle_fold`, `set_map_theme` e `move_sibling` novas; `set_side`/`relayout` passam pelo
+- `nodo-mcp`: `Session` = `Option<Editor>`; 20 ferramentas (`toggle_fold`, `set_map_theme`, `move_sibling` e `set_layout` novas; `set_side`/`relayout` passam pelo
   histórico); `setup.rs` registra no Claude Desktop.
-- `nodo-app`: 27 comandos (com `reorder_node`) (com `update_supported`/`update_check`/`update_install`) em `src/lib.rs` sobre o `Editor` (`set_side`, `reload_map`, `quit_app` novos); snapshot
+- `nodo-app`: 30 comandos (com `reorder_node`, `set_structure`, `set_spacing`, `relayout`) (com `update_supported`/`update_check`/`update_install`) em `src/lib.rs` sobre o `Editor` (`set_side`, `reload_map`, `quit_app` novos); snapshot
   esconde filhos de nó recolhido e diz se o arquivo mudou no disco (`stale`); fechar/Cmd+Q com algo não salvo pergunta
   na interface (evento `close-requested`); `.minder` associado no instalador e aberto por argumento ou pelo evento do
   macOS (`open-file`). Ícones de todas as plataformas em `icons/`, `bundle.targets = all`.
@@ -120,7 +123,7 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   palettes, theme, render com `traceBranch` curvas/em ângulo, measure, font, preview). `ideario.css` + `map.css`.
 - **Preview** (`ui/src/lib/preview.ts`): espelha o núcleo (mesmo layout, recolhidos escondidos); `?preview`, e
   `?select=Texto` abre com o nó selecionado. Mapa de exemplo "Lançamento do app", inventado.
-- **Testes:** 69 Rust + 39 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
+- **Testes:** 75 Rust + 40 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
   `.AppImage`; a janela abre um `.minder` passado como argumento) e `nodo --mcp` testado de ponta a ponta.
 - **CI/Release:** `.github/workflows/build.yml` (verificação + instaladores dos três sistemas nos Artifacts) e
   `release.yml` (rascunho → publicar); `scripts/check-version.sh` e `scripts/bump-version.sh`; guia em
@@ -154,4 +157,11 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
 - **Menus de contexto** (`lib/mapmenus.ts`, `components/MenuAt.svelte`/`MenuList.svelte` e `lib/menu.ts` copiados do
   Ideario): clique direito no nó e no fundo, tecla de menu e ⇧F10; cada item mostra o atalho. `ui.themeOpen` abre a
   folha Tema do mapa de qualquer lugar.
-- **Próximo:** Fase 3 (importação e exportação).
+- **Estruturas e espaçamento** (D22): `nodo_core::STRUCTURES` (mapa, logico, organograma, arvore) e `SPACINGS`
+  (compacto, normal, largo) em `theme.structure`/`theme.spacing` (atributos `nodo-structure`/`nodo-spacing`);
+  `Action::SetStructure`/`SetSpacing`; `layout.rs` com `Mode` (PerNode, Right, Down, Tree) e folgas escaladas; cada nó
+  recebe o layout do Minder mais parecido. App: `set_structure`, `set_spacing`, `relayout`; MCP: `set_layout`.
+  Interface: folha "Mapa" (`MapThemeSheet.svelte`) com esquemas SVG (`lib/structures.ts`), espaçamento e "Arrumar
+  posições"; submenu no menu do fundo; ligações verticais e em cotovelo em `render.ts`. A prévia espelha tudo.
+- **Próximo:** exportação (PNG, SVG, PDF com orientação, HTML, Markdown/OPML), depois aba Estrutura na barra
+  lateral com colar lista, depois abrir `.xmind` (ordem escolhida pelo usuário).

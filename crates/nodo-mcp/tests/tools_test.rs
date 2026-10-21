@@ -318,3 +318,33 @@ fn move_sibling_reorders_and_undoes_like_the_window() {
     call(&mut s, "undo", json!({}));
     assert_eq!(ids(&mut s), [a, b]);
 }
+
+#[test]
+fn set_layout_arranges_the_map_and_undoes() {
+    let mut s = fresh();
+    let a = call(&mut s, "add_node", json!({ "parent": 0, "text": "A" }))["id"]
+        .as_u64()
+        .unwrap();
+    let r = call(
+        &mut s,
+        "set_layout",
+        json!({ "structure": "organograma", "spacing": "largo" }),
+    );
+    assert_eq!(r["structure"], "organograma");
+    assert_eq!(r["spacing"], "largo");
+    let map = call(&mut s, "get_map", json!({}));
+    assert_eq!(map["structure"], "organograma");
+    let root_y = call(&mut s, "get_node", json!({ "id": 0 }))["node"]["y"].as_f64();
+    let a_y = call(&mut s, "get_node", json!({ "id": a }))["node"]["y"].as_f64();
+    if let (Some(ry), Some(ay)) = (root_y, a_y) {
+        assert!(ay > ry, "no organograma o filho fica abaixo");
+    }
+    call(&mut s, "undo", json!({}));
+    call(&mut s, "undo", json!({}));
+    assert_eq!(call(&mut s, "get_map", json!({}))["structure"], "mapa");
+    let bad = tools::call(
+        &mut s,
+        &json!({ "name": "set_layout", "arguments": { "structure": "espiral" } }),
+    );
+    assert!(bad.is_err() || bad.unwrap()["isError"] == true);
+}

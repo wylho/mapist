@@ -42,6 +42,11 @@ let path: string | null = null
 /** Tema do mapa, como `theme.style` no núcleo. */
 let style: string | null = null
 const MAP_STYLES = ['classico', 'contorno', 'sublinhado', 'vibrante', 'pilulas', 'mono']
+/** Estrutura e espaçamento, como `theme.structure` e `theme.spacing` no núcleo. */
+let structure: string | null = null
+let spacing: string | null = null
+const STRUCTURES = ['mapa', 'logico', 'organograma', 'arvore']
+const SPACINGS = ['compacto', 'normal', 'largo']
 const past: string[] = []
 const future: string[] = []
 
@@ -72,6 +77,8 @@ function snapshotState() {
     dirty,
     path,
     style,
+    structure,
+    spacing,
   })
 }
 
@@ -83,6 +90,8 @@ function restore(state: string) {
     dirty: boolean
     path: string | null
     style: string | null
+    structure: string | null
+    spacing: string | null
   }
   nodes = new Map(o.nodes)
   nextId = o.nextId
@@ -90,6 +99,8 @@ function restore(state: string) {
   dirty = o.dirty
   path = o.path
   style = o.style
+  structure = o.structure ?? null
+  spacing = o.spacing ?? null
 }
 
 function snapshotOf(): Snapshot {
@@ -113,6 +124,8 @@ function snapshotOf(): Snapshot {
       can_redo: future.length > 0,
       stale: false,
       style,
+      structure,
+      spacing,
       bounds: { min_x: 0, min_y: 0, max_x: 0, max_y: 0 },
     }
   }
@@ -158,6 +171,8 @@ function snapshotOf(): Snapshot {
     can_redo: future.length > 0,
     stale: false,
     style,
+    structure,
+    spacing,
     bounds: { min_x: minX, min_y: minY, max_x: maxX, max_y: maxY },
   }
 }
@@ -181,33 +196,66 @@ function measure(n: PNode) {
   n.height = Math.max(MIN_H, lines.length * 19 + 22)
 }
 
-/** Altura de que uma sub-árvore precisa, para irmãos nunca se sobreporem (layout.rs: `extent`). */
+/** Modo e folgas da passada de layout (layout.rs: `Params`). */
+function params() {
+  const mode = structure === 'logico' ? 'right' : structure === 'organograma' ? 'down' : structure === 'arvore' ? 'tree' : 'map'
+  const k = spacing === 'compacto' ? 0.6 : spacing === 'largo' ? 1.6 : 1
+  return { mode, hGap: H_GAP * k, vGap: V_GAP * k }
+}
+
+const before = (c: PNode) => params().mode === 'map' && c.side === 'left'
+
+/** Quanto uma sub-árvore ocupa de través, para irmãos nunca se sobreporem (layout.rs: `extent`). */
 function extent(n: PNode): number {
-  if (n.children.length === 0 || n.folded) return n.height
+  const { mode, vGap } = params()
+  const own = mode === 'down' ? n.width : n.height
+  if (n.children.length === 0 || n.folded) return own
   const band = (ids: number[]) =>
-    ids.length === 0 ? 0 : ids.reduce((a, id) => a + extent(nodes.get(id)!), 0) + V_GAP * (ids.length - 1)
+    ids.length === 0 ? 0 : ids.reduce((a, id) => a + extent(nodes.get(id)!), 0) + vGap * (ids.length - 1)
   const kids = n.children.filter((id) => nodes.has(id))
-  const left = kids.filter((id) => nodes.get(id)!.side === 'left')
-  const right = kids.filter((id) => nodes.get(id)!.side !== 'left')
-  return Math.max(n.height, band(left), band(right))
+  const pre = kids.filter((id) => before(nodes.get(id)!))
+  const post = kids.filter((id) => !before(nodes.get(id)!))
+  return Math.max(own, band(pre), band(post))
 }
 
 /** Posiciona `n` numa faixa que começa em `top`, com a borda próxima em `x` (layout.rs: `place`). */
 function place(n: PNode, x: number, top: number) {
+  const { mode, hGap, vGap } = params()
   const ext = extent(n)
-  n.x = x
-  n.y = top + (ext - n.height) / 2
+  if (mode === 'down') {
+    n.x = top + (ext - n.width) / 2
+    n.y = x
+  } else {
+    n.x = x
+    n.y = top + (ext - n.height) / 2
+  }
   if (n.children.length === 0 || n.folded) return
-  for (const left of [true, false]) {
-    const group = n.children.map((id) => nodes.get(id)!).filter((c) => c && (c.side === 'left') === left)
+  for (const pre of [true, false]) {
+    const group = n.children.map((id) => nodes.get(id)!).filter((c) => c && before(c) === pre)
     if (group.length === 0) continue
-    const total = group.reduce((a, c) => a + extent(c), 0) + V_GAP * (group.length - 1)
+    const total = group.reduce((a, c) => a + extent(c), 0) + vGap * (group.length - 1)
     let cursor = top + (ext - total) / 2
     for (const c of group) {
-      place(c, left ? n.x - H_GAP - c.width : n.x + n.width + H_GAP, cursor)
-      cursor += extent(c) + V_GAP
+      const near = mode === 'down' ? n.y + n.height + hGap : pre ? n.x - hGap - c.width : n.x + n.width + hGap
+      place(c, near, cursor)
+      cursor += extent(c) + vGap
     }
   }
+}
+
+/** Lista recuada (layout.rs: `place_tree`). Devolve onde começa a próxima linha. */
+function placeTree(n: PNode, x: number, y: number): number {
+  const { hGap, vGap } = params()
+  n.x = x
+  n.y = y
+  let next = y + n.height + vGap * 0.5
+  if (n.folded) return next
+  const indent = Math.max(18, hGap * 0.6)
+  for (const id of n.children) {
+    const c = nodes.get(id)
+    if (c) next = placeTree(c, x + indent, next)
+  }
+  return next
 }
 
 /** Mede tudo pela estimativa e posiciona (layout.rs: `layout`). */
@@ -219,7 +267,9 @@ function relayout() {
 /** Só posiciona, com os tamanhos que já estão nos nós (layout.rs: `reposition`). */
 function reposition() {
   const root = nodes.get(rootId)
-  if (root) place(root, 0, -extent(root) / 2)
+  if (!root) return
+  if (params().mode === 'tree') placeTree(root, 0, 0)
+  else place(root, 0, -extent(root) / 2)
 }
 
 // ── histórico ────────────────────────────────────────────────────────────
@@ -390,6 +440,27 @@ export const previewBackend = {
     commit(() => {
       style = next
     })
+    return snapshotOf()
+  },
+
+  set_structure: ({ structure: next }: { structure: string | null }) => {
+    if (next !== null && !STRUCTURES.includes(next)) throw new Error(`unknown map structure "${next}"`)
+    commit(() => {
+      structure = next
+    })
+    return snapshotOf()
+  },
+
+  set_spacing: ({ spacing: next }: { spacing: string | null }) => {
+    if (next !== null && !SPACINGS.includes(next)) throw new Error(`unknown spacing "${next}"`)
+    commit(() => {
+      spacing = next
+    })
+    return snapshotOf()
+  },
+
+  relayout: () => {
+    commit(() => {})
     return snapshotOf()
   },
 

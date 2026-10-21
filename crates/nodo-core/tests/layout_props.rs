@@ -1,6 +1,6 @@
 //! Propriedades do layout e do arquivo, com mapas gerados ao acaso.
 
-use nodo_core::{document, undo::Action, Editor, MindMap, NodeSide};
+use nodo_core::{document, undo::Action, Editor, MindMap, NodeSide, SPACINGS, STRUCTURES};
 use proptest::prelude::*;
 
 /// Uma sequência de edições: (pai como índice entre os nós já criados, lado, largura, altura, recolher).
@@ -72,6 +72,27 @@ proptest! {
                 prop_assert!(!overlap, "{} sobrepõe {}", a.text, b.text);
             }
         }
+    }
+
+    #[test]
+    fn no_structure_or_spacing_makes_nodes_overlap(steps in edits(), st in 0usize..4, sp in 0usize..3) {
+        let mut ed = build(&steps);
+        ed.apply(Action::SetStructure { structure: Some(STRUCTURES[st].to_string()) }).unwrap();
+        ed.apply(Action::SetSpacing { spacing: Some(SPACINGS[sp].to_string()) }).unwrap();
+        let nodes = visible(ed.map());
+        for (i, a) in nodes.iter().enumerate() {
+            for b in &nodes[i + 1..] {
+                let overlap = a.pos.x < b.pos.x + b.width - 1e-6
+                    && b.pos.x < a.pos.x + a.width - 1e-6
+                    && a.pos.y < b.pos.y + b.height - 1e-6
+                    && b.pos.y < a.pos.y + a.height - 1e-6;
+                prop_assert!(!overlap, "{}: {} sobrepõe {}", STRUCTURES[st], a.text, b.text);
+            }
+        }
+        // E a estrutura vai e volta pelo arquivo.
+        let back = document::from_xml(&document::to_xml(ed.map()).unwrap()).unwrap();
+        prop_assert_eq!(back.theme.structure.as_deref(), Some(STRUCTURES[st]));
+        prop_assert_eq!(back.theme.spacing.as_deref(), Some(SPACINGS[sp]));
     }
 
     #[test]

@@ -64,6 +64,10 @@ pub struct Snapshot {
     stale: bool,
     /// The map's theme (`nodo_core::MAP_STYLES`), or `None` for the default.
     style: Option<String>,
+    /// How the map is arranged (`nodo_core::STRUCTURES`), or `None` for the classic map.
+    structure: Option<String>,
+    /// Room between nodes (`nodo_core::SPACINGS`), or `None` for normal.
+    spacing: Option<String>,
     bounds: Bounds,
 }
 
@@ -109,6 +113,8 @@ fn snapshot(doc: &Doc) -> Snapshot {
             can_redo: false,
             stale: false,
             style: None,
+            structure: None,
+            spacing: None,
             bounds: Bounds::default(),
         };
     };
@@ -180,6 +186,8 @@ fn snapshot(doc: &Doc) -> Snapshot {
         can_redo: ed.can_redo(),
         stale: ed.changed_on_disk(),
         style: map.theme.style.clone(),
+        structure: map.theme.structure.clone(),
+        spacing: map.theme.spacing.clone(),
         bounds: Bounds {
             min_x: if min_x == f64::MAX { 0.0 } else { min_x },
             min_y: if min_y == f64::MAX { 0.0 } else { min_y },
@@ -308,6 +316,27 @@ fn set_side(state: State<'_, AppState>, id: u64, side: String) -> Result<Snapsho
 #[tauri::command]
 fn set_map_style(state: State<'_, AppState>, style: Option<String>) -> Result<Snapshot, String> {
     mutate(state, Action::SetMapStyle { style })
+}
+
+/// Arrange the map (mapa, logico, organograma, arvore); saved in the file and undoable.
+#[tauri::command]
+fn set_structure(
+    state: State<'_, AppState>,
+    structure: Option<String>,
+) -> Result<Snapshot, String> {
+    mutate(state, Action::SetStructure { structure })
+}
+
+/// Room between nodes (compacto, normal, largo); saved in the file and undoable.
+#[tauri::command]
+fn set_spacing(state: State<'_, AppState>, spacing: Option<String>) -> Result<Snapshot, String> {
+    mutate(state, Action::SetSpacing { spacing })
+}
+
+/// Put every node back where the structure wants it, undoing hand-placed positions.
+#[tauri::command]
+fn relayout(state: State<'_, AppState>) -> Result<Snapshot, String> {
+    mutate(state, Action::Relayout)
 }
 
 /// Fold or unfold a node.
@@ -542,6 +571,9 @@ pub fn run() {
             set_map_style,
             toggle_fold,
             reorder_node,
+            set_structure,
+            set_spacing,
+            relayout,
             move_node,
             undo,
             redo,

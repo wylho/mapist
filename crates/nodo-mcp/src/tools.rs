@@ -146,6 +146,17 @@ pub fn catalog() -> Vec<Value> {
             }),
         ),
         tool(
+            "set_layout",
+            "Arrange the map automatically. structure: mapa (branches on both sides of the root), logico (everything to the right), organograma (org chart, top to bottom) or arvore (indented tree). spacing: compacto, normal or largo. Both are saved in the file; omit one to keep it.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "structure": { "type": "string", "enum": nodo_core::STRUCTURES },
+                    "spacing": { "type": "string", "enum": nodo_core::SPACINGS }
+                }
+            }),
+        ),
+        tool(
             "move_sibling",
             "Move a node up or down among its siblings (Alt+Up/Alt+Down in the app). Under the root, it swaps with the nearest branch on the same side.",
             json!({
@@ -225,6 +236,8 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
             json!({
                 "version": map.version,
                 "theme": map.theme.style.as_deref().unwrap_or("classico"),
+                "structure": map.theme.structure.as_deref().unwrap_or("mapa"),
+                "spacing": map.theme.spacing.as_deref().unwrap_or("normal"),
                 "nodes": map.node_count(),
                 "tree": tree_json(&map.root)
             })
@@ -299,6 +312,31 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
                 .map(|n| n.folded)
                 .unwrap_or(false);
             json!({ "ok": true, "id": id, "folded": folded })
+        }
+        "set_layout" => {
+            // "mapa" e "normal" são o padrão: gravam como ausentes, igual ao que o app faz.
+            let pick = |key: &str, default: &str| {
+                args.get(key)
+                    .and_then(|v| v.as_str())
+                    .map(|v| (v != default).then(|| v.to_string()))
+            };
+            let structure = pick("structure", "mapa");
+            let spacing = pick("spacing", "normal");
+            if structure.is_none() && spacing.is_none() {
+                return Err("pass structure and/or spacing".into());
+            }
+            if let Some(structure) = structure {
+                mutate(session, Action::SetStructure { structure })?;
+            }
+            if let Some(spacing) = spacing {
+                mutate(session, Action::SetSpacing { spacing })?;
+            }
+            let theme = &session.require()?.theme;
+            json!({
+                "ok": true,
+                "structure": theme.structure.clone().unwrap_or_else(|| "mapa".into()),
+                "spacing": theme.spacing.clone().unwrap_or_else(|| "normal".into())
+            })
         }
         "move_sibling" => {
             let id = int_arg(&args, "id")?;

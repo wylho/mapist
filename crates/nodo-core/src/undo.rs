@@ -38,6 +38,11 @@ pub enum Action {
     /// Move a node among its siblings: `delta < 0` up (earlier), `delta > 0` down. Under the root it swaps with the
     /// nearest branch on the same side, since each side reads as its own list.
     Reorder { id: u64, delta: i64 },
+    /// Arrange the whole map (one of [`crate::STRUCTURES`]), or the classic map with `None`. Also discards hand-placed
+    /// positions, like [`Action::Relayout`].
+    SetStructure { structure: Option<String> },
+    /// Room between nodes (one of [`crate::SPACINGS`]), or normal with `None`.
+    SetSpacing { spacing: Option<String> },
 }
 
 impl Action {
@@ -106,6 +111,27 @@ impl Action {
                     }
                 }
                 map.theme.style = style.clone();
+                Ok(None)
+            }
+            Action::SetStructure { structure } => {
+                if let Some(s) = structure {
+                    if !crate::STRUCTURES.contains(&s.as_str()) {
+                        return Err(crate::Error::UnknownStructure(s.clone()));
+                    }
+                }
+                map.theme.structure = structure.clone();
+                // O Minder não conhece a estrutura: cada nó leva o layout dele mais parecido.
+                let kind = crate::layout::minder_layout(structure.as_deref());
+                crate::layout::for_each_mut(&mut map.root, &mut |n| n.layout = kind);
+                Ok(None)
+            }
+            Action::SetSpacing { spacing } => {
+                if let Some(s) = spacing {
+                    if !crate::SPACINGS.contains(&s.as_str()) {
+                        return Err(crate::Error::UnknownSpacing(s.clone()));
+                    }
+                }
+                map.theme.spacing = spacing.clone();
                 Ok(None)
             }
             Action::Reorder { id, delta } => {

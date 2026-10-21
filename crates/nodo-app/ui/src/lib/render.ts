@@ -101,7 +101,7 @@ export function draw(o: DrawOptions) {
   for (const n of snapshot.nodes) {
     if (n.parent === null) continue
     const p = byId.get(n.parent)
-    if (p) drawBranch(ctx, p, n, theme, branch.get(n.id) ?? colors.muted, linkStyle)
+    if (p) drawBranch(ctx, p, n, theme, branch.get(n.id) ?? colors.muted, linkStyle, snapshot.structure)
   }
 
   for (const n of snapshot.nodes) {
@@ -125,22 +125,70 @@ function anchorY(n: FlatNode, style: LevelStyle): number {
   return style.underline ? n.y + n.height : n.y + n.height / 2
 }
 
-function drawBranch(ctx: CanvasRenderingContext2D, parent: FlatNode, child: FlatNode, theme: MapTheme, color: string, style: LinkStyle) {
-  const left = child.side === 'left'
-  const ax = left ? parent.x : parent.x + parent.width
-  const ay = anchorY(parent, levelStyle(theme, parent.depth))
-  const bx = left ? child.x + child.width : child.x
-  const by = anchorY(child, levelStyle(theme, child.depth))
-
+function drawBranch(
+  ctx: CanvasRenderingContext2D,
+  parent: FlatNode,
+  child: FlatNode,
+  theme: MapTheme,
+  color: string,
+  style: LinkStyle,
+  structure: string | null,
+) {
   ctx.save()
   ctx.strokeStyle = color
   ctx.lineWidth = lineWidth(theme, child.depth)
   ctx.lineCap = 'round'
   ctx.beginPath()
-  traceBranch(ctx, style, ax, ay, bx, by)
+  if (structure === 'organograma') {
+    // De baixo do pai até o alto do filho.
+    traceBranchDown(ctx, style, parent.x + parent.width / 2, parent.y + parent.height, child.x + child.width / 2, child.y)
+  } else if (structure === 'arvore') {
+    // Lista recuada: desce pela margem do pai e entra no filho pela esquerda.
+    traceElbow(ctx, parent.x + 14, parent.y + parent.height, child.x, anchorY(child, levelStyle(theme, child.depth)))
+  } else {
+    // Lado pela posição de verdade: no lógico tudo cresce para a direita, mesmo um ramo marcado à esquerda.
+    const left = child.x + child.width / 2 < parent.x + parent.width / 2
+    const ax = left ? parent.x : parent.x + parent.width
+    const bx = left ? child.x + child.width : child.x
+    traceBranch(ctx, style, ax, anchorY(parent, levelStyle(theme, parent.depth)), bx, anchorY(child, levelStyle(theme, child.depth)))
+  }
   ctx.stroke()
   ctx.restore()
 }
+
+type PathCtx = Pick<CanvasRenderingContext2D, 'moveTo' | 'lineTo' | 'bezierCurveTo' | 'arcTo'>
+
+/** O mesmo que `traceBranch`, na vertical (organograma): sai para baixo e chega por cima. */
+export function traceBranchDown(ctx: PathCtx, style: LinkStyle, ax: number, ay: number, bx: number, by: number) {
+  ctx.moveTo(ax, ay)
+  const mid = (ay + by) / 2
+  if (style === 'curved') {
+    ctx.bezierCurveTo(ax, mid, bx, mid, bx, by)
+    return
+  }
+  const r = Math.min(CORNER_RADIUS, Math.abs(bx - ax) / 2, Math.abs(mid - ay))
+  if (r < 0.5) {
+    ctx.lineTo(bx, by)
+    return
+  }
+  ctx.arcTo(ax, mid, bx, mid, r)
+  ctx.arcTo(bx, mid, bx, by, r)
+  ctx.lineTo(bx, by)
+}
+
+/** Cotovelo da árvore recuada: desce de (ax, ay) e vira para a direita até (bx, by), com o canto arredondado. */
+export function traceElbow(ctx: PathCtx, ax: number, ay: number, bx: number, by: number) {
+  ctx.moveTo(ax, ay)
+  const r = Math.min(CORNER_RADIUS, Math.abs(by - ay), Math.abs(bx - ax))
+  if (r < 0.5) {
+    ctx.lineTo(ax, by)
+    ctx.lineTo(bx, by)
+    return
+  }
+  ctx.arcTo(ax, by, bx, by, r)
+  ctx.lineTo(bx, by)
+}
+
 /** Raio máximo dos cantos do traçado ortogonal, em unidades de mundo. */
 const CORNER_RADIUS = 14
 

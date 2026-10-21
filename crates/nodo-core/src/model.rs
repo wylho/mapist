@@ -378,6 +378,10 @@ pub struct ThemeRef {
     /// Nodo's map theme (one of [`crate::MAP_STYLES`]), kept in an extra
     /// `nodo-style` attribute that Minder ignores. `None` is the default look.
     pub style: Option<String>,
+    /// How the map is arranged (one of [`crate::STRUCTURES`]), in `nodo-structure`. `None` is the classic map.
+    pub structure: Option<String>,
+    /// Room between nodes (one of [`crate::SPACINGS`]), in `nodo-spacing`. `None` is normal.
+    pub spacing: Option<String>,
 }
 
 impl Default for ThemeRef {
@@ -387,6 +391,8 @@ impl Default for ThemeRef {
             label: "Light".to_string(),
             index: 1,
             style: None,
+            structure: None,
+            spacing: None,
         }
     }
 }

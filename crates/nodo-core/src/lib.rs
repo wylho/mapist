@@ -44,6 +44,14 @@ pub const MAP_STYLES: [&str; 6] = [
     "mono",
 ];
 
+/// Ways to arrange a map: both sides of the root (Minder's default), all to the right, an org chart growing down,
+/// and an indented tree. Kept in `nodo-structure`; each node also gets the closest Minder layout, so Minder shows a
+/// similar shape.
+pub const STRUCTURES: [&str; 4] = ["mapa", "logico", "organograma", "arvore"];
+
+/// Room between nodes, as a factor of the default gaps.
+pub const SPACINGS: [&str; 3] = ["compacto", "normal", "largo"];
+
 /// Errors produced by this crate.
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -64,6 +72,12 @@ pub enum Error {
 
     #[error("unknown map theme {0:?}; use one of: classico, contorno, sublinhado, vibrante, pilulas, mono")]
     UnknownStyle(String),
+
+    #[error("unknown map structure {0:?}; use one of: mapa, logico, organograma, arvore")]
+    UnknownStructure(String),
+
+    #[error("unknown spacing {0:?}; use one of: compacto, normal, largo")]
+    UnknownSpacing(String),
 
     #[error("the map has never been saved; choose where to save it")]
     NoPath,

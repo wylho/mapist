@@ -50,6 +50,10 @@ export interface Snapshot {
   stale: boolean
   /** Tema do mapa (`nodo_core::MAP_STYLES`), ou null para o padrão. */
   style: string | null
+  /** Estrutura (`nodo_core::STRUCTURES`): mapa, logico, organograma ou arvore; null é o mapa. */
+  structure: string | null
+  /** Espaçamento (`nodo_core::SPACINGS`): compacto, normal ou largo; null é o normal. */
+  spacing: string | null
   bounds: Bounds
 }
 
@@ -120,6 +124,13 @@ export const api = {
   setSide: (id: number, side: 'left' | 'right') => call<Snapshot>('set_side', { id, side }),
 
   setMapStyle: (style: string | null) => call<Snapshot>('set_map_style', { style }),
+
+  setStructure: (structure: string | null) => call<Snapshot>('set_structure', { structure }),
+
+  setSpacing: (spacing: string | null) => call<Snapshot>('set_spacing', { spacing }),
+
+  /** Arruma tudo de novo pela estrutura, desfazendo os arrastos à mão. */
+  relayout: () => call<Snapshot>('relayout'),
 
   reload: () => call<Snapshot>('reload_map'),
 
