@@ -67,7 +67,7 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   linguagem do ícone do Ideario). Fontes em `crates/nodo-app/icons/source/` (placa arredondada, quadrado inteiro,
   grade do macOS e Linux sem placa a 1,12×). Regenerar: `tauri icon icons/source/nodo.svg -o icons`, o `.icns` de
   `macos.svg` e os quatro PNG do Linux de `linux.svg` (ver o commit que os gerou).
-- **D13:** **site em nodo.pages.dev** (`site/`, Cloudflare Pages sem build), mesma estrutura e `style.css` do site
+- **D13:** **site em nodoapp.pages.dev** (`site/`, Cloudflare Pages sem build), mesma estrutura e `style.css` do site
   do Ideario; README com o mesmo conteúdo (skill `sync-site`).
 
 - **D14:** **edição como no XMind** (pedido do usuário: "não sei se já posso digitar"): sempre há um nó selecionado,
