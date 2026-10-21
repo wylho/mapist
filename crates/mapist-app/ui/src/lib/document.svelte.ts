@@ -50,10 +50,22 @@ class Document {
   /** Aplica um snapshot novo e reenvia as medições. */
   private async adopt(next: Snapshot) {
     this.snapshot = next
+    this.syncTitle()
     if (this.selected !== null && !next.nodes.some((n) => n.id === this.selected)) {
       this.selected = next.nodes[0]?.id ?? null
     }
     await this.syncSizes()
+  }
+
+  /** Título da janela: o nome do arquivo (ou do mapa), com • quando há algo por salvar. */
+  private syncTitle() {
+    if (!hasHost) return
+    const s = this.snapshot
+    const name = s.path ? s.path.split(/[\\/]/).pop() : s.title || 'Sem título'
+    const title = `${s.dirty ? '• ' : ''}${name} — Mapist`
+    import('@tauri-apps/api/window')
+      .then(({ getCurrentWindow }) => getCurrentWindow().setTitle(title))
+      .catch(() => {})
   }
 
   /**

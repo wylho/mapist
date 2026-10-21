@@ -139,6 +139,17 @@ class Theme {
     // Mantém o seletor [data-theme] coerente para o CSS que ainda o usa.
     if (this.pref === 'system') root.removeAttribute('data-theme')
     else root.setAttribute('data-theme', this.pref)
+    // No app, a barra de título (macOS, Windows) e o fundo da janela acompanham, como no Ideario.
+    if ('__TAURI_INTERNALS__' in window) {
+      const pref = this.pref
+      const bg = this.colors.bg
+      import('@tauri-apps/api/window')
+        .then(({ getCurrentWindow }) => {
+          const w = getCurrentWindow()
+          return Promise.all([w.setTheme(pref === 'system' ? null : pref), w.setBackgroundColor(bg)])
+        })
+        .catch(() => {})
+    }
   }
 }
 
