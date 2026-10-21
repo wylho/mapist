@@ -8,7 +8,8 @@
 // Ativado por `?preview` na URL, ou automaticamente quando não há host Tauri e
 // o Vite está em modo de desenvolvimento.
 
-import type { NodeSize, NoteCard, Snapshot } from './api'
+import type { CardFields, NodeSize, NoteCard, Snapshot } from './api'
+import { docToMarkdown, markdownToDoc } from './notedoc'
 
 // ── modelo em memória ────────────────────────────────────────────────────
 
@@ -20,6 +21,7 @@ interface PNode {
   color: string | null
   colorToken: string | null
   folded: boolean
+  card?: CardFields
   parent: number | null
   children: number[]
   x: number
@@ -158,6 +160,7 @@ function snapshotOf(): Snapshot {
       height: n.height,
       color: n.colorToken,
       folded: n.folded,
+      card: n.card ?? {},
       child_ids: [...n.children],
       parent: n.parent,
       has_children: n.children.length > 0,
@@ -341,6 +344,14 @@ export function seedDemo() {
   nodes.get(build.children[2])!.note = 'Dezessete ferramentas, o mesmo desfazer da janela.'
   nodes.get(root.children[0])!.note = '- 12 entrevistas com quem já usa mapas\n- Dor nº 1: **exportar para slides**'
   build.note = '- [x] Núcleo\n- [x] Layout\n- [ ] Servidor MCP\n- [ ] Janela'
+  build.card = { tags: ['mvp'], emoji: '🛠️', status_on: true, reminder_doing: true }
+  nodes.get(root.children[0])!.card = { emoji: '🔎', tags: ['pesquisa'] }
+  const launch = root.children.map((c) => nodes.get(c)!).find((n) => n.text === 'Lançamento')
+  if (launch) {
+    const beta = nodes.get(launch.children[0])!
+    beta.note = 'Convidar 30 pessoas da lista de espera.'
+    beta.card = { reminder_at: Date.now() + 2 * 86_400_000, tags: ['beta'] }
+  }
   nodes.get(root.children[root.children.length - 1])!.folded = true
 
   relayout()
@@ -394,11 +405,24 @@ export const previewBackend = {
     return snapshotOf()
   },
 
-  add_topic: ({ parent, text, note }: { parent: number; text: string; note: string }) => {
+  add_topic: ({
+    parent,
+    text,
+    note,
+    color = null,
+    card = {},
+  }: {
+    parent: number
+    text: string
+    note: string
+    color?: string | null
+    card?: CardFields
+  }) => {
     const parentNode = nodes.get(parent)
     if (!parentNode) throw new Error(`node ${parent} not found`)
     commit(() => {
-      const n = makeNode(text, parentNode.side, note)
+      const n = makeNode(text, parentNode.side, note, color)
+      n.card = cleanCard(card)
       n.parent = parent
       nodes.set(n.id, n)
       parentNode.children.push(n.id)
@@ -434,6 +458,29 @@ export const previewBackend = {
   },
 
   set_note: ({ id, note }: { id: number; note: string }) => {
+    commit(() => {
+      const n = nodes.get(id)
+      if (!n) throw new Error(`node ${id} not found`)
+      n.note = note
+    })
+    return snapshotOf()
+  },
+
+  set_card: ({ id, card }: { id: number; card: CardFields }) => {
+    commit(() => {
+      const n = nodes.get(id)
+      if (!n) throw new Error(`node ${id} not found`)
+      n.card = cleanCard(card)
+    }, false)
+    return snapshotOf()
+  },
+
+  note_doc: ({ id }: { id: number }) => markdownToDoc(nodes.get(id)?.note ?? ''),
+
+  markdown_doc: ({ markdown }: { markdown: string }) => markdownToDoc(markdown),
+
+  set_note_doc: ({ id, doc }: { id: number; doc: unknown }) => {
+    const note = docToMarkdown(doc)
     commit(() => {
       const n = nodes.get(id)
       if (!n) throw new Error(`node ${id} not found`)
@@ -663,4 +710,24 @@ export const previewBackend = {
   update_install: () => new Promise<void>(() => {}),
 
   log_measurements: () => undefined,
+}
+
+/** As regras do card no núcleo (`CardFields::cleaned`, com `atrio::text`). */
+function cleanCard(c: CardFields): CardFields {
+  const tags: string[] = []
+  for (const t of c.tags ?? []) {
+    const v = t.trim().replace(/^#+/, '').split(/\s+/).filter(Boolean).join('-').toLowerCase()
+    if (v && !tags.includes(v)) tags.push(v)
+  }
+  const at = c.reminder_at ?? null
+  const keep = at != null || !!c.status_on
+  const out: CardFields = {}
+  if (tags.length) out.tags = tags
+  if (c.emoji?.trim()) out.emoji = c.emoji.trim()
+  if (at != null) out.reminder_at = at
+  if (at != null && ['day', 'week', 'month', 'year'].includes(c.reminder_repeat ?? '')) out.reminder_repeat = c.reminder_repeat
+  if (keep && c.reminder_done) out.reminder_done = true
+  if (keep && c.reminder_doing && !c.reminder_done) out.reminder_doing = true
+  if (c.status_on) out.status_on = true
+  return out
 }

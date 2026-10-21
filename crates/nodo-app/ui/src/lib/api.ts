@@ -19,9 +19,24 @@ export interface FlatNode {
   height: number
   color: string | null
   folded: boolean
+  /** Etiquetas, emoji, lembrete e status do card (o núcleo omite o que está vazio). */
+  card: CardFields
   child_ids: number[]
   parent: number | null
   has_children: boolean
+}
+
+/** O que o card de um nó tem além do texto e da nota: o card do Ideario sem a categoria (`nodo_core::model::CardFields`). */
+export interface CardFields {
+  tags?: string[]
+  emoji?: string | null
+  /** Data do lembrete, em milissegundos. */
+  reminder_at?: number | null
+  reminder_repeat?: string | null
+  reminder_done?: boolean
+  reminder_doing?: boolean
+  /** Tem status mesmo sem lembrete. */
+  status_on?: boolean
 }
 
 export interface Edge {
@@ -121,13 +136,26 @@ export const api = {
   addNode: (parent: number, text: string) => call<Snapshot>('add_node', { parent, text }),
 
   /** Filho já com nota (um card colado), num passo só do desfazer. */
-  addTopic: (parent: number, text: string, note: string) => call<Snapshot>('add_topic', { parent, text, note }),
+  addTopic: (parent: number, text: string, note: string, color: string | null = null, card: CardFields = {}) =>
+    call<Snapshot>('add_topic', { parent, text, note, color, card }),
 
   removeNode: (id: number) => call<Snapshot>('remove_node', { id }),
 
   setText: (id: number, text: string) => call<Snapshot>('set_text', { id, text }),
 
   setNote: (id: number, note: string) => call<Snapshot>('set_note', { id, note }),
+
+  /** Etiquetas, emoji, lembrete e status; o núcleo limpa pelas regras do card. */
+  setCard: (id: number, card: CardFields) => call<Snapshot>('set_card', { id, card }),
+
+  /** A nota do nó como documento do editor do card (JSON do TipTap), pelas regras de Markdown do Ideario. */
+  noteDoc: (id: number) => call<{ type: string; content?: unknown[] }>('note_doc', { id }),
+
+  /** Markdown colado no card → documento do editor. */
+  markdownDoc: (markdown: string) => call<{ type: string; content?: unknown[] }>('markdown_doc', { markdown }),
+
+  /** Grava o documento do editor como a nota (Markdown) do nó. */
+  setNoteDoc: (id: number, doc: unknown) => call<Snapshot>('set_note_doc', { id, doc }),
 
   addFreeNote: (x: number, y: number, text: string) => call<Snapshot>('add_free_note', { x, y, text }),
 

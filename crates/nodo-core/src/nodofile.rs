@@ -8,7 +8,7 @@
 //! not know, so a newer Nodo can add fields without breaking an older one.
 
 use crate::layout;
-use crate::model::{FreeNote, MindMap, Node, NodeSide, Point, ThemeRef};
+use crate::model::{CardFields, FreeNote, MindMap, Node, NodeSide, Point, ThemeRef};
 use serde::{Deserialize, Serialize};
 
 /// The newest version this build writes and the newest it can read.
@@ -44,6 +44,9 @@ struct Topic {
     side: Side,
     #[serde(default, skip_serializing_if = "is_false")]
     folded: bool,
+    /// Tags, cover emoji, reminder and status, flattened into the topic (absent when unset).
+    #[serde(flatten)]
+    card: CardFields,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     children: Vec<Topic>,
 }
@@ -114,6 +117,7 @@ fn topic(n: &Node) -> Topic {
             _ => Side::Right,
         },
         folded: n.folded,
+        card: n.card.clone(),
         children: n.children.iter().map(topic).collect(),
     }
 }
@@ -174,6 +178,7 @@ fn node(t: Topic) -> Node {
         Side::Right => NodeSide::Right,
     };
     n.folded = t.folded;
+    n.card = t.card.cleaned();
     n.children = t.children.into_iter().map(node).collect();
     n
 }
@@ -192,6 +197,14 @@ mod tests {
             n.note = "- [ ] Roteiro\n- [x] Convites\n\n**Prazo**: sexta".into();
             n.color = Some("#6eb0f7".into());
             n.folded = true;
+            n.card = CardFields {
+                tags: vec!["pesquisa".into(), "q3".into()],
+                emoji: Some("🔍".into()),
+                reminder_at: Some(1_790_000_000_000),
+                reminder_repeat: Some("week".into()),
+                reminder_doing: true,
+                ..CardFields::default()
+            };
         }
         if let Some(n) = map.find_mut(b) {
             n.side = NodeSide::Left;
@@ -221,8 +234,8 @@ mod tests {
         assert_eq!(pairs.len(), map.node_count());
         for (a, b) in pairs {
             assert_eq!(
-                (a.id, &a.text, &a.note, &a.color, a.side, a.folded),
-                (b.id, &b.text, &b.note, &b.color, b.side, b.folded)
+                (a.id, &a.text, &a.note, &a.color, a.side, a.folded, &a.card),
+                (b.id, &b.text, &b.note, &b.color, b.side, b.folded, &b.card)
             );
         }
     }
@@ -241,6 +254,27 @@ mod tests {
     }
 
     #[test]
+    fn card_fields_sit_in_the_topic_and_are_cleaned_on_read() {
+        let text = to_nodo(&sample()).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&text).unwrap();
+        let a = &v["root"]["children"][0];
+        assert_eq!(a["tags"], serde_json::json!(["pesquisa", "q3"]));
+        assert_eq!(a["emoji"], "🔍");
+        assert_eq!(a["reminder_repeat"], "week");
+        assert!(a.get("reminder_done").is_none() && a.get("status_on").is_none());
+        let messy = r##"{"format":"nodo","version":1,"root":{"id":0,"text":"R",
+            "tags":["#Q3"," q3 ",""],"emoji":"ab","reminder_repeat":"week","reminder_done":true}}"##;
+        let card = from_nodo(messy).unwrap().root.card;
+        assert_eq!(card.tags, vec!["q3".to_string()]);
+        assert_eq!(card.emoji, None);
+        assert_eq!(card.reminder_repeat, None, "no repeat without a reminder");
+        assert!(
+            !card.reminder_done,
+            "no status without a reminder or status_on"
+        );
+    }
+
+    #[test]
     fn refuses_other_files_and_newer_versions() {
         assert!(matches!(
             from_nodo("<minder/>"),
@@ -254,7 +288,7 @@ mod tests {
     #[test]
     fn ignores_unknown_fields_and_names() {
         let text = r#"{"format":"nodo","version":1,"theme":"inventado","futuro":true,
-            "root":{"id":0,"text":"R","emoji":"🌱","children":[{"id":1,"text":"A","side":"left"}]}}"#;
+            "root":{"id":0,"text":"R","pino":"🌱","children":[{"id":1,"text":"A","side":"left"}]}}"#;
         let map = from_nodo(text).unwrap();
         assert_eq!(map.theme.style, None);
         assert_eq!(map.root.children[0].side, NodeSide::Left);

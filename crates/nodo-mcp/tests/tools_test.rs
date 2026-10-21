@@ -430,3 +430,46 @@ fn save_map_always_writes_nodo_and_says_where() {
     assert!(text.contains("\"format\": \"nodo\""), "{text}");
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn set_card_changes_only_what_it_gets_and_undoes() {
+    let mut s = fresh();
+    let id = call(&mut s, "add_node", json!({ "parent": 0, "text": "Viagem" }))["id"]
+        .as_u64()
+        .unwrap();
+    let out = call(
+        &mut s,
+        "set_card",
+        json!({ "id": id, "tags": ["#Férias", "férias"], "emoji": "🏖️", "status": "doing" }),
+    );
+    assert_eq!(out["card"]["tags"], json!(["férias"]));
+    assert_eq!(out["card"]["status"], "doing");
+    call(
+        &mut s,
+        "set_card",
+        json!({ "id": id, "reminder_at": 1_790_000_000_000_i64, "repeat": "week" }),
+    );
+    let n = call(&mut s, "get_node", json!({ "id": id }));
+    assert_eq!(n["node"]["card"]["emoji"], "🏖️", "fields not given stay");
+    assert_eq!(n["node"]["card"]["repeat"], "week");
+    call(
+        &mut s,
+        "set_card",
+        json!({ "id": id, "reminder_at": null, "status": "none" }),
+    );
+    let n = call(&mut s, "get_node", json!({ "id": id }));
+    assert!(
+        n["node"]["card"]["repeat"].is_null(),
+        "no repeat without a reminder"
+    );
+    assert_eq!(n["node"]["card"]["status"], "none");
+    call(&mut s, "undo", json!({}));
+    let n = call(&mut s, "get_node", json!({ "id": id }));
+    assert_eq!(n["node"]["card"]["repeat"], "week");
+    let err = tools::call(
+        &mut s,
+        &json!({ "name": "set_card", "arguments": { "id": id, "status": "talvez" } }),
+    )
+    .unwrap_err();
+    assert!(err.contains("unknown status"), "got: {err}");
+}

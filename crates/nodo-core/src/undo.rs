@@ -10,18 +10,23 @@
 //! correctness obvious. A command-inverse scheme can replace this later without
 //! changing the public surface.
 
-use crate::model::{FreeNote, MindMap, Node, NodeSide, Point, FREE_NOTE_HEIGHT, FREE_NOTE_WIDTH};
+use crate::model::{
+    CardFields, FreeNote, MindMap, Node, NodeSide, Point, FREE_NOTE_HEIGHT, FREE_NOTE_WIDTH,
+};
 
 /// A user-visible edit.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
     /// Add a child under `parent` with the given text.
     AddChild { parent: u64, text: String },
-    /// Add a child that already has a note (a card pasted from the Ideario, say), as one undo step.
+    /// Add a child that already has a note, a branch color and card fields (a card pasted from the Ideario, say), as
+    /// one undo step.
     AddTopic {
         parent: u64,
         text: String,
         note: String,
+        color: Option<String>,
+        card: CardFields,
     },
     /// Remove a node and its subtree.
     RemoveNode { id: u64 },
@@ -29,6 +34,8 @@ pub enum Action {
     SetText { id: u64, text: String },
     /// Replace a node's note.
     SetNote { id: u64, note: String },
+    /// Replace a node's card fields (tags, emoji, reminder, status), cleaned with the card rules.
+    SetCard { id: u64, card: CardFields },
     /// Move a node to an absolute position.
     MoveNode { id: u64, x: f64, y: f64 },
     /// Set a node's branch colour, or clear it with `None`.
@@ -76,12 +83,20 @@ impl Action {
                 }
                 Ok(map.add_child(*parent, text.clone()))
             }
-            Action::AddTopic { parent, text, note } => {
+            Action::AddTopic {
+                parent,
+                text,
+                note,
+                color,
+                card,
+            } => {
                 let id = map
                     .add_child(*parent, text.clone())
                     .ok_or(crate::Error::NodeNotFound(*parent))?;
                 if let Some(n) = map.find_mut(id) {
                     n.note = note.clone();
+                    n.color = color.clone();
+                    n.card = card.cleaned();
                 }
                 Ok(Some(id))
             }
@@ -101,6 +116,11 @@ impl Action {
             Action::SetNote { id, note } => {
                 let node = map.find_mut(*id).ok_or(crate::Error::NodeNotFound(*id))?;
                 node.note = note.clone();
+                Ok(Some(*id))
+            }
+            Action::SetCard { id, card } => {
+                let node = map.find_mut(*id).ok_or(crate::Error::NodeNotFound(*id))?;
+                node.card = card.cleaned();
                 Ok(Some(*id))
             }
             Action::MoveNode { id, x, y } => {

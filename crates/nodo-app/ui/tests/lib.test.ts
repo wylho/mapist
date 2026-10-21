@@ -565,14 +565,49 @@ describe('card do Atrio entre o Ideario e o Nodo', () => {
     await doc.load()
     const root = doc.snapshot.nodes.find((n) => n.parent === null)!
     doc.selected = root.id
-    const copied = cardFromHtml(cardToClipboard({ title: 'Feira', markdown: '- [ ] Arroz #casa', tags: ['casa', 'mercado'] }).html)!
+    const copied = cardFromHtml(
+      cardToClipboard({ title: 'Feira', markdown: '- [ ] Arroz #casa', tags: ['casa', '#Mercado'], emoji: '🧺', color: 'sky' }).html,
+    )!
     await doc.pasteCard(copied)
     const n = doc.selectedNode!
     expect(n.parent).toBe(root.id)
     expect(n.text).toBe('Feira')
-    expect(n.note).toBe('- [ ] Arroz #casa\n\n#mercado')
-    expect(doc.selectedCard()).toEqual({ title: 'Feira', markdown: '- [ ] Arroz #casa\n\n#mercado' })
+    expect(n.note).toBe('- [ ] Arroz #casa')
+    expect(n.card).toEqual({ tags: ['casa', 'mercado'], emoji: '🧺' })
+    expect(doc.selectedCard()).toEqual({
+      title: 'Feira',
+      markdown: '- [ ] Arroz #casa',
+      color: 'sky',
+      emoji: '🧺',
+      tags: ['casa', 'mercado'],
+    })
     await doc.undo()
     expect(doc.snapshot.nodes.some((x) => x.id === n.id)).toBe(false)
+  })
+})
+
+describe('campos do card no nó', () => {
+  it('o preview limpa como o núcleo e desfaz num passo', async () => {
+    const { previewBackend, seedDemo } = await import('../src/lib/preview')
+    seedDemo()
+    const id = previewBackend.get_snapshot().nodes.find((n) => n.text === 'Design')!.id
+    let snap = previewBackend.set_card({
+      id,
+      card: { tags: ['#Q3', 'q3', ' '], emoji: '🚀', reminder_repeat: 'week', status_on: true, reminder_doing: true },
+    })
+    expect(snap.nodes.find((n) => n.id === id)?.card).toEqual({
+      tags: ['q3'],
+      emoji: '🚀',
+      reminder_doing: true,
+      status_on: true,
+    })
+    snap = previewBackend.undo()
+    expect(snap.nodes.find((n) => n.id === id)?.card).toEqual({})
+  })
+
+  it('a nota vai e volta entre Markdown e o documento do editor', async () => {
+    const { docToMarkdown, markdownToDoc } = await import('../src/lib/notedoc')
+    const md = '# Plano\n\n- [ ] Roteiro\n- [x] **Convites**\n\n1. Um\n2. Dois\n\nPrazo *sexta*'
+    expect(docToMarkdown(markdownToDoc(md))).toBe(md)
   })
 })

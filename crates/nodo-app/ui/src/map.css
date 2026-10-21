@@ -124,28 +124,6 @@
 .field input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .field textarea::placeholder { color: var(--muted); }
 
-/* Swatches: usam as cores de nó do tema (--n-*). */
-.swatches { display: flex; gap: 8px; flex-wrap: wrap; }
-.swatch {
-  width: 30px;
-  height: 30px;
-  border-radius: 10px;
-  border: 1px solid var(--card-edge);
-  position: relative;
-  transition: transform .12s;
-}
-.swatch:hover { transform: scale(1.08); }
-.swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
-.swatch.none {
-  background: var(--raised);
-  border-style: dashed;
-  border-color: var(--muted);
-  display: grid;
-  place-items: center;
-  color: var(--muted);
-  font-size: 14px;
-}
-
 /* Atalhos: linhas como o .r-item do Ideario. */
 .keys { background: var(--surface); border: 1px solid var(--card-edge); border-radius: 16px; overflow: hidden; }
 .keys-row {
@@ -343,11 +321,6 @@ kbd {
 .md input[type='checkbox'] { margin: 0 6px 0 0; vertical-align: -1px; }
 
 /* Prévia da nota no inspetor: três linhas do texto cru; a nota em si abre no card ao lado do nó. */
-.note-peek {
-  margin: 0 0 8px; font-size: 13px; line-height: 1.45; color: var(--muted); white-space: pre-line; overflow-wrap: anywhere;
-  display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-}
-
 /* Nó com nota: o card do Ideario por cima do canvas, no lugar e no zoom do nó. O mouse passa direto para o canvas. */
 .map-card { position: absolute; z-index: 1; transform-origin: 0 0; pointer-events: none; transition: none; }
 .map-card:hover { box-shadow: none; }

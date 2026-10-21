@@ -5,6 +5,7 @@
 // Aqui fica só o desenho do mesmo card em canvas, para a exportação (PNG, SVG, PDF saem só do desenho): `layoutCard`
 // quebra as linhas em unidades de mundo com uma função de medir, e `render.ts` pinta.
 
+import type { CardFields } from './api'
 import type { PreviewBlock } from '@wylho/atrio'
 
 /** Medidas do `.card` do Atrio (raio 16, corpo 12/13, título 16/1.25, prévia 13.5/1.45, máx. 300 de prévia). */
@@ -21,9 +22,14 @@ export const CARD = {
   previewMax: 300,
 }
 
-/** Uma nota pede card quando tem algum texto (a raiz fica como está). */
-export function isCard(note: string, depth: number): boolean {
-  return depth > 0 && note.trim().length > 0
+/** O card tem pílulas: lembrete, status ou etiquetas. */
+export function hasPills(c: CardFields | undefined): boolean {
+  return !!c && (c.reminder_at != null || !!c.status_on || !!c.tags?.length)
+}
+
+/** Um tópico vira card quando tem nota, emoji ou pílulas (a raiz fica como está). */
+export function isCard(n: { note: string; depth: number; card?: CardFields }): boolean {
+  return n.depth > 0 && (n.note.trim().length > 0 || !!n.card?.emoji || hasPills(n.card))
 }
 
 export type LineKind = 'title' | 'heading' | 'text' | 'bullet' | 'ordered' | 'task' | 'code' | 'more' | 'file' | 'link'

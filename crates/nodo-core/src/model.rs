@@ -248,7 +248,93 @@ pub struct Node {
     pub style: Style,
     pub text: String,
     pub note: String,
+    /// The card fields of the topic (tags, cover emoji, reminder, status), the same a card has in the Ideario.
+    #[serde(default)]
+    pub card: CardFields,
     pub children: Vec<Node>,
+}
+
+/// What a topic's card has besides its text and note: the same fields as an Ideario card (Atrio's `CardMeta`),
+/// except the category, which the map does not use.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CardFields {
+    /// Tags chosen by hand; `#words` in the note show up too, without being stored here.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub emoji: Option<String>,
+    /// Reminder time, Unix epoch in milliseconds.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reminder_at: Option<i64>,
+    /// One of `atrio::text::REPEATS`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reminder_repeat: Option<String>,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub reminder_done: bool,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub reminder_doing: bool,
+    /// Has a status even without a reminder.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub status_on: bool,
+}
+
+fn is_false(b: &bool) -> bool {
+    !*b
+}
+
+impl CardFields {
+    /// The card's status, as Atrio's `statusOf`/`hasStatus`: `None` when it has neither a reminder nor a status set by
+    /// hand, otherwise `"todo"`, `"doing"` or `"done"`.
+    pub fn status(&self) -> Option<&'static str> {
+        (self.reminder_at.is_some() || self.status_on).then_some(if self.reminder_done {
+            "done"
+        } else if self.reminder_doing {
+            "doing"
+        } else {
+            "todo"
+        })
+    }
+
+    /// Set the status as Atrio's `setStatus` does (`"none"`, `"todo"`, `"doing"` or `"done"`); without a reminder a
+    /// status other than `"none"` is kept by hand. Returns `false` for an unknown status.
+    pub fn set_status(&mut self, to: &str) -> bool {
+        if to == "none" {
+            self.status_on = false;
+            if self.reminder_at.is_none() {
+                self.reminder_done = false;
+                self.reminder_doing = false;
+            }
+            return true;
+        }
+        if !["todo", "doing", "done"].contains(&to) {
+            return false;
+        }
+        if self.reminder_at.is_none() {
+            self.status_on = true;
+        }
+        self.reminder_done = to == "done";
+        self.reminder_doing = to == "doing";
+        true
+    }
+
+    /// The same fields, cleaned with the card rules: tags normalised, a single emoji or none, a known repeat only
+    /// with a reminder, and no status left behind by a reminder that is gone (unless it was set by hand).
+    pub fn cleaned(&self) -> Self {
+        let has_reminder = self.reminder_at.is_some();
+        let keep_status = has_reminder || self.status_on;
+        Self {
+            tags: atrio::text::clean_tags(&self.tags),
+            emoji: self.emoji.as_deref().and_then(atrio::text::clean_emoji),
+            reminder_at: self.reminder_at,
+            reminder_repeat: self
+                .reminder_repeat
+                .clone()
+                .filter(|r| has_reminder && atrio::text::REPEATS.contains(&r.as_str())),
+            reminder_done: keep_status && self.reminder_done,
+            reminder_doing: keep_status && self.reminder_doing && !self.reminder_done,
+            status_on: self.status_on,
+        }
+    }
 }
 
 impl Node {
@@ -269,6 +355,7 @@ impl Node {
             style: Style::default(),
             text: text.into(),
             note: String::new(),
+            card: CardFields::default(),
             children: Vec::new(),
         }
     }
@@ -506,5 +593,29 @@ impl MindMap {
             return None;
         }
         self.root.remove_child(id)
+    }
+}
+
+#[cfg(test)]
+mod card_tests {
+    use super::CardFields;
+
+    #[test]
+    fn status_follows_the_atrio_rules() {
+        let mut c = CardFields::default();
+        assert_eq!(c.status(), None);
+        assert!(c.set_status("doing"));
+        assert_eq!(c.status(), Some("doing"));
+        assert!(c.status_on, "without a reminder the status is kept by hand");
+        assert!(c.set_status("done"));
+        assert_eq!((c.reminder_done, c.reminder_doing), (true, false));
+        assert!(c.set_status("none"));
+        assert_eq!(c, CardFields::default());
+        c.reminder_at = Some(1);
+        assert_eq!(c.status(), Some("todo"), "a reminder always has a status");
+        assert!(c.set_status("done") && !c.status_on);
+        assert!(c.set_status("none"));
+        assert_eq!(c.status(), Some("done"), "with a reminder the status stays");
+        assert!(!c.set_status("talvez"));
     }
 }

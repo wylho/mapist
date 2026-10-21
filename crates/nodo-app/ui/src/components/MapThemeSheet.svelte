@@ -25,7 +25,7 @@
   function sample(id: MapThemeId): Snapshot {
     const t = MAP_THEMES[id]
     const make = (id: number, text: string, depth: number, parent: number | null): FlatNode => ({
-      id, text, note: '', side: 'right', depth, x: 0, y: 0, width: 0, height: 0, color: null, folded: false,
+      id, text, note: '', side: 'right', depth, x: 0, y: 0, width: 0, height: 0, color: null, folded: false, card: {},
       child_ids: [], parent, has_children: false,
     })
     const nodes = [

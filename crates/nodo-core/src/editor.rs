@@ -297,6 +297,34 @@ mod tests {
     }
 
     #[test]
+    fn card_fields_are_cleaned_and_undo_in_one_step() {
+        let mut ed = Editor::new("Mapa");
+        let id = add(&mut ed, 0, "Ideias");
+        let card = crate::model::CardFields {
+            tags: vec!["#Viagem".into(), "viagem".into()],
+            emoji: Some("✈️".into()),
+            status_on: true,
+            reminder_doing: true,
+            ..Default::default()
+        };
+        ed.apply(Action::SetCard { id, card }).unwrap();
+        let got = &node(&ed, id).card;
+        assert_eq!(got.tags, vec!["viagem".to_string()]);
+        assert_eq!(got.emoji.as_deref(), Some("✈️"));
+        assert!(got.status_on && got.reminder_doing);
+        assert!(ed.is_dirty());
+        assert!(ed.undo());
+        assert_eq!(node(&ed, id).card, crate::model::CardFields::default());
+        assert!(matches!(
+            ed.apply(Action::SetCard {
+                id: 99,
+                card: Default::default()
+            }),
+            Err(crate::Error::NodeNotFound(99))
+        ));
+    }
+
+    #[test]
     fn a_topic_with_a_note_is_one_undo_step() {
         let mut ed = Editor::new("Mapa");
         let id = ed
@@ -304,17 +332,26 @@ mod tests {
                 parent: 0,
                 text: "Ideias".into(),
                 note: "- [ ] Revisar".into(),
+                color: Some("#6eb0f7".into()),
+                card: crate::model::CardFields {
+                    tags: vec!["#Casa".into()],
+                    ..Default::default()
+                },
             })
             .unwrap()
             .unwrap();
         assert_eq!(node(&ed, id).note, "- [ ] Revisar");
+        assert_eq!(node(&ed, id).color.as_deref(), Some("#6eb0f7"));
+        assert_eq!(node(&ed, id).card.tags, vec!["casa".to_string()]);
         assert!(ed.undo());
         assert!(ed.map().find(id).is_none());
         assert!(matches!(
             ed.apply(Action::AddTopic {
                 parent: 99,
                 text: String::new(),
-                note: String::new()
+                note: String::new(),
+                color: None,
+                card: Default::default(),
             }),
             Err(crate::Error::NodeNotFound(99))
         ));

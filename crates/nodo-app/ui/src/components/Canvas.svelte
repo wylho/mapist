@@ -5,9 +5,11 @@
   import { theme } from '../lib/theme.svelte'
   import { cardFill, draw, hitNoteDot, hitTest, readThemeColors, resolveColor, type Viewport } from '../lib/render'
   import { CARD, isCard } from '../lib/cardtext'
-  import { CardBody, previewFromMarkdown } from '@wylho/atrio'
+  import { previewFromMarkdown } from '@wylho/atrio'
+  import MapCard from './MapCard.svelte'
   import { notes } from '../lib/notes.svelte'
   import NoteCard from './NoteCard.svelte'
+  import NodeNote from './NodeNote.svelte'
   import { prefs } from '../lib/prefs.svelte'
   import { branchColors, levelStyle, mapTheme } from '../lib/maptheme'
 
@@ -254,26 +256,6 @@
     stageEl.classList.toggle('on-dot', hitNoteDot(doc.snapshot, view, e.clientX, e.clientY, r) !== null)
   }
 
-  /** Cards das notas de nó abertas: à direita do nó (ou à esquerda, nos ramos da esquerda), em px de tela. */
-  const nodeCards = $derived(
-    notes.open.flatMap((o) => {
-      const n = doc.node(o.id)
-      if (!n) return []
-      // Do lado de fora do ramo; se não couber, do outro lado; e nunca abaixo da barra de zoom.
-      const right = (n.x + n.width) * view.scale + view.x + 12
-      const before = n.x * view.scale + view.x - 12 - o.width
-      const fitsRight = right + o.width <= stage.w - 8
-      const fitsLeft = before >= 8
-      const leftSide = n.side === 'left' && n.parent !== null ? fitsLeft || !fitsRight : !fitsRight && fitsLeft
-      // Num palco estreito (celular) o card encolhe e fica dentro dele, mesmo que cubra o nó.
-      const w = Math.min(o.width, Math.max(200, stage.w - 16))
-      const left = !fitsLeft && !fitsRight ? Math.max(8, Math.min(right, stage.w - w - 8)) : leftSide ? before : right
-      const top = Math.max(8, Math.min(n.y * view.scale + view.y, stage.h - o.height - 72))
-      const color = n.color ? (n.color.startsWith('--') ? `var(${n.color})` : n.color) : null
-      return [{ o, n, left, top, w, color }]
-    }),
-  )
-
   /** Põe uma nota solta onde a pessoa clicou (coordenadas da janela) e já abre ela para escrever. */
   export async function addNoteAt(clientX: number, clientY: number) {
     const r = stageEl.getBoundingClientRect()
@@ -306,13 +288,8 @@
     const hit = hitTest(doc.snapshot, view, e.clientX, e.clientY, r)
     if (hit === null) return
     doc.selected = hit
-    // No card, o duplo clique no título edita o título; no resto, abre a nota para escrever.
-    const n = doc.node(hit)
-    if (n && isCard(n.note, n.depth) && (e.clientY - r.top - view.y) / view.scale - n.y > CARD.padY + CARD.titleSize * CARD.titleLine + 4) {
-      notes.show(hit, true)
-      return
-    }
-    doc.startEdit()
+    // Como no Ideario: o tópico é um card, e abrir é abrir o card (o título se edita no lugar com Espaço ou F2).
+    notes.show(hit)
   }
 
   /**
@@ -323,7 +300,7 @@
     void theme.palette
     void theme.pref
     void theme.simDesktop
-    const list = doc.snapshot.nodes.filter((n) => isCard(n.note, n.depth))
+    const list = doc.snapshot.nodes.filter((n) => isCard(n))
     if (list.length === 0) return []
     const c = readThemeColors()
     const branch = branchColors(doc.snapshot.nodes, mapTheme(doc.snapshot.style), theme.mode, c.nodeColors, (x) => resolveColor(x, c))
@@ -365,7 +342,7 @@
     const ed = doc.editing
     const n = ed ? doc.node(ed.id) : null
     if (!n) return null
-    if (isCard(n.note, n.depth)) {
+    if (isCard(n)) {
       // No card, o campo fica sobre o título.
       return {
         left: (n.x + CARD.padX - 4) * view.scale + view.x,
@@ -445,7 +422,7 @@
       style:background={c.fill}
       style:transform="scale({view.scale})"
       aria-hidden="true"
-    ><CardBody title={c.n.text} blocks={c.blocks} /></div>
+    ><MapCard title={c.n.text} blocks={c.blocks} card={c.n.card} /></div>
   {/each}
   {#if doc.editing && editorBox}
     <input
@@ -480,21 +457,14 @@
       onresize={(w, h) => void doc.placeFreeNote(f.id, f.x, f.y, w, h)}
     />
   {/each}
-  {#each nodeCards as c (c.o.id)}
-    <NoteCard
-      note={{ kind: 'node', id: c.o.id }}
-      text={c.n.note}
-      left={c.left}
-      top={c.top}
-      width={c.w}
-      height={c.o.height}
-      label={c.n.text}
-      color={c.color}
-      onsave={(t) => void doc.setNote(c.o.id, t)}
-      onclose={() => notes.close(c.o.id)}
-      onresize={(w, h) => notes.resize(c.o.id, w, h)}
-    />
-  {/each}
+  {#if notes.opened !== null}
+    {@const opened = doc.node(notes.opened)}
+    {#if opened}
+      {#key opened.id}
+        <NodeNote node={opened} autofocus={notes.focus} onclose={() => notes.close()} />
+      {/key}
+    {/if}
+  {/if}
 
   {@render children?.()}
 </div>

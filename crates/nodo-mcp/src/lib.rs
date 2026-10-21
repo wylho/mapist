@@ -173,7 +173,7 @@ and an optional Markdown note. Loose notes can also sit on the canvas itself, \
 apart from any node (add_free_note, set_free_note, remove_free_note).
 
 Read the map with get_map or map_stats first. Prefer the targeted tools \
-(add_node, set_text, set_note, set_color, set_side, toggle_fold) over rewriting a \
+(add_node, set_text, set_note, set_card, set_color, set_side, toggle_fold) over rewriting a \
 whole map. Positions are recomputed after every edit; relayout only discards \
 positions a person placed by hand.
 

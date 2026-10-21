@@ -104,6 +104,22 @@ pub fn catalog() -> Vec<Value> {
             }),
         ),
         tool(
+            "set_card",
+            "Change a node's card fields, the same as an Ideario card except the category. Only the fields given change: tags (replaces the list; '#' and case are normalised), emoji (one emoji for the cover, or null), reminder_at (Unix time in milliseconds, or null to clear it and its repeat), repeat (day, week, month, year, or null; needs a reminder) and status (todo, doing, done, or none).",
+            json!({
+                "type": "object",
+                "properties": {
+                    "id": { "type": "integer" },
+                    "tags": { "type": "array", "items": { "type": "string" } },
+                    "emoji": { "type": ["string", "null"] },
+                    "reminder_at": { "type": ["integer", "null"] },
+                    "repeat": { "type": ["string", "null"], "enum": ["day", "week", "month", "year", null] },
+                    "status": { "type": "string", "enum": ["todo", "doing", "done", "none"] }
+                },
+                "required": ["id"]
+            }),
+        ),
+        tool(
             "add_free_note",
             "Put a loose Markdown note on the canvas, not attached to any node (a node's own note is set_note). Without x/y it goes to the right of the map. Returns the note id.",
             json!({
@@ -315,6 +331,8 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
                     parent,
                     text,
                     note: note.to_string(),
+                    color: None,
+                    card: Default::default(),
                 },
                 None => Action::AddChild { parent, text },
             };
@@ -337,6 +355,49 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
             let note = str_arg(&args, "note")?;
             mutate(session, Action::SetNote { id, note })?;
             json!({ "ok": true, "id": id })
+        }
+        "set_card" => {
+            let id = int_arg(&args, "id")?;
+            let map = session.require()?;
+            let mut card = map
+                .find(id)
+                .ok_or_else(|| format!("node {id} not found"))?
+                .card
+                .clone();
+            if let Some(tags) = args.get("tags") {
+                let tags = tags.as_array().ok_or("tags must be an array of strings")?;
+                card.tags = tags
+                    .iter()
+                    .filter_map(|t| t.as_str().map(str::to_string))
+                    .collect();
+            }
+            if let Some(emoji) = args.get("emoji") {
+                card.emoji = emoji.as_str().map(str::to_string);
+            }
+            if let Some(at) = args.get("reminder_at") {
+                card.reminder_at = at.as_i64();
+                if card.reminder_at.is_none() {
+                    card.reminder_repeat = None;
+                }
+            }
+            if let Some(repeat) = args.get("repeat") {
+                card.reminder_repeat = repeat.as_str().map(str::to_string);
+            }
+            if let Some(status) = args.get("status") {
+                let status = status.as_str().unwrap_or_default();
+                if !card.set_status(status) {
+                    return Err(format!(
+                        "unknown status {status:?}: use todo, doing, done or none"
+                    ));
+                }
+            }
+            mutate(session, Action::SetCard { id, card })?;
+            let card = &session
+                .require()?
+                .find(id)
+                .map(|n| n.card.clone())
+                .unwrap_or_default();
+            json!({ "ok": true, "id": id, "card": card_json(card) })
         }
         "add_free_note" => {
             let text = str_arg(&args, "text")?;
@@ -567,11 +628,22 @@ fn node_json(n: &nodo_core::model::Node) -> Value {
         "layout": n.layout.as_str(),
         "color": n.color,
         "folded": n.folded,
+        "card": card_json(&n.card),
         "x": n.pos.x,
         "y": n.pos.y,
         "width": n.width,
         "height": n.height,
         "children": n.children.iter().map(|c| c.id).collect::<Vec<_>>()
+    })
+}
+
+fn card_json(c: &nodo_core::model::CardFields) -> Value {
+    json!({
+        "tags": c.tags,
+        "emoji": c.emoji,
+        "reminder_at": c.reminder_at,
+        "repeat": c.reminder_repeat,
+        "status": c.status().unwrap_or("none")
     })
 }
 

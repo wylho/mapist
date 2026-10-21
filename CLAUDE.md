@@ -121,6 +121,11 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   `from_nodo`; aceita versão até `VERSION` e ignora campos desconhecidos), `load`/`save` gravam `.nodo`. Um `.minder`
   abre como importação (como Markdown/OPML: sem caminho, salvar pergunta); salvar com outra extensão grava o `.nodo`
   ao lado e devolve o caminho. Associação de arquivo: `.nodo` (editor) e `.minder` (leitor).
+- **D29:** **o tópico é o card do Ideario** (pedido do usuário: "estamos criando um ideário que organiza as coisas
+  por nós"). No mapa, o card da lista do Ideario (`MapCard` = `CardBody` + `CardPills` do Atrio); duplo clique ou
+  "Abrir card" abre o mesmo card do Ideario (`CardDialog` + `NoteEditor`: diálogo na janela larga, tela cheia na
+  estreita, modo documento), com `features({ category: false, attachments: false, capture: false, links: false })`.
+  A edição do conteúdo sai da barra lateral (fica só o que é do mapa). Campos do card no núcleo: `CardFields`.
 - **D18:** **o canvas redesenha no máximo uma vez por quadro**, e o que o desenho lê não pode ser `$state` escrito no
   mesmo efeito. Motivo: um laço assim (`colors`) fazia centenas de redesenhos por tecla e deixava a edição travando.
 
@@ -145,7 +150,7 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   palettes, theme, render com `traceBranch` curvas/em ângulo, measure, font, preview). `atrio.css` (do Atrio) + `map.css`.
 - **Preview** (`ui/src/lib/preview.ts`): espelha o núcleo (mesmo layout, recolhidos escondidos); `?preview`, e
   `?select=Texto` abre com o nó selecionado. Mapa de exemplo "Lançamento do app", inventado.
-- **Testes:** 98 Rust + 44 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
+- **Testes:** 102 Rust + 46 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
   `.AppImage`; a janela abre um `.minder` passado como argumento) e `nodo --mcp` testado de ponta a ponta.
 - **CI/Release:** `.github/workflows/build.yml` (verificação + instaladores dos três sistemas nos Artifacts) e
   `release.yml` (rascunho → publicar); `scripts/check-version.sh` e `scripts/bump-version.sh`; guia em
@@ -216,8 +221,15 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   desconhecidos ignorados; proptest em `tests/layout_props.rs`), `Editor::open_or_import` (`.minder` vira importação;
   sem extensão conhecida, decide pelo conteúdo) e `Editor::save` (sempre `.nodo`). App: diálogos e
   `tauri.conf.json`; MCP: `open_map`/`save_map` e instruções. Site e README sem o Minder como argumento.
-- **Próximo:** antes de mexer nos apps, o **card unificado no Atrio** (pedido do usuário: o grande componente card com
-  editor, etiquetas, data, status, anexos, gravações); depois os apps passam a usá-lo. estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore);
-  o card inteiro vindo do Atrio, com `features({ category: false })` no Nodo: falta o componente `NoteEditor` no Atrio
-  e, aqui, os campos do nó no núcleo (etiquetas, data/lembrete, status, emoji, anexos) gravados no `.minder`;
-  aba Estrutura na barra lateral com colar lista; abrir `.xmind`.
+- **Card do Atrio no tópico** (D29): `model::CardFields` (etiquetas, emoji, lembrete, status, limpos por
+  `atrio::text`; crate `atrio` por git na tag, reexportada em `nodo_core::atrio`), no `.nodo` dentro do tópico,
+  `Action::SetCard` e `AddTopic` com cor e campos (colar card = um passo); MCP `set_card` e `card` no `get_node`; app
+  `set_card`, `note_doc`/`set_note_doc`/`markdown_doc` (nota ↔ documento do TipTap pelo `atrio::markdown`, as regras
+  do Ideario). Interface: `components/NodeNote.svelte` (o card aberto, barra do topo como a do Ideario),
+  `components/MapCard.svelte`, `lib/notes.svelte.ts` (um card aberto por vez, `docMode`), `lib/notedoc.ts` (conversão
+  só da prévia); copiar/colar leva emoji e etiquetas. `vite.config.ts` exclui o Atrio do pré-empacotamento.
+  Falta: a exportação (PNG/SVG/PDF) ainda não desenha emoji e pílulas do card; anexos no `.nodo`.
+- **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
+  para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
+  estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura
+  na barra lateral com colar lista; abrir `.xmind`.

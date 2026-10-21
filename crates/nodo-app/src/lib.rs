@@ -45,6 +45,8 @@ pub struct FlatNode {
     height: f64,
     color: Option<String>,
     folded: bool,
+    /// Tags, emoji, reminder and status (fields left out when unset).
+    card: nodo_core::model::CardFields,
     child_ids: Vec<u64>,
     parent: Option<u64>,
     has_children: bool,
@@ -155,6 +157,7 @@ fn snapshot(doc: &Doc) -> Snapshot {
             height: node.height,
             color: node.color.clone(),
             folded: node.folded,
+            card: node.card.clone(),
             child_ids: node.children.iter().map(|c| c.id).collect(),
             parent,
             has_children: !node.children.is_empty(),
@@ -320,15 +323,27 @@ fn add_node(state: State<'_, AppState>, parent: u64, text: String) -> Result<Sna
     mutate(state, Action::AddChild { parent, text })
 }
 
-/// Add a child with a note already in it (a pasted card), as one undo step.
+/// Add a child with a note, branch color and card fields already in it (a pasted card), as one undo step.
 #[tauri::command]
 fn add_topic(
     state: State<'_, AppState>,
     parent: u64,
     text: String,
     note: String,
+    color: Option<String>,
+    card: Option<nodo_core::model::CardFields>,
 ) -> Result<Snapshot, String> {
-    mutate(state, Action::AddTopic { parent, text, note })
+    let card = card.unwrap_or_default();
+    mutate(
+        state,
+        Action::AddTopic {
+            parent,
+            text,
+            note,
+            color,
+            card,
+        },
+    )
 }
 
 /// Remove a node and its subtree.
@@ -346,6 +361,44 @@ fn set_text(state: State<'_, AppState>, id: u64, text: String) -> Result<Snapsho
 /// Replace a node's note.
 #[tauri::command]
 fn set_note(state: State<'_, AppState>, id: u64, note: String) -> Result<Snapshot, String> {
+    mutate(state, Action::SetNote { id, note })
+}
+
+/// Replace a node's card fields (tags, emoji, reminder, status); the core cleans them with the card rules.
+#[tauri::command]
+fn set_card(
+    state: State<'_, AppState>,
+    id: u64,
+    card: nodo_core::model::CardFields,
+) -> Result<Snapshot, String> {
+    mutate(state, Action::SetCard { id, card })
+}
+
+/// A node's note as the card editor's document (TipTap JSON), read with the Ideario's Markdown rules.
+#[tauri::command]
+fn note_doc(state: State<'_, AppState>, id: u64) -> Result<serde_json::Value, String> {
+    let mut doc = lock(&state)?;
+    let node = editor(&mut doc)?
+        .map()
+        .find(id)
+        .ok_or_else(|| format!("nó {id} não encontrado"))?;
+    Ok(nodo_core::atrio::markdown::from_markdown(&node.note))
+}
+
+/// Markdown pasted in the card, as the editor's document.
+#[tauri::command]
+fn markdown_doc(markdown: String) -> serde_json::Value {
+    nodo_core::atrio::markdown::from_markdown(&markdown)
+}
+
+/// Save the card editor's document as the node's Markdown note.
+#[tauri::command]
+fn set_note_doc(
+    state: State<'_, AppState>,
+    id: u64,
+    doc: serde_json::Value,
+) -> Result<Snapshot, String> {
+    let note = nodo_core::atrio::markdown::to_markdown(&doc, &|_| None);
     mutate(state, Action::SetNote { id, note })
 }
 
@@ -670,6 +723,10 @@ pub fn run() {
             remove_node,
             set_text,
             set_note,
+            set_card,
+            note_doc,
+            markdown_doc,
+            set_note_doc,
             add_free_note,
             set_free_note,
             place_free_note,

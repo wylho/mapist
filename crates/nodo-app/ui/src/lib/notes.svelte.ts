@@ -1,28 +1,26 @@
-// Cards de nota no mapa. A nota de um nó abre ao lado dele (clicar na bolinha, ou pelo menu), como um comentário:
-// vários podem ficar abertos, cada um lembra o tamanho que a pessoa deu, só nesta sessão. As notas soltas vivem no
-// arquivo (`snapshot.notes`) e estão sempre à vista. Só um card por vez está em edição.
+// O card aberto e as notas soltas. Um nó se abre como o card do Ideario (um por vez, na janela do card); as notas
+// soltas vivem no arquivo (`snapshot.notes`), estão sempre à vista e só uma por vez está em edição.
 
-export interface OpenNote {
-  id: number
-  width: number
-  height: number
-}
-
-/** Qual card está em edição: a nota do nó `id` ou a nota solta `id`. */
+/** Qual card está em edição: a nota solta `id` (o nó aberto é `notes.opened`). */
 export type NoteRef = { kind: 'node' | 'free'; id: number }
 
 class Notes {
-  open = $state<OpenNote[]>([])
+  /** O nó aberto como card, ou null. */
+  opened = $state<number | null>(null)
+  /** Abriu para escrever já (tópico novo ou "Adicionar nota"). */
+  focus = $state(false)
+  /** Modo documento (página inteira), lembrado nesta sessão, como no Ideario. */
+  docMode = $state(false)
   editing = $state<NoteRef | null>(null)
 
   isOpen(id: number) {
-    return this.open.some((n) => n.id === id)
+    return this.opened === id
   }
 
-  /** Abre a nota do nó; `edit` já entra escrevendo (nota nova). */
+  /** Abre o nó como card; `edit` já põe o cursor no texto. */
   show(id: number, edit = false) {
-    if (!this.isOpen(id)) this.open = [...this.open, { id, width: 300, height: 220 }]
-    if (edit) this.editing = { kind: 'node', id }
+    this.opened = id
+    this.focus = edit
   }
 
   toggle(id: number) {
@@ -30,21 +28,12 @@ class Notes {
     else this.show(id)
   }
 
-  close(id: number) {
-    this.open = this.open.filter((n) => n.id !== id)
-    if (this.isEditing('node', id)) this.editing = null
+  close(id?: number) {
+    if (id === undefined || this.opened === id) this.opened = null
   }
 
   isEditing(kind: NoteRef['kind'], id: number) {
     return this.editing?.kind === kind && this.editing.id === id
-  }
-
-  resize(id: number, width: number, height: number) {
-    const n = this.open.find((x) => x.id === id)
-    if (n && (n.width !== width || n.height !== height)) {
-      n.width = width
-      n.height = height
-    }
   }
 }
 

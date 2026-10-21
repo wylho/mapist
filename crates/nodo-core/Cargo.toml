@@ -12,6 +12,7 @@ serde_json.workspace = true
 quick-xml.workspace = true
 thiserror.workspace = true
 uuid.workspace = true
+atrio = { git = "https://github.com/wylho/atrio", tag = "v0.8.0" }
 
 [dev-dependencies]
 proptest = "1"

@@ -4,13 +4,24 @@
 // store só o guarda. Não há estado de mapa duplicado no frontend, o que evita
 // divergência entre o que a tela mostra e o que o core acha que tem.
 
-import { api, hasHost, isPreview, type Snapshot } from './api'
+import { api, hasHost, isPreview, type CardFields, type Snapshot } from './api'
 import { measureAll } from './measure'
 import { mapTheme } from './maptheme'
 import { ui } from './ui.svelte'
 import type { ClipCard, NoteColor } from '@wylho/atrio'
 import { NODE_COLOR_TOKENS, resolveNodeColor } from './palettes'
 import { theme } from './theme.svelte'
+
+/** A cor do ramo, guardada já resolvida (hex do tema), como a cor de nota do mesmo lugar na paleta; outra é `none`. */
+export function noteColorOf(color: string | null): NoteColor {
+  const i = color ? theme.colors.notes.findIndex((c) => c.toLowerCase() === color.toLowerCase()) : -1
+  return i >= 0 ? (NODE_COLOR_TOKENS[i].slice(4) as NoteColor) : 'none'
+}
+
+/** A cor de nota como cor do ramo (hex do tema), ou null para `none`. */
+export function nodeColorOf(color: NoteColor | null | undefined): string | null {
+  return color && color !== 'none' ? resolveNodeColor(`--n-${color}`, theme.colors) : null
+}
 
 const EMPTY: Snapshot = {
   nodes: [],
@@ -329,10 +340,15 @@ class Document {
   selectedCard(): ClipCard | null {
     const n = this.selectedNode
     if (!n) return null
-    // A cor do ramo é guardada já resolvida (hex do tema); volta a ser a cor de nota de mesmo lugar na paleta.
-    const i = n.color ? theme.colors.notes.findIndex((c) => c.toLowerCase() === n.color?.toLowerCase()) : -1
-    const color = i >= 0 ? (NODE_COLOR_TOKENS[i].slice(4) as NoteColor) : undefined
-    return { title: n.text, markdown: n.note, ...(color ? { color } : {}) }
+    const color = noteColorOf(n.color)
+    const { emoji, tags } = n.card ?? {}
+    return {
+      title: n.text,
+      markdown: n.note,
+      ...(color !== 'none' ? { color } : {}),
+      ...(emoji ? { emoji } : {}),
+      ...(tags?.length ? { tags } : {}),
+    }
   }
 
   /** Cola um card (do Ideario, ou de outro nó) como filho do nó selecionado, ou da raiz. Seleciona o novo nó. */
@@ -340,17 +356,10 @@ class Document {
     const parent = this.selected ?? this.snapshot.nodes.find((n) => n.parent === null)?.id
     if (parent === undefined) return
     const before = new Set(this.snapshot.nodes.map((n) => n.id))
-    const tags = (card.tags ?? []).filter((t) => !new RegExp(`#${t}(?![\\p{L}\\d_-])`, 'u').test(card.markdown))
-    const note = [card.markdown.trim(), tags.map((t) => `#${t}`).join(' ')].filter(Boolean).join('\n\n')
-    const title = [card.emoji, card.title.trim()].filter(Boolean).join(' ') || 'Nota'
-    await this.run(() => api.addTopic(parent, title, note))
+    const fields = { emoji: card.emoji ?? null, tags: card.tags ?? [] }
+    await this.run(() => api.addTopic(parent, card.title.trim() || 'Nota', card.markdown.trim(), nodeColorOf(card.color), fields))
     const id = this.snapshot.nodes.find((n) => !before.has(n.id))?.id
-    if (id === undefined) return
-    this.selected = id
-    if (card.color && card.color !== 'none') {
-      const hex = resolveNodeColor(`--n-${card.color}`, theme.colors)
-      await this.run(() => api.setColor(id, hex))
-    }
+    if (id !== undefined) this.selected = id
   }
 
   setText(id: number, text: string) {
@@ -359,6 +368,16 @@ class Document {
 
   setNote(id: number, note: string) {
     return this.run(() => api.setNote(id, note))
+  }
+
+  /** Etiquetas, emoji, lembrete e status do card do nó. */
+  setCard(id: number, card: CardFields) {
+    return this.run(() => api.setCard(id, card))
+  }
+
+  /** Grava o documento do editor do card como a nota do nó (o núcleo converte para Markdown). */
+  setNoteDoc(id: number, body: unknown) {
+    return this.run(() => api.setNoteDoc(id, body))
   }
 
   /** Põe uma nota solta no mapa com o canto em (x, y), em unidades de mundo. Devolve o id dela. */

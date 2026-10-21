@@ -248,7 +248,7 @@ interface NodeOpts {
 }
 
 function drawNode(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
-  if (isCard(n.note, n.depth)) {
+  if (isCard(n)) {
     drawCard(ctx, n, o)
     return
   }
@@ -474,7 +474,7 @@ export function hitNoteDot(snapshot: Snapshot, view: Viewport, clientX: number, 
   const r = Math.max(7, 9 / view.scale)
   for (let i = snapshot.nodes.length - 1; i >= 0; i--) {
     const n = snapshot.nodes[i]
-    if (!n.note || isCard(n.note, n.depth)) continue
+    if (!n.note || isCard(n)) continue
     const d = noteDot(n)
     if (Math.hypot(wx - d.x, wy - d.y) <= r) return n.id
   }
