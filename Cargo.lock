@@ -2061,6 +2061,7 @@ version = "0.1.0"
 dependencies = [
  "mapist-core",
  "mapist-mcp",
+ "objc2-app-kit",
  "serde",
  "serde_json",
  "tauri",

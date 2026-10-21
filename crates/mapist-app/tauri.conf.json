@@ -22,7 +22,7 @@
         "label": "main",
         "center": true,
         "backgroundColor": "#eef1ef",
-        "create": true
+        "create": false
       }
     ],
     "security": {

@@ -29,6 +29,11 @@ class Document {
   /** Dimensões medidas no frontend, por id. */
   sizes = $state<Map<number, { width: number; height: number }>>(new Map())
   busy = $state(false)
+  /**
+   * Nó sendo editado no lugar, como no XMind. `draft` é o texto no campo; `selectAll` diz se ele abre com tudo
+   * selecionado (Espaço, F2, nó novo) ou com o cursor no fim (começou digitando uma letra).
+   */
+  editing = $state<{ id: number; draft: string; selectAll: boolean } | null>(null)
 
   get nodes() {
     return this.snapshot.nodes
@@ -51,9 +56,8 @@ class Document {
   private async adopt(next: Snapshot) {
     this.snapshot = next
     this.syncTitle()
-    if (this.selected !== null && !next.nodes.some((n) => n.id === this.selected)) {
-      this.selected = next.nodes[0]?.id ?? null
-    }
+    // Sempre há um nó selecionado quando há mapa: dá para começar a digitar sem clicar antes.
+    if (this.selected === null || !next.nodes.some((n) => n.id === this.selected)) this.selected = next.nodes[0]?.id ?? null
     await this.syncSizes()
   }
 
@@ -193,17 +197,56 @@ class Document {
     if (path) await this.save(path.endsWith('.minder') ? path : `${path}.minder`)
   }
 
+  /** Abre a edição no nó selecionado. Com `initial`, começa com esse texto (a letra que a pessoa digitou). */
+  startEdit(initial?: string) {
+    const n = this.selectedNode
+    if (!n) return
+    this.editing = initial === undefined
+      ? { id: n.id, draft: n.text, selectAll: true }
+      : { id: n.id, draft: initial, selectAll: false }
+  }
+
+  /** Grava o que está no campo. Texto vazio não apaga o nó: mantém o que havia. */
+  async commitEdit() {
+    const ed = this.editing
+    this.editing = null
+    if (!ed) return
+    const n = this.node(ed.id)
+    const next = ed.draft.trim()
+    if (!n || next === '' || next === n.text) return
+    await this.setText(ed.id, next)
+  }
+
+  cancelEdit() {
+    this.editing = null
+  }
+
+  /** Cria um nó, seleciona e já abre a edição com o texto provisório selecionado (como no XMind). */
+  private async addAndEdit(parent: number, text: string) {
+    const before = new Set(this.snapshot.nodes.map((n) => n.id))
+    await this.run(() => api.addNode(parent, text))
+    const created = this.snapshot.nodes.find((n) => !before.has(n.id))
+    if (!created) return
+    this.selected = created.id
+    this.editing = { id: created.id, draft: created.text, selectAll: true }
+  }
+
   addChild(text = 'Nova ideia') {
     const id = this.selected
     if (id === null) return Promise.resolve()
-    return this.run(() => api.addNode(id, text))
+    // Filho de um nó recolhido ficaria escondido: abre o ramo antes.
+    if (this.selectedNode?.folded) {
+      return this.run(() => api.toggleFold(id)).then(() => this.addAndEdit(id, text))
+    }
+    return this.addAndEdit(id, text)
   }
 
   addSibling(text = 'Nova ideia') {
     const n = this.selectedNode
-    if (!n || n.parent === null) return Promise.resolve()
-    const parent = n.parent
-    return this.run(() => api.addNode(parent, text))
+    // Na raiz não há irmão: Enter cria um filho, como no XMind.
+    if (!n) return Promise.resolve()
+    if (n.parent === null) return this.addChild(text)
+    return this.addAndEdit(n.parent, text)
   }
 
   remove() {

@@ -346,3 +346,32 @@ describe('preview: layout espelha o núcleo', () => {
       }
   })
 })
+
+describe('edição estilo XMind', () => {
+  it('raiz selecionada ao abrir, Tab cria filho já em edição, Enter na raiz cria filho, texto vazio não apaga', async () => {
+    const { doc } = await import('../src/lib/document.svelte')
+    await doc.create('Raiz')
+    const root = doc.snapshot.nodes[0]
+    expect(doc.selected).toBe(root.id)
+
+    doc.startEdit('P')
+    expect(doc.editing).toMatchObject({ id: root.id, draft: 'P', selectAll: false })
+    doc.editing!.draft = 'Plano'
+    await doc.commitEdit()
+    expect(doc.snapshot.nodes[0].text).toBe('Plano')
+
+    await doc.addChild()
+    const child = doc.selectedNode!
+    expect(child.parent).toBe(root.id)
+    expect(doc.editing).toMatchObject({ id: child.id, draft: 'Nova ideia', selectAll: true })
+    doc.editing!.draft = '   '
+    await doc.commitEdit()
+    expect(doc.node(child.id)!.text).toBe('Nova ideia')
+
+    doc.selected = root.id
+    await doc.addSibling()
+    expect(doc.selectedNode!.parent).toBe(root.id)
+    doc.cancelEdit()
+    expect(doc.editing).toBeNull()
+  })
+})

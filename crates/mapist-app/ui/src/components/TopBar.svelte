@@ -23,6 +23,7 @@
   import { ui } from '../lib/ui.svelte'
 
   const mod = /Mac/.test(navigator.platform) ? '⌘' : 'Ctrl+'
+  const overlayTitlebar = document.documentElement.dataset.titlebar === 'overlay'
   const sel = $derived(doc.selectedNode)
   const title = $derived(doc.snapshot.title || 'Sem título')
 
@@ -48,7 +49,8 @@
   })
 </script>
 
-<header class="topbar appbar">
+<!-- macOS: a barra é também a barra de título (transparente) e arrasta a janela, como a do Ideario. -->
+<header class="topbar appbar" data-tauri-drag-region={overlayTitlebar ? 'deep' : undefined}>
   <div class="top-left">
     <button class="icon-btn" aria-label="Novo mapa" title="Novo mapa ({mod}N)" onclick={() => doc.newMap()}><FilePlus2 size={20} /></button>
     <button class="icon-btn" aria-label="Abrir" title="Abrir ({mod}O)" onclick={() => doc.openDialog()}><FolderOpen size={20} /></button>
@@ -64,7 +66,7 @@
       <div class="filter-group" role="group" aria-label="Nó selecionado">
         <button class="icon-btn" aria-label="Adicionar filho" title="Adicionar filho (Tab)" onclick={() => doc.addChild()}><Plus size={20} /></button>
         {#if sel.has_children}
-          <button class="icon-btn" aria-label={sel.folded ? 'Expandir ramo' : 'Recolher ramo'} title="{sel.folded ? 'Expandir ramo' : 'Recolher ramo'} (Espaço)" onclick={() => doc.toggleFold()}>
+          <button class="icon-btn" aria-label={sel.folded ? 'Expandir ramo' : 'Recolher ramo'} title="{sel.folded ? 'Expandir ramo' : 'Recolher ramo'} ({mod}/)" onclick={() => doc.toggleFold()}>
             {#if sel.folded}<ChevronsUpDown size={19} />{:else}<ChevronsDownUp size={19} />{/if}
           </button>
         {/if}

@@ -39,6 +39,8 @@
         },
         ',': () => (ui.settingsOpen = true),
         '0': () => canvasRef?.fit(true),
+        // Recolher/expandir, como no XMind (o Espaço agora edita).
+        '/': () => doc.toggleFold(),
       }
       // Desfazer dentro de um campo de texto é do campo.
       if (key in action && !(typing(e) && (key === 'z' || key === 'y'))) {
@@ -47,45 +49,48 @@
       }
       return
     }
-    if (typing(e)) return
+    if (typing(e) || doc.editing) return
 
     switch (e.key) {
       case 'Tab':
         e.preventDefault()
-        doc.addChild()
-        break
+        void doc.addChild()
+        return
       case 'Enter':
         e.preventDefault()
-        doc.addSibling()
-        break
+        void doc.addSibling()
+        return
+      case ' ':
+      case 'F2':
+        e.preventDefault()
+        doc.startEdit()
+        return
       case 'Backspace':
       case 'Delete':
         e.preventDefault()
-        doc.remove()
-        break
-      case ' ':
-        e.preventDefault()
-        doc.toggleFold()
-        break
-      case 'Escape':
-        doc.selected = null
-        break
+        void doc.remove()
+        return
       case 'ArrowUp':
         e.preventDefault()
         doc.moveSelection(0, -1)
-        break
+        return
       case 'ArrowDown':
         e.preventDefault()
         doc.moveSelection(0, 1)
-        break
+        return
       case 'ArrowLeft':
         e.preventDefault()
         doc.moveSelection(-1, 0)
-        break
+        return
       case 'ArrowRight':
         e.preventDefault()
         doc.moveSelection(1, 0)
-        break
+        return
+    }
+    // Qualquer letra, número ou símbolo com um nó selecionado começa a escrever nele, substituindo o texto (XMind).
+    if (e.key.length === 1 && !e.altKey && doc.selectedNode) {
+      e.preventDefault()
+      doc.startEdit(e.key)
     }
   }
 
@@ -106,7 +111,7 @@
 <!-- Ao voltar para a janela, confere se um agente salvou o arquivo pelo MCP. -->
 <svelte:window onkeydown={onKeydown} onfocus={() => void doc.checkDisk()} />
 
-<div class="shell wide map-shell">
+<div class="shell map-shell">
   <TopBar />
 
   <div class="map-body">
@@ -123,6 +128,17 @@
       <Inspector />
     {/if}
   </div>
+
+  <!-- O que dá para fazer agora: tira a dúvida de "já posso digitar?". Só com teclado, então não no celular. -->
+  {#if doc.hasDocument}
+    <div class="key-hint" aria-live="polite">
+      {#if doc.editing}
+        <span><kbd>Enter</kbd> confirma</span><span><kbd>Tab</kbd> confirma e cria filho</span><span><kbd>Esc</kbd> cancela</span>
+      {:else if doc.selectedNode}
+        <span>Digite para escrever</span><span><kbd>Tab</kbd> filho</span><span><kbd>Enter</kbd> irmão</span><span><kbd>Espaço</kbd> editar</span>
+      {/if}
+    </div>
+  {/if}
 
   {#if isPreview}
     <div class="preview-tag" title="Backend simulado em memória; nenhum arquivo é lido ou gravado">

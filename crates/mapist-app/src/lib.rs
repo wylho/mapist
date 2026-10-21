@@ -8,7 +8,7 @@ use mapist_core::{model::MindMap, model::NodeSide, undo::Action, Editor};
 use serde::Serialize;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
-use tauri::{Emitter, Manager, State};
+use tauri::{Emitter, Manager, State, WebviewWindowBuilder};
 
 /// Application state shared across command invocations.
 #[derive(Default)]
@@ -392,6 +392,38 @@ fn mcp_uninstall() -> Result<mapist_mcp::setup::McpInfo, String> {
     mapist_mcp::setup::info()
 }
 
+/// Tells the page the title bar is transparent (macOS): the app bar makes room
+/// for the window buttons in its corner and drags the window, as in Ideario.
+#[cfg(target_os = "macos")]
+const TITLEBAR_SCRIPT: &str = "document.documentElement.dataset.titlebar = 'overlay';";
+#[cfg(not(target_os = "macos"))]
+const TITLEBAR_SCRIPT: &str = "";
+
+/// macOS: width of the corner holding the three window buttons, with the same
+/// margin on both sides. Measured, because their size and spacing change between
+/// macOS versions. Not `async`: it runs on the main thread, as AppKit requires.
+#[tauri::command]
+fn mac_lights_width(window: tauri::WebviewWindow) -> Option<f64> {
+    #[cfg(target_os = "macos")]
+    {
+        use objc2_app_kit::{NSWindow, NSWindowButton};
+        let ptr = window.ns_window().ok()?.cast::<NSWindow>();
+        // SAFETY: Tauri hands back this window's live NSWindow; we only read it, on the main thread.
+        let ns = unsafe { ptr.as_ref() }?;
+        let close = ns
+            .standardWindowButton(NSWindowButton::CloseButton)?
+            .frame();
+        let zoom = ns.standardWindowButton(NSWindowButton::ZoomButton)?.frame();
+        let width = zoom.origin.x + zoom.size.width + close.origin.x;
+        (width > 0.0 && width < 200.0).then_some(width)
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = window;
+        None
+    }
+}
+
 /// Whether closing now would lose unsaved work.
 fn has_unsaved(app: &tauri::AppHandle) -> bool {
     let state = app.state::<AppState>();
@@ -444,6 +476,32 @@ pub fn run() {
                 .build(),
         )
         .manage(state)
+        // The window is built here rather than from the config, so that macOS
+        // gets the transparent title bar with the buttons inside the app bar.
+        .setup(|app| {
+            let config = app
+                .config()
+                .app
+                .windows
+                .iter()
+                .find(|w| w.label == "main")
+                .cloned()
+                .ok_or("janela main ausente no tauri.conf.json")?;
+            #[allow(unused_mut)]
+            let mut window = WebviewWindowBuilder::from_config(app.handle(), &config)?
+                .initialization_script(TITLEBAR_SCRIPT);
+            #[cfg(target_os = "macos")]
+            {
+                window = window
+                    .title_bar_style(tauri::TitleBarStyle::Overlay)
+                    .hidden_title(true)
+                    // y is the height of the button area, not their top: 33 centres them
+                    // in the 64 px app bar (measured in Ideario on a macOS screenshot).
+                    .traffic_light_position(tauri::LogicalPosition::new(18.0, 33.0));
+            }
+            window.build()?;
+            Ok(())
+        })
         // Unsaved work: the window asks, with the app's own confirmation dialog
         // (a native dialog here would block the main thread that runs it).
         .on_window_event(|window, event| {
@@ -473,6 +531,7 @@ pub fn run() {
             search_nodes,
             set_sizes,
             quit_app,
+            mac_lights_width,
             mcp_info,
             mcp_install,
             mcp_uninstall

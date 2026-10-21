@@ -34,7 +34,12 @@
       editingId = n.id
       text = n.text
       note = n.note
+      return
     }
+    // O mesmo nó mudou por fora (edição no mapa, desfazer, o Claude): acompanha, menos o campo onde se está digitando.
+    const focused = document.activeElement?.id
+    if (focused !== 'node-text') text = n.text
+    if (focused !== 'node-note') note = n.note
   })
 
   function onText(e: Event) {
@@ -143,10 +148,13 @@
     <div class="field">
       <span class="field-label">Atalhos</span>
       <div class="keys">
+        <div class="keys-row"><span>Escrever no nó</span><kbd>digite</kbd></div>
+        <div class="keys-row"><span>Editar o texto</span><kbd>Espaço</kbd></div>
         <div class="keys-row"><span>Adicionar filho</span><kbd>Tab</kbd></div>
-        <div class="keys-row"><span>Adicionar irmão</span><kbd>↵</kbd></div>
+        <div class="keys-row"><span>Adicionar irmão</span><kbd>Enter</kbd></div>
+        <div class="keys-row"><span>Andar pelo mapa</span><kbd>← ↑ → ↓</kbd></div>
+        <div class="keys-row"><span>Recolher ou expandir</span><kbd>{mod}/</kbd></div>
         <div class="keys-row"><span>Excluir</span><kbd>Delete</kbd></div>
-        <div class="keys-row"><span>Recolher ou expandir</span><kbd>Espaço</kbd></div>
         <div class="keys-row"><span>Desfazer</span><kbd>{mod}Z</kbd></div>
         <div class="keys-row"><span>Buscar</span><kbd>{mod}F</kbd></div>
       </div>
