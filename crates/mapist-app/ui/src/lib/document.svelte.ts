@@ -153,6 +153,11 @@ class Document {
     return this.run(() => api.setColor(id, color))
   }
 
+  /** Persiste a posição final de um nó arrastado. */
+  move(id: number, x: number, y: number) {
+    return this.run(() => api.moveNode(id, x, y))
+  }
+
   toggleFold() {
     const id = this.selected
     if (id === null) return Promise.resolve()

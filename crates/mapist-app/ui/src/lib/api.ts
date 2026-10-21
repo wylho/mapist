@@ -98,6 +98,8 @@ export const api = {
    */
   setSizes: (sizes: NodeSize[]) => call<Snapshot>('set_sizes', { sizes }),
 
+  moveNode: (id: number, x: number, y: number) => call<Snapshot>('move_node', { id, x, y }),
+
   /** Estado do registro MCP no cliente (Claude Desktop). */
   mcpInfo: () => call<McpInfo>('mcp_info'),
   mcpInstall: () => call<McpInfo>('mcp_install'),

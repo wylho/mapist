@@ -18,5 +18,7 @@ mapist-core = { path = "../mapist-core" }
 mapist-mcp = { path = "../mapist-mcp" }
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
+tauri-plugin-window-state = "2"
+tauri-plugin-opener = "2"
 serde.workspace = true
 serde_json.workspace = true

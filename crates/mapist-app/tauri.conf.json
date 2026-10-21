@@ -18,7 +18,11 @@
         "minWidth": 640,
         "minHeight": 480,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "label": "main",
+        "center": true,
+        "backgroundColor": "#eef1ef",
+        "create": true
       }
     ],
     "security": {
@@ -27,10 +31,16 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["app", "dmg"],
-    "icon": ["icons/icon.png"],
+    "targets": [
+      "app",
+      "dmg"
+    ],
+    "icon": [
+      "icons/icon.png"
+    ],
     "category": "Productivity",
     "shortDescription": "Mind mapping",
     "longDescription": "Mapist is a mind-mapping application with a built-in MCP server, derived from Minder."
-  }
+  },
+  "mainBinaryName": "mapist"
 }

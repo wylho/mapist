@@ -7,7 +7,7 @@
 use mapist_core::{layout, model::MindMap, undo};
 use serde::Serialize;
 use std::sync::Mutex;
-use tauri::State;
+use tauri::{Manager, State};
 
 /// Application state shared across command invocations.
 pub struct AppState {
@@ -341,6 +341,27 @@ fn search_nodes(
         .collect())
 }
 
+/// Move a node to an absolute position, recording it for undo.
+///
+/// The renderer drags nodes freely, so positions are pinned rather than
+/// recomputed; call relayout to snap the tree back to a computed arrangement.
+#[tauri::command]
+fn move_node(state: State<'_, AppState>, id: u64, x: f64, y: f64) -> Result<Snapshot, String> {
+    let mut doc = state.inner.lock().map_err(|_| "state poisoned")?;
+    {
+        let hist = doc.history.as_mut().ok_or("no document is open")?;
+        hist.apply(undo::Action::MoveNode { id, x, y })
+            .map_err(|e| e.to_string())?;
+        let mut updated = hist.current().clone();
+        // Positions were chosen by hand, but children still follow their parent,
+        // so re-run placement without re-measuring.
+        layout::reposition(&mut updated);
+        doc.map = Some(updated);
+    }
+    doc.dirty = true;
+    Ok(snapshot(&doc))
+}
+
 /// Apply node dimensions measured by the frontend, then relayout.
 ///
 /// The webview measures text with real font metrics, which the core cannot do
@@ -405,11 +426,70 @@ fn mcp_uninstall() -> Result<mapist_mcp::setup::McpInfo, String> {
     mapist_mcp::setup::info()
 }
 
+/// Ask before discarding unsaved work.
+///
+/// Returns `false` to let the window close. The dialog runs on the main thread
+/// because that is where the platform event loop lives.
+fn confirm_close(window: &tauri::Window) -> bool {
+    use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
+
+    let state = window.state::<AppState>();
+    let (dirty, path) = match state.inner.lock() {
+        Ok(doc) => (
+            doc.dirty,
+            doc.path
+                .as_deref()
+                .map(|p| {
+                    std::path::Path::new(p)
+                        .file_name()
+                        .map(|n| n.to_string_lossy().into_owned())
+                        .unwrap_or_else(|| p.to_string())
+                })
+                .unwrap_or_else(|| "this map".to_string()),
+        ),
+        Err(_) => (false, String::new()),
+    };
+    if !dirty {
+        return true;
+    }
+    let message = format!("{path} has unsaved changes.");
+    window
+        .dialog()
+        .message(message)
+        .title("Discard changes?")
+        .kind(MessageDialogKind::Warning)
+        .buttons(MessageDialogButtons::OkCancelCustom(
+            "Discard".into(),
+            "Keep editing".into(),
+        ))
+        .blocking_show()
+}
+
 /// Run the application.
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        // Opens links in the user's browser rather than inside the webview.
+        .plugin(tauri_plugin_opener::init())
+        // Reopens the window at the size and place it was left. Only geometry:
+        // appearance belongs to the app's own theme setting.
+        .plugin(
+            tauri_plugin_window_state::Builder::default()
+                .with_state_flags(
+                    tauri_plugin_window_state::StateFlags::SIZE
+                        | tauri_plugin_window_state::StateFlags::POSITION
+                        | tauri_plugin_window_state::StateFlags::MAXIMIZED,
+                )
+                .build(),
+        )
         .manage(AppState::default())
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                if !confirm_close(window) {
+                    api.prevent_close();
+                }
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             get_snapshot,
             new_map,
@@ -425,6 +505,7 @@ pub fn run() {
             redo,
             search_nodes,
             set_sizes,
+            move_node,
             mcp_info,
             mcp_install,
             mcp_uninstall

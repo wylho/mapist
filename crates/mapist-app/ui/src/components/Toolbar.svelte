@@ -2,12 +2,14 @@
   // Barra superior: marca, ações de arquivo, ações de nó, busca e undo/redo.
   import { doc } from '../lib/document.svelte'
   import { theme } from '../lib/theme.svelte'
+  import { prefs } from '../lib/prefs.svelte'
 
-  let search = $state('')
+  let search = $state(prefs.search)
   let searchTimer: ReturnType<typeof setTimeout> | undefined
 
   function onSearch(e: Event) {
     search = (e.target as HTMLInputElement).value
+    prefs.setSearch(search)
     clearTimeout(searchTimer)
     searchTimer = setTimeout(() => doc.search(search), 160)
   }

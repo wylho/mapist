@@ -7,10 +7,11 @@
   import ThemeSheet from './components/ThemeSheet.svelte'
   import { doc } from './lib/document.svelte'
   import { hasHost } from './lib/api'
+  import { prefs } from './lib/prefs.svelte'
 
   let canvasRef = $state<Canvas | undefined>(undefined)
   // O nível de zoom vive no canvas; espelhamos aqui para o rótulo reagir.
-  let zoom = $state(1)
+  let zoom = $state(prefs.zoom)
 
   const zoomPct = $derived(Math.round(zoom * 100))
 
@@ -86,7 +87,7 @@
   <Toolbar />
 
   <div class="map-body">
-    <Canvas bind:this={canvasRef} onzoom={(z) => (zoom = z)}>
+    <Canvas bind:this={canvasRef} onzoom={(z) => { zoom = z; prefs.setZoom(z) }}>
       <ThemeSheet />
 
       <div class="scope-bar">
@@ -113,7 +114,9 @@
       </div>
     </Canvas>
 
-    <Inspector />
+    {#if prefs.inspectorOpen}
+      <Inspector />
+    {/if}
   </div>
 
   {#if doc.error}
