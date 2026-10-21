@@ -9,11 +9,13 @@ import {
   DESKTOPS,
   fitAccent,
   mix,
+  NODE_COLOR_TOKENS,
   PALETTES,
   paletteColors,
+  resolveNodeColor,
   systemColors,
 } from '../src/lib/palettes'
-import { hitTest } from '../src/lib/render'
+import { hitTest, resolveColor } from '../src/lib/render'
 import type { Snapshot } from '../src/lib/api'
 
 describe('mix', () => {
@@ -233,3 +235,45 @@ describe('hitTest', () => {
     expect(hitTest(overlapping, view, 50, 20, rect)).toBe(1)
   })
 })
+
+describe('cor de nó: token vira hex, nunca o contrário', () => {
+  it('resolve cada token para um hex válido do tema', () => {
+    const c = PALETTES.ideario.light
+    for (const t of NODE_COLOR_TOKENS) {
+      expect(resolveNodeColor(t, c), t).toMatch(/^#[0-9a-f]{6}$/i)
+    }
+  })
+
+  it('resolve o token para o primeiro valor de notes, na ordem certa', () => {
+    const c = PALETTES.ideario.light
+    expect(resolveNodeColor('--n-sand', c)).toBe(NOTES_FIRST)
+    expect(resolveNodeColor('--n-sand', c)).toBe(c.notes[0])
+  })
+
+  it('passa hex direto, como um .minder carregaria', () => {
+    const c = PALETTES.ideario.light
+    expect(resolveNodeColor('#c6262e', c)).toBe('#c6262e')
+  })
+
+  it('resolveColor do render concorda com resolveNodeColor', () => {
+    const colors = {
+      stage: '',
+      surface: '#ffffff',
+      raised: '',
+      fg: '',
+      muted: '',
+      line: '',
+      accent: '',
+      onAccent: '',
+      cardEdge: '',
+      nodeColors: PALETTES.ideario.light.notes,
+    }
+    for (const t of NODE_COLOR_TOKENS) {
+      expect(resolveColor(t, colors)).toBe(resolveNodeColor(t, PALETTES.ideario.light))
+    }
+    expect(resolveColor('#c6262e', colors)).toBe('#c6262e')
+    expect(resolveColor(null, colors)).toBe('#ffffff')
+  })
+})
+
+const NOTES_FIRST = PALETTES.ideario.light.notes[0]

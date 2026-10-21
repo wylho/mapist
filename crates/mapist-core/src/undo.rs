@@ -60,8 +60,13 @@ impl Action {
             }
             Action::MoveNode { id, x, y } => {
                 let node = map.find_mut(*id).ok_or(crate::Error::NodeNotFound(*id))?;
+                let dx = *x - node.pos.x;
+                let dy = *y - node.pos.y;
+                // Move the whole subtree rigidly, so children follow their parent
+                // rather than staying behind at their old positions.
                 node.pos.x = *x;
                 node.pos.y = *y;
+                shift_subtree(node, dx, dy);
                 Ok(Some(*id))
             }
             Action::SetColor { id, color } => {
@@ -70,6 +75,18 @@ impl Action {
                 Ok(Some(*id))
             }
         }
+    }
+}
+
+/// Shift a node's descendants by `(dx, dy)`, relative to the node itself.
+///
+/// Used by [`Action::MoveNode`] so that dragging a branch carries its children
+/// with it. The node itself is repositioned by the caller.
+fn shift_subtree(node: &mut Node, dx: f64, dy: f64) {
+    for child in &mut node.children {
+        child.pos.x += dx;
+        child.pos.y += dy;
+        shift_subtree(child, dx, dy);
     }
 }
 

@@ -2,9 +2,8 @@
   // Inspetor do nó selecionado: texto, nota, cor, lado, layout e métricas.
   import { doc } from '../lib/document.svelte'
   import { theme } from '../lib/theme.svelte'
+  import { NODE_COLOR_TOKENS, resolveNodeColor } from '../lib/palettes'
   import McpPanel from './McpPanel.svelte'
-
-  const NODE_TOKENS = ['--n-sand', '--n-sage', '--n-sky', '--n-rose', '--n-lilac', '--n-butter'] as const
 
   let text = $state('')
   let note = $state('')
@@ -92,13 +91,13 @@
               aria-pressed={node.color === null}
               onclick={() => doc.setColor(node.id, null)}>×</button
             >
-            {#each NODE_TOKENS as token (token)}
+            {#each NODE_COLOR_TOKENS as token (token)}
               <button
                 class="swatch"
                 style:background={swatchColor(token)}
                 title={token}
-                aria-pressed={node.color === token}
-                onclick={() => doc.setColor(node.id, token)}
+                aria-pressed={node.color === resolveNodeColor(token, theme.colors)}
+                onclick={() => doc.setColor(node.id, resolveNodeColor(token, theme.colors))}
               ></button>
             {/each}
           </div>

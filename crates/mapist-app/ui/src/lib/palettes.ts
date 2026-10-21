@@ -237,6 +237,30 @@ export function paletteColors(
   return id === "system" ? systemColors(desktopId, mode, systemAccent) : PALETTES[id][mode];
 }
 
+/** Ordem fixa dos tokens de cor de nó, na sequência dos `notes` de cada paleta. */
+export const NODE_COLOR_TOKENS = [
+  "--n-sand",
+  "--n-sage",
+  "--n-sky",
+  "--n-rose",
+  "--n-lilac",
+  "--n-butter",
+] as const;
+
+/**
+ * Resolve um token de cor de nó (`--n-sky`) para o valor hex que o arquivo
+ * `.minder` deve guardar no tema ativo.
+ *
+ * O arquivo exige `#rrggbb` (compatibilidade com o Minder); os tokens CSS são
+ * só a interface. Esta é a única ponte entre os dois, para que nenhuma outra
+ * parte do código persista um token no lugar de uma cor concreta.
+ */
+export function resolveNodeColor(token: string, colors: Colors): string {
+  const i = NODE_COLOR_TOKENS.indexOf(token as (typeof NODE_COLOR_TOKENS)[number])
+  if (i >= 0) return colors.notes[i]
+  return token
+}
+
 /** As mesmas variáveis CSS que o app.css do Ideario espera. */
 export function cssVars(c: Colors, mode: Mode): Record<string, string> {
   const dark = mode === "dark";

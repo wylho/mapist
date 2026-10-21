@@ -6,6 +6,7 @@
 import type { Snapshot } from './api'
 import { fitText } from './measure'
 import { nodeFont, uiFont } from './font'
+import { NODE_COLOR_TOKENS } from './palettes'
 
 export interface Viewport {
   x: number
@@ -39,14 +40,17 @@ export interface DrawOptions {
   dpr: number
 }
 
-/** Converte um token de cor (`--n-sage`) no valor concreto do tema. */
+/**
+ * Converte um token de cor de nó (`--n-sage`) no valor concreto do tema.
+ *
+ * A fonte da verdade da ordem dos tokens é `NODE_COLOR_TOKENS` em palettes.ts;
+ * aqui só se consulta, para que a lista não exista em dois lugares e divirja.
+ * Cores hex passam direto, exatamente como vieram de um `.minder`.
+ */
 export function resolveColor(token: string | null, colors: ThemeColors): string {
   if (!token) return colors.surface
-  if (token.startsWith('--n-')) {
-    const order = ['sand', 'sage', 'sky', 'rose', 'lilac', 'butter']
-    const i = order.indexOf(token.slice(4))
-    if (i >= 0) return colors.nodeColors[i]
-  }
+  const i = NODE_COLOR_TOKENS.indexOf(token as (typeof NODE_COLOR_TOKENS)[number])
+  if (i >= 0) return colors.nodeColors[i]
   return token
 }
 

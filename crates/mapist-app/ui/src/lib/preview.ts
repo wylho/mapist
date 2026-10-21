@@ -190,12 +190,12 @@ function relayout() {
 
 // ── histórico ────────────────────────────────────────────────────────────
 
-function commit(fn: () => void) {
+function commit(fn: () => void, relayoutAfter = true) {
   past.push(snapshotState())
   if (past.length > 200) past.shift()
   future.length = 0
   fn()
-  relayout()
+  if (relayoutAfter) relayout()
   dirty = true
 }
 
@@ -224,23 +224,23 @@ export function seedDemo() {
     return n
   }
 
-  const discovery = branch(root, 'Discovery', '--n-sky', ['Entrevistas', 'Análise de mercado'])
+  const discovery = branch(root, 'Discovery', '#6eb0f7', ['Entrevistas', 'Análise de mercado'])
   discovery.children.length = 2
-  const design = branch(root, 'Design', '--n-lilac', ['Wireframes', 'Design system'])
+  const design = branch(root, 'Design', '#b28ee6', ['Wireframes', 'Design system'])
   const ds = nodes.get(design.children[1])!
-  branch(ds, 'Tokens', '--n-lilac')
-  branch(ds, 'Componentes', '--n-lilac')
+  branch(ds, 'Tokens', '#b28ee6')
+  branch(ds, 'Componentes', '#b28ee6')
 
-  branch(root, 'Build', '--n-sage', ['Core model', 'Layout engine', 'Servidor MCP', 'Shell desktop'])
-  branch(root, 'Lançamento', '--n-sand', ['Beta', 'Documentação', 'v1.0'])
+  branch(root, 'Build', '#7fbf7f', ['Core model', 'Layout engine', 'Servidor MCP', 'Shell desktop'])
+  branch(root, 'Lançamento', '#e8c547', ['Beta', 'Documentação', 'v1.0'])
 
-  const research = makeNode('Pesquisa', 'left', '', '--n-rose')
+  const research = makeNode('Pesquisa', 'left', '', '#e5818d')
   research.parent = root.id
-  research.color = '--n-rose'
+  research.color = '#e5818d'
   root.children.push(research.id)
   nodes.set(research.id, research)
-  branch(research, 'Concorrentes', '--n-rose')
-  branch(research, 'Artigos', '--n-rose')
+  branch(research, 'Concorrentes', '#e5818d')
+  branch(research, 'Artigos', '#e5818d')
 
   // Uma nota e um nó dobrado, para os marcadores aparecerem.
   const mcp = nodes.get(nodes.get(root.children.find((id) => nodes.get(id)?.text === 'Build')!)!.children[2])!
@@ -353,12 +353,15 @@ export const previewBackend = {
   },
 
   move_node: ({ id, x, y }: { id: number; x: number; y: number }) => {
-    commit(() => {
-      const n = nodes.get(id)
-      if (!n) throw new Error(`node ${id} not found`)
-      n.x = x
-      n.y = y
-    })
+    commit(
+      () => {
+        const n = nodes.get(id)
+        if (!n) throw new Error(`node ${id} not found`)
+        n.x = x
+        n.y = y
+      },
+      false, // posição manual: o relayout a desfaria
+    )
     return snapshotOf()
   },
 

@@ -209,6 +209,53 @@ mod tests {
     }
 
     #[test]
+    fn move_node_carries_its_subtree() {
+        // sample(): root(0) -> Alpha(1) -> Alpha-1(3); root -> Beta(2).
+        let mut map = sample();
+        layout::layout(&mut map);
+
+        let child_pos_before = map.find(1).unwrap().pos;
+        let grandchild_pos_before = map.find(3).unwrap().pos;
+
+        undo::Action::MoveNode {
+            id: 1,
+            x: 500.0,
+            y: 500.0,
+        }
+        .apply(&mut map)
+        .unwrap();
+
+        // O nó foi para onde pedimos…
+        assert_eq!(map.find(1).unwrap().pos.x, 500.0);
+        assert_eq!(map.find(1).unwrap().pos.y, 500.0);
+
+        // …e o neto se moveu junto, pelo mesmo deslocamento.
+        let dx = 500.0 - child_pos_before.x;
+        let dy = 500.0 - child_pos_before.y;
+        let g = map.find(3).unwrap().pos;
+        assert!((g.x - (grandchild_pos_before.x + dx)).abs() < 1e-6);
+        assert!((g.y - (grandchild_pos_before.y + dy)).abs() < 1e-6);
+    }
+
+    #[test]
+    fn move_node_does_not_drift_other_branches() {
+        let mut map = sample();
+        layout::layout(&mut map);
+        let beta_before = map.find(2).unwrap().pos;
+
+        undo::Action::MoveNode {
+            id: 1,
+            x: 300.0,
+            y: 300.0,
+        }
+        .apply(&mut map)
+        .unwrap();
+
+        // O ramo irmão não se move.
+        assert_eq!(map.find(2).unwrap().pos, beta_before);
+    }
+
+    #[test]
     fn round_trips_notes() {
         let mut map = MindMap::new("Root");
         let id = map.add_child(0, "Child").unwrap();

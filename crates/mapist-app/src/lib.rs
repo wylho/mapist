@@ -352,10 +352,11 @@ fn move_node(state: State<'_, AppState>, id: u64, x: f64, y: f64) -> Result<Snap
         let hist = doc.history.as_mut().ok_or("no document is open")?;
         hist.apply(undo::Action::MoveNode { id, x, y })
             .map_err(|e| e.to_string())?;
-        let mut updated = hist.current().clone();
-        // Positions were chosen by hand, but children still follow their parent,
-        // so re-run placement without re-measuring.
-        layout::reposition(&mut updated);
+        let updated = hist.current().clone();
+        // Manual layout: the moved node keeps its chosen position. Do NOT call
+        // layout::reposition here — it recomputes every position from the root
+        // and would erase the move the user just made. Automatic layout reapplies
+        // on structural edits (relayout and the mutating commands).
         doc.map = Some(updated);
     }
     doc.dirty = true;
