@@ -65,7 +65,7 @@ code { font: .88em var(--mono); background: var(--raised); border: 1px solid var
 .hero p.lead { font-size: clamp(18px, 2.1vw, 23px); line-height: 1.45; color: var(--muted); max-width: 680px; margin: 0 auto; text-wrap: pretty; }
 .hero .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 32px; }
 .hero .fine { margin-top: 16px; font-size: 14px; color: var(--muted); }
-.hero .fine a { color: inherit; }
+.hero .fine a { color: inherit; display: inline-flex; align-items: center; gap: 4px; }
 
 /* recortes soltos nas bordas, cortados pela tela (pedaços dos prints do próprio app) */
 .tile {
@@ -77,9 +77,8 @@ code { font: .88em var(--mono); background: var(--raised); border: 1px solid var
 .tile.t2 { width: 220px; height: 170px; right: -30px; top: 64px; rotate: 3deg; }
 .tile.t3 { width: 230px; height: 230px; left: 7%; bottom: -70px; rotate: 2deg; }
 .tile.t4 { width: 280px; height: 200px; right: 4%; bottom: -40px; rotate: -3deg; }
-.tile.map { background-image: url(/img/mapa.webp); }
-.tile.themes { background-image: url(/img/temas.webp); }
-@media (prefers-color-scheme: dark) { .tile.map { background-image: url(/img/mapa-escuro.webp); } }
+.tile { background-image: var(--img); }
+@media (prefers-color-scheme: dark) { .tile { background-image: var(--img-dark, var(--img)); } }
 
 /* ---------- print grande ---------- */
 .showcase { padding: 0 24px; }
@@ -104,6 +103,7 @@ code { font: .88em var(--mono); background: var(--raised); border: 1px solid var
 .card .media { margin-top: auto; padding-top: 28px; }
 .card .media img { width: 100%; border-radius: 16px 16px 0 0; box-shadow: 0 0 0 1px var(--edge), var(--shadow); }
 .card.wide .media { margin: 0; padding: 0; align-self: end; }
+.card.wide > div:first-child { padding-bottom: 40px; }
 .card.wide .media img { border-radius: 16px 0 0 0; }
 .card.wide .media.phone { justify-self: center; width: min(280px, 70%); }
 .card .media.phone img { height: 440px; object-fit: cover; object-position: top; border-radius: 26px 26px 0 0; }
@@ -114,6 +114,22 @@ code { font: .88em var(--mono); background: var(--raised); border: 1px solid var
 .box h3 { font-size: 18px; margin: 0 0 6px; letter-spacing: -.01em; }
 .box p { margin: 0; color: var(--muted); font-size: 15.5px; }
 .box .ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); margin-bottom: 16px; }
+
+/* grade de quatro */
+.grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+/* novidades */
+.news { max-width: 860px; margin: 0 auto; padding: 36px 40px; border-radius: 28px; }
+.news ul { padding-left: 1.1em; margin: 0 0 12px; }
+.news li { color: var(--muted); margin: 6px 0; }
+.news li b { color: var(--fg); }
+.news details { margin: 14px 0; }
+.news summary { cursor: pointer; font-weight: 600; }
+.news details p { margin: 8px 0; }
+.tag { font-size: 12px; font-weight: 600; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 2px 8px; vertical-align: middle; }
+pre { line-height: 1.5; background: var(--raised); border: 1px solid var(--edge); border-radius: 12px; padding: 12px 14px; overflow-x: auto; margin: .6em 0; }
+pre code { background: none; border: 0; padding: 0; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.box.full { margin-top: 16px; }
 
 /* baixar */
 .dl .box h3 { font-size: 20px; }
@@ -140,9 +156,11 @@ code { font: .88em var(--mono); background: var(--raised); border: 1px solid var
 .doc h1 { font-size: clamp(36px, 6vw, 56px); letter-spacing: -.035em; line-height: 1.05; margin: 8px 0 12px; }
 .doc h2 { font-size: 22px; margin: 2em 0 .4em; }
 .doc .box { margin: 1.2em 0; }
+.doc #english { margin-top: 72px; padding-top: 48px; border-top: 1px solid var(--line); }
 
 /* ---------- telas menores ---------- */
 @media (max-width: 1000px) {
+  .grid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .tile.t3, .tile.t4 { display: none; }
   .card.wide { grid-template-columns: 1fr; padding: 36px 36px 0; }
   .card.wide .media img { border-radius: 16px 16px 0 0; }
@@ -153,7 +171,8 @@ code { font: .88em var(--mono); background: var(--raised); border: 1px solid var
   .hero { padding: 72px 20px 64px; }
   .tile { display: none; }
   .section { padding: 80px 0; }
-  .cards, .grid, .footer .cols { grid-template-columns: 1fr; }
+  .cards, .grid, .grid.four, .footer .cols { grid-template-columns: 1fr; }
+  .news { padding: 28px 24px; }
   .card { min-height: 0; padding: 28px 28px 0; border-radius: 24px; }
   .hero .cta .btn { flex: 1 1 100%; }
 }
