@@ -84,7 +84,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          projectPath: crates/mapist-app
+          # Da raiz, como no workflow Build: a CLI acha crates/mapist-app/tauri.conf.json sozinha, e o
+          # beforeBuildCommand (cd mapist-app/ui) roda a partir de crates/. Com projectPath ele rodaria uma pasta
+          # abaixo e não acharia a interface.
           tauriScript: ${{ github.workspace }}/crates/mapist-app/ui/node_modules/.bin/tauri
           tagName: v__VERSION__
           releaseName: Mapist v__VERSION__
