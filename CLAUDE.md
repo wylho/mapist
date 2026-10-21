@@ -95,7 +95,9 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   mesmo efeito. Motivo: um laço assim (`colors`) fazia centenas de redesenhos por tecla e deixava a edição travando.
 
 ## Estado atual
-- **Fases 1 e 2 concluídas. Versão 0.1.0 lançada** (Release `v0.1.0`: `.dmg` universal, `-setup.exe`/`.msi`,
+- **Fases 1 e 2 concluídas. Versão 0.2.0 lançada** (21/10/2026, Release `v0.2.0` com `latest.json` e `.sig` de todos os
+  instaladores: a primeira com atualização automática). A 0.1.0 saiu como Mapist e teve o Release apagado
+- Antes: versão 0.1.0 (Release `v0.1.0`: `.dmg` universal, `-setup.exe`/`.msi`,
   `.AppImage`/`.deb`/`.rpm`), sem atualizador: quem tem a 0.1.0 baixa a 0.2.0 à mão; dali em diante é automático (D19).
 - `nodo-core`: modelo (`model.rs`), `.minder` (`document.rs`), layout (`layout.rs`: faixa por sub-árvore, lado de cada
   ramo, descendentes de nó recolhido sem posição), histórico (`undo.rs`: `Action` inclui `SetSide`, `ToggleFold`,
@@ -126,11 +128,14 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
 - **Edição XMind e temas de mapa** (`lib/maptheme.ts`, `components/MapThemeSheet.svelte`, `Action::SetMapStyle`,
   `set_map_theme` no MCP, `set_map_style` no app); barra do macOS integrada (`setup` + `mac_lights_width` em
   `src/lib.rs`, `main.ts`, `map.css`).
-- **Renomeado para Nodo e versão 0.2.0 no `main`** (ainda não lançada). Edição rápida de novo (`Canvas.svelte`:
+- **Renomeado para Nodo** (0.2.0). Edição rápida de novo (`Canvas.svelte`:
   `scheduleRender`, 12–26 ms por Tab/Enter na prévia, um desenho só). Botões do macOS pela configuração da janela.
 - **Atualização automática** (D19) e `.github/workflows/check-secrets.yml` (confere chave e token sem mostrar nada).
   O Release exige o segredo da chave.
 - **Revisão antes da 0.2.0:** letras digitadas logo após Tab/Enter iam para o nó anterior ou se perdiam
   (`doc.type` guarda o que chega enquanto o nó nasce; `App.svelte` usa ele); "Procurar atualizações" só aparece onde
   o app se atualiza (`update_supported`); barra sem sobreposição em janela de 390 px (Novo e Abrir saem abaixo de 480).
-- **Próximo:** lançar a 0.2.0 quando o usuário pedir; depois a Fase 3 (importação e exportação).
+- **Sites ligados:** seção "Do mesmo autor" no site do Nodo (leva ao Ideario) e no do Ideario (leva ao Nodo), com
+  print do outro app e link no rodapé. `.github/workflows/delete-release.yml` apaga um Release antigo ou a tag que
+  sobrou (recusa o último).
+- **Próximo:** Fase 3 (importação e exportação).
