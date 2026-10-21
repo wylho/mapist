@@ -9,21 +9,23 @@ directly.
 
 ## Status
 
-Phase 1 — core. The data model, layout engine, document I/O, undo history, and
-MCP server are implemented and tested. The Tauri desktop shell is not built yet.
+Phase 2 — desktop shell. The core, MCP server, and Tauri application are
+implemented and tested. Editing happens in the window or over MCP.
 
 | Component | State |
 |---|---|
 | `mapist-core` — model, layout, document I/O, undo | Implemented, 15 tests |
 | `mapist-mcp` — MCP server over stdio | Implemented, 19 tests |
-| `mapist-app` — Tauri desktop shell | Not started |
+| `mapist-app` — Tauri desktop shell | Implemented, 5 tests |
 
 ## Layout
 
 ```
 crates/
 ├── mapist-core/     model, layout, XML document I/O, undo — no UI
-└── mapist-mcp/      Model Context Protocol server over stdio
+├── mapist-mcp/      Model Context Protocol server over stdio
+└── mapist-app/      Tauri window, commands, and canvas UI
+    └── ui/          HTML/CSS/JS renderer
 ```
 
 `mapist-core` is deliberately UI-free. The desktop application and the MCP
@@ -40,6 +42,35 @@ cargo test
 ```
 
 The MCP server binary lands at `target/release/mapist-mcp`.
+
+To run the desktop application:
+
+```bash
+cargo run -p mapist-app
+```
+
+To produce a bundled `.app` and `.dmg`:
+
+```bash
+cargo tauri build --config crates/mapist-app/tauri.conf.json
+```
+
+### Using the window
+
+| Input | Effect |
+|---|---|
+| Click | Select a node |
+| Double-click | Select and focus the text field |
+| Drag background | Pan |
+| Wheel | Zoom |
+| <kbd>Tab</kbd> | Add a child |
+| <kbd>Enter</kbd> | Add a sibling |
+| <kbd>Delete</kbd> | Delete the node and its subtree |
+| <kbd>Space</kbd> | Fold or unfold |
+| Arrow keys | Move the selection geometrically |
+| <kbd>Cmd</kbd>+<kbd>Z</kbd> / <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> | Undo / redo |
+| <kbd>Cmd</kbd>+<kbd>S</kbd> | Save |
+
 
 ## File format
 
@@ -106,10 +137,18 @@ printf '%s\n' \
 
 ## Roadmap
 
-- **Phase 1** — core, MCP server *(current)*
-- **Phase 2** — Tauri shell: canvas rendering, keyboard editing, inspectors
+- **Phase 1** — core, MCP server *(done)*
+- **Phase 2** — Tauri shell: canvas rendering, keyboard editing, inspectors *(done)*
 - **Phase 3** — import/export: Markdown, OPML, FreeMind, Mermaid, SVG, PNG
 - **Phase 4** — themes, animations, focus mode, tabs, i18n
+
+### Known gaps
+
+- Save and open use a prompt for the path; native file dialogs are not wired.
+- Node widths are estimated from character counts, not measured with a real
+  font, so boxes can be slightly wide or narrow.
+- Connections parse and round-trip but cannot be drawn or edited yet.
+- The webview has no window-control or menu integration yet.
 
 ## License
 
