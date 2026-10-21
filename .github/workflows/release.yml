@@ -1,0 +1,115 @@
+# Publica uma versão do Mapist na página Releases do GitHub, com os instaladores de macOS, Windows e Linux.
+# Para lançar: suba a versão (scripts/bump-version.sh X.Y.Z) e rode Actions → Release → Run workflow.
+#
+# O Release nasce como rascunho; quando os três sistemas terminam, o job "Publicar" o publica. Assim o
+# "último Release" nunca aponta para uma versão pela metade. Guia: docs/RELEASE.md.
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    name: Verificar antes de lançar
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: crates/mapist-app/ui/pnpm-lock.yaml
+      - name: Dependências do sistema (WebKitGTK)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: pnpm --dir crates/mapist-app/ui install --frozen-lockfile
+      - run: scripts/check-version.sh
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test --workspace
+      - run: pnpm --dir crates/mapist-app/ui run check
+      - run: pnpm --dir crates/mapist-app/ui run test
+
+  release:
+    name: Instaladores (${{ matrix.name }})
+    needs: check
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS
+            os: macos-latest
+            args: --target universal-apple-darwin
+            rust-targets: aarch64-apple-darwin,x86_64-apple-darwin
+          - name: Windows
+            os: windows-latest
+            args: ''
+            rust-targets: ''
+          - name: Linux
+            os: ubuntu-22.04
+            args: ''
+            rust-targets: ''
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: crates/mapist-app/ui/pnpm-lock.yaml
+      - name: Dependências do sistema (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
+      - uses: Swatinem/rust-cache@v2
+      - run: pnpm --dir crates/mapist-app/ui install --frozen-lockfile
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: crates/mapist-app
+          tauriScript: ${{ github.workspace }}/crates/mapist-app/ui/node_modules/.bin/tauri
+          tagName: v__VERSION__
+          releaseName: Mapist v__VERSION__
+          releaseBody: |
+            Instaladores do Mapist v__VERSION__.
+
+            - **macOS** (Apple Silicon e Intel): baixe o `.dmg`. Na primeira vez, clique com o botão direito no app → **Abrir** (o app ainda não é assinado pela Apple).
+            - **Windows**: baixe o `-setup.exe` (ou o `.msi`).
+            - **Linux**: baixe o `.AppImage`, o `.deb` (Ubuntu, Debian) ou o `.rpm` (Fedora).
+
+            Para ligar o Claude aos seus mapas: Configurações → Claude, no próprio app.
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+
+  publish:
+    name: Publicar
+    needs: release
+    runs-on: ubuntu-22.04
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Publicar o rascunho
+        run: |
+          tag="v$(node -p "require('./crates/mapist-app/tauri.conf.json').version")"
+          gh release edit "$tag" --draft=false --latest
