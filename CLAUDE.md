@@ -103,6 +103,9 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   retrato/paisagem automático), HTML de um arquivo só, Markdown e OPML. O PDF é imagem em alta resolução (igual à
   tela) em vez de vetor, para não depender de fontes embutidas; o SVG é o vetor.
 - **D24:** **importar Markdown e OPML** (pedido do usuário) pelo próprio Abrir, como mapa novo não salvo.
+- **D25:** **nó com nota é o card do Ideario** (escolha do usuário, opção A: fundo na cor do ramo clara), em HTML
+  com o CSS do Ideario por cima do canvas, para ser idêntico; a nota se edita num card flutuante, e há notas soltas
+  no mapa, gravadas no arquivo.
 - **D18:** **o canvas redesenha no máximo uma vez por quadro**, e o que o desenho lê não pode ser `$state` escrito no
   mesmo efeito. Motivo: um laço assim (`colors`) fazia centenas de redesenhos por tecla e deixava a edição travando.
 
@@ -116,7 +119,7 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   `Relayout`), **`Editor`** (`editor.rs`: histórico + arquivo + revisões; sujo segue o desfazer até o salvo; salvar é
   atômico; `changed_on_disk` para ver o que o agente salvou). Testes em `editor.rs`, `lib.rs` e
   `tests/layout_props.rs` (proptest).
-- `nodo-mcp`: `Session` = `Option<Editor>`; 21 ferramentas (`toggle_fold`, `set_map_theme`, `move_sibling`, `set_layout` e `export_map` novas; `set_side`/`relayout` passam pelo
+- `nodo-mcp`: `Session` = `Option<Editor>`; 24 ferramentas (`toggle_fold`, `set_map_theme`, `move_sibling`, `set_layout`, `export_map` e as notas soltas `add_free_note`/`set_free_note`/`remove_free_note`; `set_side`/`relayout` passam pelo
   histórico); `setup.rs` registra no Claude Desktop.
 - `nodo-app`: 32 comandos (com `reorder_node`, `set_structure`, `set_spacing`, `relayout`, `export_text`, `write_export`) (com `update_supported`/`update_check`/`update_install`) em `src/lib.rs` sobre o `Editor` (`set_side`, `reload_map`, `quit_app` novos); snapshot
   esconde filhos de nó recolhido e diz se o arquivo mudou no disco (`stale`); fechar/Cmd+Q com algo não salvo pergunta
@@ -127,7 +130,7 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   palettes, theme, render com `traceBranch` curvas/em ângulo, measure, font, preview). `ideario.css` + `map.css`.
 - **Preview** (`ui/src/lib/preview.ts`): espelha o núcleo (mesmo layout, recolhidos escondidos); `?preview`, e
   `?select=Texto` abre com o nó selecionado. Mapa de exemplo "Lançamento do app", inventado.
-- **Testes:** 87 Rust + 42 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
+- **Testes:** 90 Rust + 43 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
   `.AppImage`; a janela abre um `.minder` passado como argumento) e `nodo --mcp` testado de ponta a ponta.
 - **CI/Release:** `.github/workflows/build.yml` (verificação + instaladores dos três sistemas nos Artifacts) e
   `release.yml` (rascunho → publicar); `scripts/check-version.sh` e `scripts/bump-version.sh`; guia em
@@ -179,5 +182,16 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   vira a raiz), `Editor::open_or_import` (por extensão; o mapa importado fica sem caminho e sujo, então salvar pergunta
   onde e o arquivo original nunca é sobrescrito). Usado pelo `open_map` do app e do MCP; o diálogo Abrir aceita
   `.md`, `.markdown`, `.txt` e `.opml`. Ida e volta: o Markdown e o OPML exportados voltam à mesma árvore.
-- **Próximo:** balão da nota com Markdown formatado (clicar na bolinha), depois aba Estrutura na barra lateral com
-  colar lista, depois abrir `.xmind`.
+- **Notas** (D25): nó com nota vira **o card do Ideario** (opção A do usuário: card na cor do ramo bem clara):
+  `lib/cardtext.ts` (`cardHtml` = marcação do `NoteCard.svelte` do Ideario com os blocos `pv-*` e os limites do
+  `preview_of`; `layoutCard` desenha o mesmo card no canvas/SVG para exportar), medido no DOM (`measureCard` em
+  `measure.ts`) e posto por cima do canvas em `Canvas.svelte` (`.map-card`, sem mouse; o canvas desenha ramos e
+  seleção). Duplo clique no título edita o título; no corpo, abre a nota. A nota se escreve num card flutuante ao
+  lado do nó (`components/NoteCard.svelte`, translúcido, Markdown formatado com `lib/markdown.ts`, um clique edita,
+  salva sozinho; `lib/notes.svelte.ts`). **Notas soltas** no fundo do mapa: `model::FreeNote`, `<nodo-notes>` no
+  arquivo (o Minder ignora), `Action::AddFreeNote/SetFreeNote/PlaceFreeNote/RemoveFreeNote`, comandos
+  `add_free_note`/`set_free_note`/`place_free_note`/`remove_free_note`, ferramentas MCP; "Nova nota aqui" no menu do
+  fundo, "Adicionar nota" no do nó. O inspetor só mostra a prévia da nota e o botão para abrir.
+- **Próximo:** estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore);
+  componentes e formato de área de transferência compartilhados com o Ideario (decisão pendente com o usuário);
+  aba Estrutura na barra lateral com colar lista; abrir `.xmind`.

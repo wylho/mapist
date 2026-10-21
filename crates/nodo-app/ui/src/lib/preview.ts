@@ -337,8 +337,10 @@ export function seedDemo() {
   branch(root, 'Divulgação', '#f0a36b', ['Site', 'Vídeo curto', 'Comunidade'], 'left')
   branch(root, 'Pesquisa', '#e5818d', ['Concorrentes', 'Artigos'], 'left')
 
-  // Uma nota e um ramo recolhido, para os marcadores aparecerem.
+  // Notas (os nós com nota viram card) e um ramo recolhido, para os marcadores aparecerem.
   nodes.get(build.children[2])!.note = 'Dezessete ferramentas, o mesmo desfazer da janela.'
+  nodes.get(root.children[0])!.note = '- 12 entrevistas com quem já usa mapas\n- Dor nº 1: **exportar para slides**'
+  build.note = '- [x] Núcleo\n- [x] Layout\n- [ ] Servidor MCP\n- [ ] Janela'
   nodes.get(root.children[root.children.length - 1])!.folded = true
 
   relayout()

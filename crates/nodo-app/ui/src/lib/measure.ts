@@ -9,8 +9,9 @@
 
 import type { FlatNode } from './api'
 
-import { levelFont } from './font'
+import { fontStack, levelFont } from './font'
 import { levelStyle, mapTheme, type MapTheme } from './maptheme'
+import { CARD, cardHtml, isCard } from './cardtext'
 
 /** Altura de linha, proporcional ao tamanho do texto do nível. */
 const LINE_RATIO = 1.4
@@ -35,6 +36,7 @@ function context(): CanvasRenderingContext2D {
  * `ctx.scale()`, então medir e desenhar usam sempre a mesma referência.
  */
 export function measureNode(node: FlatNode, theme: MapTheme = mapTheme(null)): { width: number; height: number } {
+  if (isCard(node.note, node.depth)) return measureCard(node.text, node.note)
   const c = context()
   const style = levelStyle(theme, node.depth)
   c.font = levelFont(style)
@@ -67,4 +69,40 @@ export function fitText(text: string, maxWidth: number, style: { size: number; w
     out = out.slice(0, -1)
   }
   return out + '…'
+}
+
+let host: HTMLElement | null = null
+const cardSizes = new Map<string, { width: number; height: number }>()
+
+/**
+ * Mede o card de um nó com nota no próprio DOM, com a marcação e o CSS que a tela usa (`cardHtml` + `ideario.css`).
+ * Fora do zoom: o card na tela é escalado por `transform`, então a medida aqui já é em unidades de mundo.
+ */
+export function measureCard(title: string, note: string): { width: number; height: number } {
+  const key = `${title}\u0000${note}`
+  const hit = cardSizes.get(key)
+  if (hit) return hit
+  if (!host) {
+    host = document.createElement('div')
+    host.setAttribute('aria-hidden', 'true')
+    host.style.cssText = `position:absolute;left:-10000px;top:0;visibility:hidden;pointer-events:none;width:${CARD.width}px`
+    document.body.appendChild(host)
+  }
+  host.innerHTML = `<div class="card">${cardHtml(title, note)}</div>`
+  const size = { width: CARD.width, height: Math.ceil((host.firstElementChild as HTMLElement).getBoundingClientRect().height) }
+  if (cardSizes.size > 500) cardSizes.clear()
+  cardSizes.set(key, size)
+  return size
+}
+
+/** Esquece as medidas dos cards (a fonte ou o tema mudou). */
+export function resetCardSizes() {
+  cardSizes.clear()
+}
+
+/** Largura de um trecho numa fonte do card (o desenho para exportar usa, inclusive o SVG, que não sabe medir). */
+export function measureRun(text: string, size: number, weight: number, mono = false): number {
+  const c = context()
+  c.font = `${weight} ${size}px ${mono ? 'ui-monospace, monospace' : fontStack()}`
+  return c.measureText(text).width
 }

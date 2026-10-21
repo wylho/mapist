@@ -3,11 +3,12 @@
   import { onMount } from 'svelte'
   import { doc } from '../lib/document.svelte'
   import { theme } from '../lib/theme.svelte'
-  import { draw, hitNoteDot, hitTest, readThemeColors, type Viewport } from '../lib/render'
+  import { cardFill, draw, hitNoteDot, hitTest, readThemeColors, resolveColor, type Viewport } from '../lib/render'
+  import { CARD, cardHtml, isCard } from '../lib/cardtext'
   import { notes } from '../lib/notes.svelte'
   import NoteCard from './NoteCard.svelte'
   import { prefs } from '../lib/prefs.svelte'
-  import { levelStyle, mapTheme } from '../lib/maptheme'
+  import { branchColors, levelStyle, mapTheme } from '../lib/maptheme'
 
   import type { Snippet } from 'svelte'
 
@@ -304,7 +305,34 @@
     const hit = hitTest(doc.snapshot, view, e.clientX, e.clientY, r)
     if (hit === null) return
     doc.selected = hit
+    // No card, o duplo clique no título edita o título; no resto, abre a nota para escrever.
+    const n = doc.node(hit)
+    if (n && isCard(n.note, n.depth) && (e.clientY - r.top - view.y) / view.scale - n.y > CARD.padY + CARD.titleSize * CARD.titleLine + 4) {
+      notes.show(hit, true)
+      return
+    }
     doc.startEdit()
+  }
+
+  /**
+   * Nós com nota, desenhados como o card do Ideario (HTML e CSS dele) por cima do canvas, na posição e no zoom do mapa.
+   * Não recebem o mouse: clicar, arrastar e o menu continuam com o canvas, como em qualquer nó.
+   */
+  const cardNodes = $derived.by(() => {
+    void theme.palette
+    void theme.pref
+    void theme.simDesktop
+    const list = doc.snapshot.nodes.filter((n) => isCard(n.note, n.depth))
+    if (list.length === 0) return []
+    const c = readThemeColors()
+    const branch = branchColors(doc.snapshot.nodes, mapTheme(doc.snapshot.style), theme.mode, c.nodeColors, (x) => resolveColor(x, c))
+    return list.map((n) => ({ n, fill: cardFill(branch.get(n.id) ?? c.muted, c.surface, theme.mode), html: cardHtml(n.text, n.note) }))
+  })
+
+  /** Como o `watchClip` do Ideario: marca a prévia que passou da altura, para o CSS esmaecer o fim. */
+  function clip(el: HTMLElement) {
+    const p = el.querySelector<HTMLElement>('.preview')
+    p?.toggleAttribute('data-clipped', p.scrollHeight > p.clientHeight + 2)
   }
 
   // Abre o campo no lugar do nó sempre que o documento pede (tecla, Tab/Enter, duplo clique).
@@ -341,6 +369,17 @@
     const ed = doc.editing
     const n = ed ? doc.node(ed.id) : null
     if (!n) return null
+    if (isCard(n.note, n.depth)) {
+      // No card, o campo fica sobre o título.
+      return {
+        left: (n.x + CARD.padX - 4) * view.scale + view.x,
+        top: (n.y + CARD.padY - 4) * view.scale + view.y,
+        width: (n.width - CARD.padX * 2 + 8) * view.scale,
+        height: (CARD.titleSize * CARD.titleLine + 8) * view.scale,
+        font: CARD.titleSize * view.scale,
+        weight: 600,
+      }
+    }
     const style = levelStyle(mapTheme(doc.snapshot.style), n.depth)
     return {
       left: n.x * view.scale + view.x,
@@ -401,6 +440,19 @@
   aria-label="Mapa mental"
 >
   <canvas bind:this={canvas}></canvas>
+  {#each cardNodes as c (c.n.id)}
+    <!-- eslint-disable-next-line svelte/no-at-html-tags -- cardHtml escapa todo o texto da nota -->
+    <div
+      class="card map-card"
+      style:left="{c.n.x * view.scale + view.x}px"
+      style:top="{c.n.y * view.scale + view.y}px"
+      style:width="{c.n.width}px"
+      style:background={c.fill}
+      style:transform="scale({view.scale})"
+      aria-hidden="true"
+      {@attach (el) => (void c.html, clip(el))}
+    >{@html c.html}</div>
+  {/each}
   {#if doc.editing && editorBox}
     <input
       class="inline-editor"

@@ -5,9 +5,10 @@
 
 import type { Snapshot } from './api'
 import type { FlatNode } from './api'
-import { fitText } from './measure'
-import { levelFont, uiFont } from './font'
-import { NODE_COLOR_TOKENS } from './palettes'
+import { fitText, measureRun } from './measure'
+import { CARD, isCard, layoutCard } from './cardtext'
+import { fontStack, levelFont, uiFont } from './font'
+import { mix, NODE_COLOR_TOKENS } from './palettes'
 import { branchColors, levelStyle, lineWidth, mapTheme, softFill, textOn, type LevelStyle, type MapTheme } from './maptheme'
 
 export interface Viewport {
@@ -50,6 +51,11 @@ export interface DrawOptions {
   width: number
   height: number
   dpr: number
+  /**
+   * Pinta os nós com nota como card. Na tela não: lá o card é HTML por cima do canvas (o mesmo do Ideario), e o
+   * canvas só desenha a seleção em volta. Na exportação sim, porque o PNG, o SVG e o PDF saem só do desenho.
+   */
+  paintCards?: boolean
 }
 
 /**
@@ -113,8 +119,14 @@ export function draw(o: DrawOptions) {
       isSelected: n.id === selected,
       isHovered: n.id === hovered,
       isMatch: matches.has(n.id),
+      paintCards: o.paintCards ?? false,
     })
   }
+}
+
+/** Recheio do card de um nó com nota: a cor do ramo bem clara, como as cores de nota do Ideario (opção A). */
+export function cardFill(branch: string, surface: string, mode: 'light' | 'dark'): string {
+  return mix(branch, surface, mode === 'dark' ? 0.2 : 0.22)
 }
 
 /**
@@ -231,9 +243,14 @@ interface NodeOpts {
   isSelected: boolean
   isHovered: boolean
   isMatch: boolean
+  paintCards: boolean
 }
 
 function drawNode(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
+  if (isCard(n.note, n.depth)) {
+    drawCard(ctx, n, o)
+    return
+  }
   const { colors, theme, mode, branch, isSelected, isHovered, isMatch } = o
   const { x, y, width: w, height: h } = n
   const isRoot = n.parent === null
@@ -336,6 +353,85 @@ function drawNode(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
   ctx.restore()
 }
 
+/** Um nó com nota. Seleção e recolhido sempre; o card em si só quando `paintCards` (exportação). */
+function drawCard(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
+  const { colors, mode, branch } = o
+  const { x, y, width: w, height: h } = n
+  ctx.save()
+  if (o.paintCards) {
+    roundRect(ctx, x, y, w, h, CARD.radius)
+    ctx.fillStyle = cardFill(branch, colors.surface, mode)
+    ctx.fill()
+    ctx.strokeStyle = colors.cardEdge
+    ctx.lineWidth = 1
+    ctx.stroke()
+    const font = fontStack()
+    const lay = layoutCard(n.text, n.note, measureRun)
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'alphabetic'
+    for (const l of lay.lines) {
+      const done = l.kind === 'task' && l.done
+      const ink = done ? colors.muted : colors.fg
+      ctx.globalAlpha = l.alpha * (l.kind === 'p' || l.kind === 'li' || l.kind === 'ol' ? 0.85 : 1)
+      const size = l.kind === 'title' ? CARD.titleSize : l.kind === 'code' ? 11.5 : CARD.bodySize
+      if (l.first && (l.kind === 'li' || l.kind === 'ol')) {
+        ctx.font = `400 ${size}px ${font}`
+        ctx.fillStyle = colors.muted
+        ctx.fillText(l.mark ?? '•', x + l.markX, y + l.y)
+      }
+      if (l.first && l.kind === 'task') {
+        roundRect(ctx, x + l.markX + 0.75, y + l.y - 11.25, 12.5, 12.5, 4)
+        ctx.strokeStyle = ink
+        ctx.lineWidth = 1.5
+        ctx.stroke()
+        if (l.done) {
+          ctx.beginPath()
+          ctx.moveTo(x + l.markX + 3.8, y + l.y - 5)
+          ctx.lineTo(x + l.markX + 6.2, y + l.y - 2.6)
+          ctx.lineTo(x + l.markX + 10.4, y + l.y - 8)
+          ctx.stroke()
+        }
+      }
+      for (const r of l.runs) {
+        const weight = l.kind === 'title' ? 600 : l.kind === 'h' ? 650 : r.bold ? 600 : 400
+        ctx.font = `${weight} ${size}px ${l.kind === 'code' ? 'ui-monospace, monospace' : font}`
+        ctx.fillStyle = ink
+        ctx.fillText(r.text, x + l.x + r.x, y + l.y)
+        if (done) {
+          // Tarefa feita: riscada, como no card do Ideario.
+          const tw = measureRun(r.text, size, weight)
+          ctx.beginPath()
+          ctx.moveTo(x + l.x + r.x, y + l.y - size * 0.3)
+          ctx.lineTo(x + l.x + r.x + tw, y + l.y - size * 0.3)
+          ctx.strokeStyle = ink
+          ctx.lineWidth = 1
+          ctx.stroke()
+        }
+      }
+    }
+    ctx.globalAlpha = 1
+  }
+  const ring = o.isSelected ? 1 : o.isMatch ? 0.55 : o.isHovered ? 0.4 : 0
+  if (ring > 0) {
+    roundRect(ctx, x - 3, y - 3, w + 6, h + 6, CARD.radius + 3)
+    ctx.strokeStyle = colors.accent
+    ctx.lineWidth = o.isSelected ? 2 : 1.5
+    ctx.globalAlpha = ring
+    ctx.stroke()
+    ctx.globalAlpha = 1
+  }
+  if (n.has_children && n.folded) {
+    ctx.beginPath()
+    ctx.arc(n.side === 'left' ? x - 8 : x + w + 8, y + h / 2, 5, 0, Math.PI * 2)
+    ctx.fillStyle = branch
+    ctx.fill()
+    ctx.strokeStyle = colors.stage
+    ctx.lineWidth = 2
+    ctx.stroke()
+  }
+  ctx.restore()
+}
+
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   const rad = Math.min(r, w / 2, h / 2)
   ctx.beginPath()
@@ -376,7 +472,7 @@ export function hitNoteDot(snapshot: Snapshot, view: Viewport, clientX: number, 
   const r = Math.max(7, 9 / view.scale)
   for (let i = snapshot.nodes.length - 1; i >= 0; i--) {
     const n = snapshot.nodes[i]
-    if (!n.note) continue
+    if (!n.note || isCard(n.note, n.depth)) continue
     const d = noteDot(n)
     if (Math.hypot(wx - d.x, wy - d.y) <= r) return n.id
   }

@@ -48,7 +48,7 @@ function paint(ctx: unknown, s: Snapshot, scale: number) {
   draw({
     snapshot: s, colors: readThemeColors(), view: { scale, x: f.x * scale, y: f.y * scale },
     selected: null, hovered: null, matches: new Set(), width: f.width * scale, height: f.height * scale, dpr: 1,
-    linkStyle: prefs.linkStyle, mode: theme.mode, ...({ ctx } as Record<string, unknown>),
+    linkStyle: prefs.linkStyle, mode: theme.mode, paintCards: true, ...({ ctx } as Record<string, unknown>),
   } as never)
 }
 
