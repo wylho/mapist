@@ -91,6 +91,9 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   `components/UpdateNotice.svelte`; `latest.json` do último Release, assinatura com a chave dos segredos
   `TAURI_SIGNING_PRIVATE_KEY(_PASSWORD)`). macOS, Windows e AppImage; `.deb`/`.rpm` não. A chave privada fica guardada
   pelo usuário no Ideario dele; perder a chave é perder a atualização de quem já instalou.
+- **D20:** **repositórios apt e dnf como os do Ideario**, com uma chave GPG só do Nodo (escolha do usuário): os
+  índices assinados vão em cada Release e o site redireciona `/apt` e `/rpm` para o último. A chave privada fica com o
+  usuário, no Ideario dele.
 - **D18:** **o canvas redesenha no máximo uma vez por quadro**, e o que o desenho lê não pode ser `$state` escrito no
   mesmo efeito. Motivo: um laço assim (`colors`) fazia centenas de redesenhos por tecla e deixava a edição travando.
 
@@ -138,4 +141,7 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
 - **Sites ligados:** seção "Do mesmo autor" no site do Nodo (leva ao Ideario) e no do Ideario (leva ao Nodo), com
   print do outro app e link no rodapé. `.github/workflows/delete-release.yml` apaga um Release antigo ou a tag que
   sobrou (recusa o último).
+- **Repositórios apt e dnf** (D20): `scripts/linux-repos.sh` (cópia do Ideario), `.github/workflows/linux-repos.yml`
+  (chamado pelo Release e à mão), `site/_redirects`, `site/linux/` (chave pública e `nodo.repo`), seção Linux no site e
+  no README. Segredo `NODO_GPG_PRIVATE_KEY`, conferido no `check-secrets.yml`.
 - **Próximo:** Fase 3 (importação e exportação).

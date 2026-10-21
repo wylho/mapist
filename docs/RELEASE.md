@@ -29,7 +29,7 @@ Os mesmos instaladores saem a cada push nos "Artifacts" do workflow **Build**, p
 
 Desde a 0.2.0, como no Ideario (`tauri-plugin-updater`, `src/updates.rs`): ao abrir, o app lê o `latest.json` do
 último Release e, se houver versão nova, mostra um aviso no canto com **Atualizar**. Vale no macOS, no Windows e no
-AppImage; o `.deb` e o `.rpm` não se atualizam sozinhos (repositório apt/dnf ainda não existe).
+AppImage; o `.deb` e o `.rpm` se atualizam pelo repositório apt/dnf (abaixo).
 
 - O Release assina cada instalador com a chave dos segredos `TAURI_SIGNING_PRIVATE_KEY` e
   `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`; o app só instala o que a chave pública do `tauri.conf.json` confirma.
@@ -38,6 +38,14 @@ AppImage; o `.deb` e o `.rpm` não se atualizam sozinhos (repositório apt/dnf a
   Ideario do usuário (categoria de chaves, com PIN), na nota "Nodo — chave das atualizações".
 - Depois de criar ou trocar um segredo: Actions → **Conferir segredos** → Run workflow.
 
+## Repositórios apt e dnf
+
+Cada Release monta também os índices dos repositórios Linux (`scripts/linux-repos.sh`, workflow
+**Repositórios Linux**), assinados com a chave GPG do segredo `NODO_GPG_PRIVATE_KEY`; a pública fica em
+`site/linux/nodo.asc` e `nodo.gpg`. O site redireciona `/apt` e `/rpm` para o último Release (`site/_redirects`), então
+quem instalou pelo repositório recebe cada versão no `apt upgrade`/`dnf upgrade`. A cópia da chave privada fica no
+Ideario do usuário, na nota "Nodo — chave do repositório Linux". Para refazer os índices de um Release já publicado:
+Actions → Repositórios Linux → Run workflow.
+
 ## Ainda não ligado
 - **Assinatura de código** no macOS e no Windows (SPEC P4).
-- **Repositórios apt/dnf** (o Ideario tem; aqui só se houver pedido).

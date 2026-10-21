@@ -38,12 +38,17 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: pnpm --dir crates/nodo-app/ui install --frozen-lockfile
       - run: scripts/check-version.sh
-      - name: Chave das atualizações
+      - name: Chaves das atualizações e do repositório
         env:
           KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          GPG: ${{ secrets.NODO_GPG_PRIVATE_KEY }}
         run: |
           if [[ -z "$KEY" ]]; then
             echo "::error::Falta o segredo TAURI_SIGNING_PRIVATE_KEY: sem ele a versão sai sem atualização automática."
+            exit 1
+          fi
+          if [[ -z "$GPG" ]]; then
+            echo "::error::Falta o segredo NODO_GPG_PRIVATE_KEY: sem ele a versão sai sem os repositórios apt e dnf."
             exit 1
           fi
       - run: cargo clippy --all-targets -- -D warnings
@@ -108,18 +113,24 @@ jobs:
 
             - **macOS** (Apple Silicon e Intel): baixe o `.dmg`. Na primeira vez, clique com o botão direito no app → **Abrir** (o app ainda não é assinado pela Apple).
             - **Windows**: baixe o `-setup.exe` (ou o `.msi`).
-            - **Linux**: baixe o `.AppImage` (atualiza sozinho), o `.deb` (Ubuntu, Debian) ou o `.rpm` (Fedora).
+            - **Linux**: pelo repositório (atualiza junto com o sistema), veja https://nodo-1c7.pages.dev/#linux. Ou baixe o `.AppImage` (atualiza sozinho), o `.deb` ou o `.rpm`.
 
-            Os arquivos `.sig` e `latest.json` são do atualizador; não precisa baixar.
+            Os arquivos `apt-*`, `rpm-*`, `.sig` e `latest.json` são dos repositórios Linux e do atualizador; não precisa baixar.
 
             Para ligar o Claude aos seus mapas: Configurações → Claude, no próprio app.
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
 
+  repos:
+    name: Repositórios Linux
+    needs: release
+    uses: ./.github/workflows/linux-repos.yml
+    secrets: inherit
+
   publish:
     name: Publicar
-    needs: release
+    needs: [release, repos]
     runs-on: ubuntu-22.04
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
