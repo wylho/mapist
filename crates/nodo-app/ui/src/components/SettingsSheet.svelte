@@ -20,6 +20,9 @@
   ]
   const systemName = $derived(`Cores do ${DESKTOPS[theme.simDesktop].label}`)
 
+  const mod = /Mac/.test(navigator.platform) ? '⌘' : 'Ctrl+'
+  const alt = /Mac/.test(navigator.platform) ? '⌥' : 'Alt+'
+
   let version = $state<string | null>(null)
   if (hasHost) {
     void import('@tauri-apps/api/app').then(({ getVersion }) => getVersion().then((v) => (version = v)))
@@ -150,6 +153,46 @@
             </div>
           </section>
         {/if}
+
+        <section class="set-group">
+          <h3>Atalhos</h3>
+            <span class="keys-head">Escrever</span>
+            <div class="keys">
+              <div class="keys-row"><span>Escrever no nó</span><kbd>digite</kbd></div>
+              <div class="keys-row"><span>Editar o texto</span><kbd>Espaço ou F2</kbd></div>
+              <div class="keys-row"><span>Adicionar filho</span><kbd>Tab</kbd></div>
+              <div class="keys-row"><span>Adicionar irmão</span><kbd>Enter</kbd></div>
+              <div class="keys-row"><span>Confirmar e criar o próximo</span><kbd>Tab (editando)</kbd></div>
+              <div class="keys-row"><span>Cancelar a edição</span><kbd>Esc</kbd></div>
+            </div>
+            <span class="keys-head">Organizar</span>
+            <div class="keys">
+              <div class="keys-row"><span>Andar pelo mapa</span><kbd>← ↑ → ↓</kbd></div>
+              <div class="keys-row"><span>Subir ou descer entre irmãos</span><kbd>{alt}↑ {alt}↓</kbd></div>
+              <div class="keys-row"><span>Ir para a raiz</span><kbd>Home</kbd></div>
+              <div class="keys-row"><span>Recolher ou expandir</span><kbd>{mod}/</kbd></div>
+              <div class="keys-row"><span>Excluir</span><kbd>Delete</kbd></div>
+              <div class="keys-row"><span>Menu do nó</span><kbd>⇧F10</kbd></div>
+            </div>
+            <span class="keys-head">Ver</span>
+            <div class="keys">
+              <div class="keys-row"><span>Ver o mapa inteiro</span><kbd>⇧1</kbd></div>
+              <div class="keys-row"><span>Enquadrar a seleção</span><kbd>⇧2</kbd></div>
+              <div class="keys-row"><span>Tamanho real (100%)</span><kbd>{mod}0</kbd></div>
+              <div class="keys-row"><span>Aproximar ou afastar</span><kbd>{mod}= {mod}-</kbd></div>
+              <div class="keys-row"><span>Buscar</span><kbd>{mod}F</kbd></div>
+            </div>
+            <span class="keys-head">Arquivo</span>
+            <div class="keys">
+              <div class="keys-row"><span>Novo</span><kbd>{mod}N</kbd></div>
+              <div class="keys-row"><span>Abrir</span><kbd>{mod}O</kbd></div>
+              <div class="keys-row"><span>Salvar</span><kbd>{mod}S</kbd></div>
+              <div class="keys-row"><span>Salvar como</span><kbd>{mod}⇧S</kbd></div>
+              <div class="keys-row"><span>Desfazer</span><kbd>{mod}Z</kbd></div>
+              <div class="keys-row"><span>Refazer</span><kbd>{mod}⇧Z</kbd></div>
+              <div class="keys-row"><span>Configurações</span><kbd>{mod},</kbd></div>
+            </div>
+        </section>
 
         <p class="footnote">
           {isPreview ? 'Prévia no navegador · dados de exemplo' : `Nodo${version ? ` v${version}` : ''}`}

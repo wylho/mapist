@@ -11,8 +11,6 @@
   let noteTimer: ReturnType<typeof setTimeout> | undefined
 
   const node = $derived(doc.selectedNode)
-  const mod = /Mac/.test(navigator.platform) ? '⌘' : 'Ctrl+'
-  const alt = /Mac/.test(navigator.platform) ? '⌥' : 'Alt+'
   const COLOR_NAMES: Record<string, string> = {
     '--n-sand': 'Areia',
     '--n-sage': 'Sálvia',
@@ -146,26 +144,6 @@
       </div>
     {/if}
 
-    <div class="field">
-      <span class="field-label">Atalhos</span>
-      <div class="keys">
-        <div class="keys-row"><span>Escrever no nó</span><kbd>digite</kbd></div>
-        <div class="keys-row"><span>Editar o texto</span><kbd>Espaço</kbd></div>
-        <div class="keys-row"><span>Adicionar filho</span><kbd>Tab</kbd></div>
-        <div class="keys-row"><span>Adicionar irmão</span><kbd>Enter</kbd></div>
-        <div class="keys-row"><span>Andar pelo mapa</span><kbd>← ↑ → ↓</kbd></div>
-        <div class="keys-row"><span>Subir ou descer entre irmãos</span><kbd>{alt}↑ {alt}↓</kbd></div>
-        <div class="keys-row"><span>Ir para a raiz</span><kbd>Home</kbd></div>
-        <div class="keys-row"><span>Recolher ou expandir</span><kbd>{mod}/</kbd></div>
-        <div class="keys-row"><span>Excluir</span><kbd>Delete</kbd></div>
-        <div class="keys-row"><span>Desfazer</span><kbd>{mod}Z</kbd></div>
-        <div class="keys-row"><span>Buscar</span><kbd>{mod}F</kbd></div>
-        <div class="keys-row"><span>Ver o mapa inteiro</span><kbd>⇧1</kbd></div>
-        <div class="keys-row"><span>Enquadrar a seleção</span><kbd>⇧2</kbd></div>
-        <div class="keys-row"><span>Tamanho real (100%)</span><kbd>{mod}0</kbd></div>
-        <div class="keys-row"><span>Aproximar ou afastar</span><kbd>{mod}= {mod}-</kbd></div>
-      </div>
-    </div>
 
     <div class="banner">
       {doc.snapshot.nodes.length === 1 ? '1 nó' : `${doc.snapshot.nodes.length} nós`}

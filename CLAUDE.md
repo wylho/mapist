@@ -149,5 +149,9 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
 - **Atalhos** (D21): ⌘0 tamanho real (centrado na seleção), ⌘=/⌘- zoom, ⇧1 ver o mapa inteiro, ⇧2 enquadrar a
   seleção com o ramo visível (`Canvas.svelte`: `fit`, `fitSelection`, `actualSize`), ⌥↑/⌥↓ sobe/desce entre irmãos
   (`Action::Reorder` no núcleo, `reorder_node` no app, `move_sibling` no MCP; na raiz só troca com o mesmo lado),
-  Home seleciona a raiz. O rótulo de zoom é botão para 100%. Lista no Inspector.
+  Home seleciona a raiz. O rótulo de zoom é botão para 100%. A lista de atalhos fica nas Configurações
+  (seção Atalhos, em grupos), não na barra lateral (pedido do usuário).
+- **Menus de contexto** (`lib/mapmenus.ts`, `components/MenuAt.svelte`/`MenuList.svelte` e `lib/menu.ts` copiados do
+  Ideario): clique direito no nó e no fundo, tecla de menu e ⇧F10; cada item mostra o atalho. `ui.themeOpen` abre a
+  folha Tema do mapa de qualquer lugar.
 - **Próximo:** Fase 3 (importação e exportação).
