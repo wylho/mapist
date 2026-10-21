@@ -1,0 +1,21 @@
+[package]
+name = "mapist-mcp"
+description = "Model Context Protocol server exposing Mapist mind maps to external agents."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+name = "mapist_mcp"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mapist-mcp"
+path = "src/main.rs"
+
+[dependencies]
+mapist-core = { path = "../mapist-core" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

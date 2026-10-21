@@ -1,0 +1,14 @@
+/target
+**/*.rs.bk
+*.pdb
+
+# Tauri build output (phase 2)
+/target
+/dist
+/src-tauri/target
+
+# Editor and OS noise
+.DS_Store
+.idea/
+.vscode/
+*.swp
