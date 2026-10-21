@@ -56,7 +56,9 @@ const readMode = (): ThemePref => {
 
 const readPalette = (): PaletteId => {
   const v = load(PALETTE_KEY)
-  return v === 'system' || (v && v in PALETTES) ? (v as PaletteId) : 'ideario'
+  // 'ideario' era o nome desta paleta até a 0.1; quem escolheu continua nela.
+  if (v === 'ideario') return 'mapist'
+  return v === 'system' || (v && v in PALETTES) ? (v as PaletteId) : 'mapist'
 }
 
 /** No navegador (prévia), adivinha a área de trabalho pelo user agent. */

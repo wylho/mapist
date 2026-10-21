@@ -16,10 +16,12 @@
 //! ```
 
 pub mod document;
+pub mod editor;
 pub mod layout;
 pub mod model;
 pub mod undo;
 
+pub use editor::Editor;
 pub use model::{
     ArrowStyle, BorderStyle, Connection, DashStyle, DrawArea, LayoutKind, MindMap, Node, NodeSide,
     Point, Style, ThemeRef,
@@ -45,6 +47,9 @@ pub enum Error {
     #[error("cannot remove the root node")]
     CannotRemoveRoot,
 
+    #[error("the map has never been saved; choose where to save it")]
+    NoPath,
+
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
 }
@@ -58,10 +63,21 @@ pub fn load(path: impl AsRef<std::path::Path>) -> Result<MindMap> {
     document::from_xml(&text)
 }
 
-/// Write a map to a file.
+/// Write a map to a file, atomically: the XML goes to a temporary file beside
+/// the target and is renamed over it, so a crash mid-save never leaves half a map.
 pub fn save(map: &MindMap, path: impl AsRef<std::path::Path>) -> Result<()> {
+    let path = path.as_ref();
     let xml = document::to_xml(map)?;
-    std::fs::write(path, xml)?;
+    let name = path
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let tmp = path.with_file_name(format!(".{name}.mapist-tmp"));
+    std::fs::write(&tmp, xml)?;
+    if let Err(e) = std::fs::rename(&tmp, path) {
+        let _ = std::fs::remove_file(&tmp);
+        return Err(e.into());
+    }
     Ok(())
 }
 

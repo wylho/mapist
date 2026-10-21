@@ -16,6 +16,7 @@ const EMPTY: Snapshot = {
   title: 'Sem título',
   can_undo: false,
   can_redo: false,
+  stale: false,
   bounds: { min_x: 0, min_y: 0, max_x: 0, max_y: 0 },
 }
 
@@ -207,6 +208,45 @@ class Document {
   /** Persiste a posição final de um nó arrastado. */
   move(id: number, x: number, y: number) {
     return this.run(() => api.moveNode(id, x, y))
+  }
+
+  setSide(id: number, side: 'left' | 'right') {
+    return this.run(() => api.setSide(id, side))
+  }
+
+  /**
+   * Um agente pode salvar o mesmo arquivo pelo MCP. Ao voltar para a janela, o mapa é relido: direto se não há
+   * nada por salvar aqui, ou depois de perguntar, porque reler descartaria o que foi feito na janela.
+   */
+  async checkDisk() {
+    if (!hasHost || this.busy || !this.snapshot.path) return
+    let snap: Snapshot
+    try {
+      snap = await api.snapshot()
+    } catch {
+      return
+    }
+    if (!snap.stale) return
+    if (snap.dirty) {
+      const ok = await ui.ask({
+        title: 'O arquivo mudou fora do Mapist',
+        text: 'Outro programa (talvez o Claude) salvou este mapa. Recarregar descarta as alterações feitas aqui.',
+        confirm: 'Recarregar',
+      })
+      if (!ok) return
+    }
+    await this.run(() => api.reload())
+    if (!this.error) ui.say('Mapa atualizado a partir do arquivo')
+  }
+
+  /** A janela pediu para fechar com alterações não salvas. */
+  async confirmQuit() {
+    const ok = await ui.ask({
+      title: 'Sair sem salvar?',
+      text: 'Este mapa tem alterações que não foram salvas. Para guardá-las, cancele e salve antes.',
+      confirm: 'Sair sem salvar',
+    })
+    if (ok) await api.quit()
   }
 
   toggleFold() {

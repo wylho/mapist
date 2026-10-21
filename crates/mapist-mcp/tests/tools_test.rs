@@ -247,3 +247,29 @@ fn dirty_flag_clears_on_save() {
 
     let _ = std::fs::remove_file(&path);
 }
+
+#[test]
+fn set_side_and_fold_survive_later_edits() {
+    // Antes do Editor, set_side mexia numa cópia do mapa e a edição seguinte o apagava.
+    let mut s = fresh();
+    let a = call(&mut s, "add_node", json!({ "parent": 0, "text": "A" }))["id"]
+        .as_u64()
+        .unwrap();
+    call(&mut s, "add_node", json!({ "parent": a, "text": "A1" }));
+    call(&mut s, "set_side", json!({ "id": a, "side": "left" }));
+    call(&mut s, "toggle_fold", json!({ "id": a }));
+    call(&mut s, "add_node", json!({ "parent": 0, "text": "B" }));
+
+    let node = call(&mut s, "get_node", json!({ "id": a }));
+    assert_eq!(node["node"]["side"], "left");
+    assert_eq!(node["node"]["folded"], true);
+
+    // E tudo isso desfaz pelo mesmo histórico.
+    call(&mut s, "undo", json!({}));
+    call(&mut s, "undo", json!({}));
+    call(&mut s, "undo", json!({}));
+    assert_eq!(
+        call(&mut s, "get_node", json!({ "id": a }))["node"]["side"],
+        "right"
+    );
+}

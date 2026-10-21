@@ -110,6 +110,25 @@
         </div>
       </div>
 
+      {#if node.depth === 1}
+        <div class="card">
+          <div class="card-body field">
+            <span class="field-label">Lado do ramo</span>
+            <div class="seg tight" role="radiogroup" aria-label="Lado do ramo">
+              {#each [{ v: 'left', l: 'Esquerda' }, { v: 'right', l: 'Direita' }] as o (o.v)}
+                <button
+                  class="seg-item"
+                  role="radio"
+                  aria-checked={node.side === o.v}
+                  data-state={node.side === o.v ? 'on' : 'off'}
+                  onclick={() => node.side !== o.v && doc.setSide(node.id, o.v as 'left' | 'right')}>{o.l}</button
+                >
+              {/each}
+            </div>
+          </div>
+        </div>
+      {/if}
+
       <div class="card">
         <div class="card-body field">
           <span class="field-label">Nó</span>

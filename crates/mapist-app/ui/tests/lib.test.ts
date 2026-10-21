@@ -113,7 +113,7 @@ describe('palettes', () => {
 
 describe('cssVars', () => {
   it('emits every variable app.css expects', () => {
-    const v = cssVars(PALETTES.ideario.light, 'light')
+    const v = cssVars(PALETTES.mapist.light, 'light')
     for (const key of [
       '--bg',
       '--stage',
@@ -140,7 +140,7 @@ describe('cssVars', () => {
   })
 
   it('derives accent-soft when the palette omits it', () => {
-    const noSoft = { ...PALETTES.ideario.light, accentSoft: undefined }
+    const noSoft = { ...PALETTES.mapist.light, accentSoft: undefined }
     const v = cssVars(noSoft, 'light')
     expect(v['--accent-soft']).toBeTruthy()
     expect(v['--accent-soft']).not.toBe(noSoft.accent)
@@ -152,7 +152,7 @@ describe('cssVars', () => {
   })
 
   it('gives dark mode a dark shadow', () => {
-    const v = cssVars(PALETTES.ideario.dark, 'dark')
+    const v = cssVars(PALETTES.mapist.dark, 'dark')
     expect(v['--shadow']).toContain('rgb(0 0 0')
   })
 })
@@ -238,20 +238,20 @@ describe('hitTest', () => {
 
 describe('cor de nó: token vira hex, nunca o contrário', () => {
   it('resolve cada token para um hex válido do tema', () => {
-    const c = PALETTES.ideario.light
+    const c = PALETTES.mapist.light
     for (const t of NODE_COLOR_TOKENS) {
       expect(resolveNodeColor(t, c), t).toMatch(/^#[0-9a-f]{6}$/i)
     }
   })
 
   it('resolve o token para o primeiro valor de notes, na ordem certa', () => {
-    const c = PALETTES.ideario.light
+    const c = PALETTES.mapist.light
     expect(resolveNodeColor('--n-sand', c)).toBe(NOTES_FIRST)
     expect(resolveNodeColor('--n-sand', c)).toBe(c.notes[0])
   })
 
   it('passa hex direto, como um .minder carregaria', () => {
-    const c = PALETTES.ideario.light
+    const c = PALETTES.mapist.light
     expect(resolveNodeColor('#c6262e', c)).toBe('#c6262e')
   })
 
@@ -266,17 +266,17 @@ describe('cor de nó: token vira hex, nunca o contrário', () => {
       accent: '',
       onAccent: '',
       cardEdge: '',
-      nodeColors: PALETTES.ideario.light.notes,
+      nodeColors: PALETTES.mapist.light.notes,
     }
     for (const t of NODE_COLOR_TOKENS) {
-      expect(resolveColor(t, colors)).toBe(resolveNodeColor(t, PALETTES.ideario.light))
+      expect(resolveColor(t, colors)).toBe(resolveNodeColor(t, PALETTES.mapist.light))
     }
     expect(resolveColor('#c6262e', colors)).toBe('#c6262e')
     expect(resolveColor(null, colors)).toBe('#ffffff')
   })
 })
 
-const NOTES_FIRST = PALETTES.ideario.light.notes[0]
+const NOTES_FIRST = PALETTES.mapist.light.notes[0]
 
 describe('traceBranch', () => {
   function recorder() {
@@ -318,5 +318,31 @@ describe('traceBranch', () => {
     const r = recorder()
     traceBranch(r.ctx, 'orthogonal', 0, 0, -100, -60)
     expect(r.calls.at(-1)).toBe('L -100 -60')
+  })
+})
+
+describe('preview: layout espelha o núcleo', () => {
+  it('ramo da esquerda fica à esquerda da raiz, sem nós sobrepostos, e recolhido esconde os filhos', async () => {
+    const { seedDemo, previewBackend } = await import('../src/lib/preview')
+    seedDemo()
+    let snap = previewBackend.get_snapshot()
+    const research = snap.nodes.find((n) => n.text === 'Pesquisa')!
+    expect(research.folded).toBe(true)
+    expect(snap.nodes.some((n) => n.parent === research.id)).toBe(false)
+
+    snap = previewBackend.toggle_fold({ id: research.id })
+    const root = snap.nodes[0]
+    const kids = snap.nodes.filter((n) => n.parent === research.id)
+    expect(kids.length).toBe(2)
+    const r = snap.nodes.find((n) => n.id === research.id)!
+    expect(r.x + r.width).toBeLessThanOrEqual(root.x)
+    for (const k of kids) expect(k.x + k.width).toBeLessThanOrEqual(r.x)
+
+    for (const a of snap.nodes)
+      for (const b of snap.nodes) {
+        if (a.id >= b.id) continue
+        const overlap = a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height
+        expect(overlap, `${a.text} × ${b.text}`).toBe(false)
+      }
   })
 })

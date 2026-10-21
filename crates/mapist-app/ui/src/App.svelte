@@ -91,10 +91,18 @@
 
   onMount(() => {
     doc.load()
+    if (!hasHost) return
+    // Fechar (ou Cmd+Q) com alterações não salvas: o núcleo segura e pergunta aqui.
+    let unlisten: (() => void) | undefined
+    void import('@tauri-apps/api/event').then(({ listen }) =>
+      listen('close-requested', () => void doc.confirmQuit()).then((u) => (unlisten = u)),
+    )
+    return () => unlisten?.()
   })
 </script>
 
-<svelte:window onkeydown={onKeydown} />
+<!-- Ao voltar para a janela, confere se um agente salvou o arquivo pelo MCP. -->
+<svelte:window onkeydown={onKeydown} onfocus={() => void doc.checkDisk()} />
 
 <div class="shell wide map-shell">
   <TopBar />

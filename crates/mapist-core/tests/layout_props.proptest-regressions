@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc e77a98a54f5823a21aef011a97fe3027b95a1e0040da538b9502bfa99486f52d # shrinks to steps = [(0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (4, true, 311.9308837409636, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false)]
+cc 8d2e398f73f8c1b7c790e6e493968a222239236ba4095973692dfb804548ae35 # shrinks to steps = [(0, false, 40.0, 30.0, false), (13, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (1, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (1, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (1, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (0, false, 40.0, 30.0, false), (28, true, 235.87588446964222, 30.0, false)]

@@ -259,10 +259,10 @@ function drawNode(
     ctx.globalAlpha = 1
   }
 
-  // Ramo dobrado
+  // Ramo recolhido: a bolinha fica do lado onde os filhos estariam.
   if (n.has_children && n.folded) {
     ctx.beginPath()
-    ctx.arc(x + w + 8, y + h / 2, 5, 0, Math.PI * 2)
+    ctx.arc(n.side === 'left' ? x - 8 : x + w + 8, y + h / 2, 5, 0, Math.PI * 2)
     ctx.fillStyle = colors.accent
     ctx.fill()
     ctx.strokeStyle = colors.stage

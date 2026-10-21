@@ -46,6 +46,8 @@ export interface Snapshot {
   title: string
   can_undo: boolean
   can_redo: boolean
+  /** O arquivo mudou no disco depois de lido ou salvo aqui (um agente salvou pelo MCP). */
+  stale: boolean
   bounds: Bounds
 }
 
@@ -109,6 +111,13 @@ export const api = {
   setColor: (id: number, color: string | null) => call<Snapshot>('set_color', { id, color }),
 
   toggleFold: (id: number) => call<Snapshot>('toggle_fold', { id }),
+
+  setSide: (id: number, side: 'left' | 'right') => call<Snapshot>('set_side', { id, side }),
+
+  reload: () => call<Snapshot>('reload_map'),
+
+  /** Fecha sem salvar, depois de a pessoa confirmar. */
+  quit: () => call<void>('quit_app'),
 
   undo: () => call<Snapshot>('undo'),
 

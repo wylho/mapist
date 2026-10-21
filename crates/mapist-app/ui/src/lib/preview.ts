@@ -87,7 +87,15 @@ function restore(state: string) {
 }
 
 function snapshotOf(): Snapshot {
-  const list = [...nodes.values()]
+  // Como no núcleo: os descendentes de um nó recolhido não aparecem.
+  const list: PNode[] = []
+  const visit = (id: number) => {
+    const n = nodes.get(id)
+    if (!n) return
+    list.push(n)
+    if (!n.folded) n.children.forEach(visit)
+  }
+  visit(rootId)
   if (list.length === 0) {
     return {
       nodes: [],
@@ -97,6 +105,7 @@ function snapshotOf(): Snapshot {
       title: 'Sem título',
       can_undo: past.length > 0,
       can_redo: future.length > 0,
+      stale: false,
       bounds: { min_x: 0, min_y: 0, max_x: 0, max_y: 0 },
     }
   }
@@ -140,6 +149,7 @@ function snapshotOf(): Snapshot {
     title: nodes.get(rootId)?.text ?? 'Sem título',
     can_undo: past.length > 0,
     can_redo: future.length > 0,
+    stale: false,
     bounds: { min_x: minX, min_y: minY, max_x: maxX, max_y: maxY },
   }
 }
@@ -163,29 +173,45 @@ function measure(n: PNode) {
   n.height = Math.max(MIN_H, lines.length * 19 + 22)
 }
 
-function place(n: PNode, x: number, y: number): number {
-  n.x = x
-  n.y = y
+/** Altura de que uma sub-árvore precisa, para irmãos nunca se sobreporem (layout.rs: `extent`). */
+function extent(n: PNode): number {
   if (n.children.length === 0 || n.folded) return n.height
-
-  const dir = n.side === 'left' ? -1 : 1
-  const childX = x + dir * (n.width + H_GAP)
-  let cursor = y
-  const start = cursor
-  for (const cid of n.children) {
-    const c = nodes.get(cid)
-    if (c) cursor += place(c, childX, cursor) + V_GAP
-  }
-  const total = Math.max(cursor - V_GAP - start, n.height)
-  n.y = start + (total - n.height) / 2
-  return total
+  const band = (ids: number[]) =>
+    ids.length === 0 ? 0 : ids.reduce((a, id) => a + extent(nodes.get(id)!), 0) + V_GAP * (ids.length - 1)
+  const kids = n.children.filter((id) => nodes.has(id))
+  const left = kids.filter((id) => nodes.get(id)!.side === 'left')
+  const right = kids.filter((id) => nodes.get(id)!.side !== 'left')
+  return Math.max(n.height, band(left), band(right))
 }
 
+/** Posiciona `n` numa faixa que começa em `top`, com a borda próxima em `x` (layout.rs: `place`). */
+function place(n: PNode, x: number, top: number) {
+  const ext = extent(n)
+  n.x = x
+  n.y = top + (ext - n.height) / 2
+  if (n.children.length === 0 || n.folded) return
+  for (const left of [true, false]) {
+    const group = n.children.map((id) => nodes.get(id)!).filter((c) => c && (c.side === 'left') === left)
+    if (group.length === 0) continue
+    const total = group.reduce((a, c) => a + extent(c), 0) + V_GAP * (group.length - 1)
+    let cursor = top + (ext - total) / 2
+    for (const c of group) {
+      place(c, left ? n.x - H_GAP - c.width : n.x + n.width + H_GAP, cursor)
+      cursor += extent(c) + V_GAP
+    }
+  }
+}
+
+/** Mede tudo pela estimativa e posiciona (layout.rs: `layout`). */
 function relayout() {
-  const all = [...nodes.values()]
-  for (const n of all) measure(n)
+  for (const n of nodes.values()) measure(n)
+  reposition()
+}
+
+/** Só posiciona, com os tamanhos que já estão nos nós (layout.rs: `reposition`). */
+function reposition() {
   const root = nodes.get(rootId)
-  if (root) place(root, 0, 0)
+  if (root) place(root, 0, -extent(root) / 2)
 }
 
 // ── histórico ────────────────────────────────────────────────────────────
@@ -195,7 +221,8 @@ function commit(fn: () => void, relayoutAfter = true) {
   if (past.length > 200) past.shift()
   future.length = 0
   fn()
-  if (relayoutAfter) relayout()
+  // Como o Editor do núcleo: posiciona sem medir de novo; quem mediu foi a tela.
+  if (relayoutAfter) reposition()
   dirty = true
 }
 
@@ -215,7 +242,7 @@ export function seedDemo() {
   nodes.set(root.id, root)
 
   const branch = (parent: PNode, text: string, token: string, children: string[] = []) => {
-    const n = makeNode(text, 'right', '', token)
+    const n = makeNode(text, parent.side, '', token)
     n.parent = parent.id
     n.color = token
     parent.children.push(n.id)
@@ -320,6 +347,7 @@ export const previewBackend = {
       const n = nodes.get(id)
       if (!n) throw new Error(`node ${id} not found`)
       n.text = text
+      measure(n)
     })
     return snapshotOf()
   },
@@ -342,6 +370,23 @@ export const previewBackend = {
     })
     return snapshotOf()
   },
+
+  set_side: ({ id, side }: { id: number; side: 'left' | 'right' }) => {
+    commit(() => {
+      const stack = [id]
+      while (stack.length) {
+        const n = nodes.get(stack.pop()!)
+        if (!n) continue
+        n.side = side
+        stack.push(...n.children)
+      }
+    })
+    return snapshotOf()
+  },
+
+  reload_map: () => snapshotOf(),
+
+  quit_app: () => undefined,
 
   toggle_fold: ({ id }: { id: number }) => {
     commit(() => {
