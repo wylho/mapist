@@ -10,7 +10,7 @@
   import { theme, type ThemePref } from '../lib/theme.svelte'
   import { DESKTOPS, PALETTES, paletteColors, type DesktopId, type PaletteId } from '../lib/palettes'
   import type { LinkStyle } from '../lib/render'
-  import Picker from './Picker.svelte'
+  import { Picker } from '@wylho/atrio'
   import { updates } from '../lib/updates.svelte'
 
   // Sistema primeiro: é o padrão e faz o app parecer nativo.

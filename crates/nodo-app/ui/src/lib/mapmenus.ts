@@ -27,8 +27,8 @@ import {
   ZoomIn,
 } from '@lucide/svelte'
 import { SPACINGS, STRUCTURES, spacingOf, structureOf } from './structures'
-import type { MenuEntry } from './menu'
-import { SEP } from './menu'
+import type { MenuEntry } from '@wylho/atrio'
+import { SEP } from '@wylho/atrio'
 import { doc } from './document.svelte'
 import { ui } from './ui.svelte'
 import { prefs } from './prefs.svelte'

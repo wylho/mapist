@@ -200,8 +200,9 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
 - **Atrio no Nodo** (D26): `main.ts` importa `@wylho/atrio/atrio.css` (o `ideario.css` saiu); cards pelo `CardBody`;
   ⌘C num nó copia como card e ⌘V cola um card (do Ideario ou de outro nó) como filho com a nota
   (`Action::AddTopic`, comando `add_topic`, `add_node` do MCP aceita `note`), e "Copiar como card"/"Colar card"
-  nos menus. A cor da nota vira a cor do ramo e volta.
+  nos menus. A cor da nota vira a cor do ramo e volta. Desde o Atrio 0.3.0, `MenuAt`, `MenuList`, `Picker` e
+  `SEP`/`MenuEntry` vêm de lá (as cópias saíram de `components/` e `lib/menu.ts`).
 - **Próximo:** estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore);
-  o card inteiro (editor, etiquetas, data, status, anexos) vindo do Atrio, com a categoria desligada no Nodo (rumo no
-  CLAUDE.md do Atrio);
+  o card inteiro vindo do Atrio, com `features({ category: false })` no Nodo: falta o componente `NoteEditor` no Atrio
+  e, aqui, os campos do nó no núcleo (etiquetas, data/lembrete, status, emoji, anexos) gravados no `.minder`;
   aba Estrutura na barra lateral com colar lista; abrir `.xmind`.

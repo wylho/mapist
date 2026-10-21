@@ -21,8 +21,8 @@ importers:
         specifier: 2.7.2
         version: 2.7.2
       '@wylho/atrio':
-        specifier: github:wylho/atrio#v0.2.0
-        version: https://codeload.github.com/wylho/atrio/tar.gz/f9c109b8b6b464d403e041d36717065acb25b13f(@lucide/svelte@1.61.0(svelte@5.57.2))(svelte@5.57.2)
+        specifier: github:wylho/atrio#v0.3.0
+        version: https://codeload.github.com/wylho/atrio/tar.gz/ee32044ba8f1673cfe52d1d5b4ebe1eda7df541f(@lucide/svelte@1.61.0(svelte@5.57.2))(bits-ui@2.20.0(@internationalized/date@3.12.4)(svelte@5.57.2))(svelte@5.57.2)
       bits-ui:
         specifier: ^2.20.0
         version: 2.20.0(@internationalized/date@3.12.4)(svelte@5.57.2)
@@ -393,12 +393,44 @@ packages:
   '@vitest/spy@5.0.5':
     resolution: {integrity: sha512-lwJRExuH417257Q5wv9QYugN9IMJkoxcrKrYxGPQkBzl7wlNpTUxD/5yNX4ESKVUIShKPgkGchYPFMWOOk0wzw==}
 
-  '@wylho/atrio@https://codeload.github.com/wylho/atrio/tar.gz/f9c109b8b6b464d403e041d36717065acb25b13f':
-    resolution: {tarball: https://codeload.github.com/wylho/atrio/tar.gz/f9c109b8b6b464d403e041d36717065acb25b13f}
-    version: 0.2.0
+  '@wylho/atrio@https://codeload.github.com/wylho/atrio/tar.gz/ee32044ba8f1673cfe52d1d5b4ebe1eda7df541f':
+    resolution: {tarball: https://codeload.github.com/wylho/atrio/tar.gz/ee32044ba8f1673cfe52d1d5b4ebe1eda7df541f}
+    version: 0.3.0
     peerDependencies:
       '@lucide/svelte': '>=1.0.0'
+      '@tiptap/core': ^3.31.4
+      '@tiptap/extension-collaboration': ^3.31.4
+      '@tiptap/extension-list': ^3.31.4
+      '@tiptap/extension-table': ^3.31.4
+      '@tiptap/extensions': ^3.31.4
+      '@tiptap/pm': ^3.31.4
+      '@tiptap/starter-kit': ^3.31.4
+      '@tiptap/y-tiptap': ^3.0.9
+      bits-ui: ^2.19.5
+      emojibase-data: ^17.0.0
       svelte: ^5.57.0
+      yjs: ^13.6.33
+    peerDependenciesMeta:
+      '@tiptap/core':
+        optional: true
+      '@tiptap/extension-collaboration':
+        optional: true
+      '@tiptap/extension-list':
+        optional: true
+      '@tiptap/extension-table':
+        optional: true
+      '@tiptap/extensions':
+        optional: true
+      '@tiptap/pm':
+        optional: true
+      '@tiptap/starter-kit':
+        optional: true
+      '@tiptap/y-tiptap':
+        optional: true
+      emojibase-data:
+        optional: true
+      yjs:
+        optional: true
 
   acorn@8.19.0:
     resolution: {integrity: sha512-oJlA3XiRm7Cyk6qFD2Jn8ak9B7jSy0qy00ADO3+8dpT0LSjFihQYv4C02LFCSYJV3Q37xYwwRy5m+IpIiUzqWw==}
@@ -1189,9 +1221,10 @@ snapshots:
 
   '@vitest/spy@5.0.5': {}
 
-  '@wylho/atrio@https://codeload.github.com/wylho/atrio/tar.gz/f9c109b8b6b464d403e041d36717065acb25b13f(@lucide/svelte@1.61.0(svelte@5.57.2))(svelte@5.57.2)':
+  '@wylho/atrio@https://codeload.github.com/wylho/atrio/tar.gz/ee32044ba8f1673cfe52d1d5b4ebe1eda7df541f(@lucide/svelte@1.61.0(svelte@5.57.2))(bits-ui@2.20.0(@internationalized/date@3.12.4)(svelte@5.57.2))(svelte@5.57.2)':
     dependencies:
       '@lucide/svelte': 1.61.0(svelte@5.57.2)
+      bits-ui: 2.20.0(@internationalized/date@3.12.4)(svelte@5.57.2)
       svelte: 5.57.2
 
   acorn@8.19.0: {}

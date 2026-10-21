@@ -9,7 +9,7 @@
   import SettingsSheet from './components/SettingsSheet.svelte'
   import ConfirmDialog from './components/ConfirmDialog.svelte'
   import UpdateNotice from './components/UpdateNotice.svelte'
-  import MenuAt from './components/MenuAt.svelte'
+  import { MenuAt } from '@wylho/atrio'
   import ExportSheet from './components/ExportSheet.svelte'
   import { backgroundMenu, nodeMenu, type ViewActions } from './lib/mapmenus'
   import { cardToClipboard, readCard } from '@wylho/atrio'
