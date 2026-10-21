@@ -1,6 +1,6 @@
 ---
 name: sync-site
-description: Mantém o site do Nodo (site/, publicado em nodoapp.pages.dev pelo Cloudflare Pages) e a página do GitHub (README.md) com o mesmo conteúdo e prints atualizados. Use ao mudar o texto ou os prints de um dos dois, ao lançar uma versão nova, ao mudar um recurso que aparece na página inicial, ou quando o usuário pedir para atualizar o site ou o README.
+description: Mantém o site do Nodo (site/, publicado em usenodo.pages.dev pelo Cloudflare Pages) e a página do GitHub (README.md) com o mesmo conteúdo e prints atualizados. Use ao mudar o texto ou os prints de um dos dois, ao lançar uma versão nova, ao mudar um recurso que aparece na página inicial, ou quando o usuário pedir para atualizar o site ou o README.
 ---
 
 # Site e README sincronizados

@@ -15,8 +15,8 @@ do Minder sem perder nada. E o Claude pode trabalhar no mesmo mapa que você, pe
 <p align="center">
   <b>Windows · macOS · Linux</b><br>
   <a href="#baixar"><b>Baixar</b></a> ·
-  <a href="https://nodoapp.pages.dev">nodoapp.pages.dev</a> ·
-  <a href="https://nodoapp.pages.dev/privacidade/">Privacidade</a> ·
+  <a href="https://usenodo.pages.dev">usenodo.pages.dev</a> ·
+  <a href="https://usenodo.pages.dev/privacidade/">Privacidade</a> ·
   <a href="#english">English</a> ·
   <a href="https://github.com/sponsors/wylho">♥ Apoiar</a>
 </p>
@@ -88,7 +88,7 @@ Grátis e de código aberto. Os instaladores ficam na página de
 | **Linux** | O `.AppImage`, que roda em qualquer distribuição, o `.deb` ou o `.rpm`. |
 
 **Privacidade:** sem anúncios, sem rastreamento, sem coleta de dados. Seus mapas ficam no seu computador. Leia a
-[Política de Privacidade](https://nodoapp.pages.dev/privacidade/).
+[Política de Privacidade](https://usenodo.pages.dev/privacidade/).
 
 ---
 
@@ -119,7 +119,7 @@ crates/
 ├── nodo-core/   modelo, layout, .minder, Editor (histórico + arquivo), sem interface
 ├── nodo-mcp/    servidor MCP sobre stdio (18 ferramentas)
 └── nodo-app/    janela Tauri; a interface Svelte 5 fica em ui/
-site/              nodoapp.pages.dev (Cloudflare Pages, sem build)
+site/              usenodo.pages.dev (Cloudflare Pages, sem build)
 ```
 
 O aplicativo e o MCP passam pelo mesmo `nodo_core::Editor`: um agente produz exatamente o mesmo resultado que uma
