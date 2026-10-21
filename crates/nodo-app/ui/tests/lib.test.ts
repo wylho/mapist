@@ -408,6 +408,37 @@ describe('edição estilo XMind', () => {
   })
 })
 
+describe('atalhos de estrutura', () => {
+  it('⌥↑/⌥↓ sobem e descem o tópico entre os irmãos; Home seleciona a raiz', async () => {
+    const { doc } = await import('../src/lib/document.svelte')
+    await doc.create('Raiz')
+    const root = doc.snapshot.nodes[0].id
+    await doc.addChild('P')
+    doc.cancelEdit()
+    const p = doc.selected!
+    await doc.addChild('A')
+    doc.cancelEdit()
+    doc.selected = p
+    await doc.addChild('B')
+    doc.cancelEdit()
+    const b = doc.selected!
+    const kids = () => doc.node(p)!.child_ids.map((id) => doc.node(id)!.text)
+    expect(kids()).toEqual(['A', 'B'])
+
+    await doc.reorder(-1)
+    expect(kids()).toEqual(['B', 'A'])
+    expect(doc.selected).toBe(b)
+    // Já é o primeiro: fica onde está, sem erro.
+    await doc.reorder(-1)
+    expect(kids()).toEqual(['B', 'A'])
+    await doc.undo()
+    expect(kids()).toEqual(['A', 'B'])
+
+    doc.selectRoot()
+    expect(doc.selected).toBe(root)
+  })
+})
+
 describe('temas de mapa', () => {
   it('cada ramo principal ganha uma cor, os filhos herdam, e a cor escolhida à mão manda', async () => {
     const { branchColors, mapTheme, MAP_THEMES } = await import('../src/lib/maptheme')

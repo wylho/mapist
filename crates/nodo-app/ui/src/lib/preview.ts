@@ -406,6 +406,23 @@ export const previewBackend = {
     return snapshotOf()
   },
 
+  reorder_node: ({ id, delta }: { id: number; delta: number }) => {
+    const parent = [...nodes.values()].find((n) => n.children.includes(id))
+    const me = nodes.get(id)
+    if (!parent || !me) throw new Error('there is no sibling in that direction to swap with')
+    const at = parent.children.indexOf(id)
+    const fits = (cid: number) => parent.parent !== null || nodes.get(cid)?.side === me.side
+    let to = -1
+    if (delta < 0) for (let i = at - 1; i >= 0 && to < 0; i--) if (fits(parent.children[i])) to = i
+    if (delta > 0) for (let i = at + 1; i < parent.children.length && to < 0; i++) if (fits(parent.children[i])) to = i
+    if (to < 0) throw new Error('there is no sibling in that direction to swap with')
+    commit(() => {
+      parent.children[at] = parent.children[to]
+      parent.children[to] = id
+    })
+    return snapshotOf()
+  },
+
   move_node: ({ id, x, y }: { id: number; x: number; y: number }) => {
     commit(
       () => {

@@ -288,3 +288,33 @@ fn map_theme_is_set_read_back_and_validated() {
     call(&mut s, "undo", json!({}));
     assert_eq!(call(&mut s, "get_map", json!({}))["theme"], "classico");
 }
+
+#[test]
+fn move_sibling_reorders_and_undoes_like_the_window() {
+    let mut s = fresh();
+    let p = call(&mut s, "add_node", json!({ "parent": 0, "text": "P" }))["id"]
+        .as_u64()
+        .unwrap();
+    let a = call(&mut s, "add_node", json!({ "parent": p, "text": "A" }))["id"]
+        .as_u64()
+        .unwrap();
+    let b = call(&mut s, "add_node", json!({ "parent": p, "text": "B" }))["id"]
+        .as_u64()
+        .unwrap();
+    call(
+        &mut s,
+        "move_sibling",
+        json!({ "id": b, "direction": "up" }),
+    );
+    let ids = |s: &mut Session| -> Vec<u64> {
+        call(s, "get_node", json!({ "id": p }))["node"]["children"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|c| c.as_u64())
+            .collect()
+    };
+    assert_eq!(ids(&mut s), [b, a]);
+    call(&mut s, "undo", json!({}));
+    assert_eq!(ids(&mut s), [a, b]);
+}

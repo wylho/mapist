@@ -35,6 +35,9 @@ pub enum Action {
     Relayout,
     /// Choose the map's theme (one of [`crate::MAP_STYLES`]), or the default with `None`.
     SetMapStyle { style: Option<String> },
+    /// Move a node among its siblings: `delta < 0` up (earlier), `delta > 0` down. Under the root it swaps with the
+    /// nearest branch on the same side, since each side reads as its own list.
+    Reorder { id: u64, delta: i64 },
 }
 
 impl Action {
@@ -105,8 +108,45 @@ impl Action {
                 map.theme.style = style.clone();
                 Ok(None)
             }
+            Action::Reorder { id, delta } => {
+                let root = map.root.id;
+                let parent = parent_of_mut(&mut map.root, *id).ok_or(if *id == root {
+                    crate::Error::NoSiblingThere
+                } else {
+                    crate::Error::NodeNotFound(*id)
+                })?;
+                let at = parent
+                    .children
+                    .iter()
+                    .position(|c| c.id == *id)
+                    .ok_or(crate::Error::NodeNotFound(*id))?;
+                let side = parent.children[at].side;
+                let same_side = parent.id == root;
+                let fits = |n: &Node| !same_side || n.side == side;
+                let to = match delta.signum() {
+                    -1 => parent.children[..at].iter().rposition(fits),
+                    1 => parent.children[at + 1..]
+                        .iter()
+                        .position(fits)
+                        .map(|i| at + 1 + i),
+                    _ => None,
+                }
+                .ok_or(crate::Error::NoSiblingThere)?;
+                parent.children.swap(at, to);
+                Ok(Some(*id))
+            }
         }
     }
+}
+
+/// The node whose direct children include `id`.
+fn parent_of_mut(node: &mut Node, id: u64) -> Option<&mut Node> {
+    if node.children.iter().any(|c| c.id == id) {
+        return Some(node);
+    }
+    node.children
+        .iter_mut()
+        .find_map(|child| parent_of_mut(child, id))
 }
 
 /// Shift a node's descendants by `(dx, dy)`, relative to the node itself.

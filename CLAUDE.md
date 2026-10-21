@@ -94,6 +94,8 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
 - **D20:** **repositórios apt e dnf como os do Ideario**, com uma chave GPG só do Nodo (escolha do usuário): os
   índices assinados vão em cada Release e o site redireciona `/apt` e `/rpm` para o último. A chave privada fica com o
   usuário, no Ideario dele.
+- **D21:** **atalhos de zoom como XMind/MindNode e Figma** (pesquisa do usuário pedida): ⌘0 = 100% (antes era
+  ajustar), ⌘=/⌘- , ⇧1 tudo, ⇧2 seleção (pelo `e.code`, independente do teclado). ⌥↑/⌥↓ do XMind para reordenar.
 - **D18:** **o canvas redesenha no máximo uma vez por quadro**, e o que o desenho lê não pode ser `$state` escrito no
   mesmo efeito. Motivo: um laço assim (`colors`) fazia centenas de redesenhos por tecla e deixava a edição travando.
 
@@ -107,9 +109,9 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   `Relayout`), **`Editor`** (`editor.rs`: histórico + arquivo + revisões; sujo segue o desfazer até o salvo; salvar é
   atômico; `changed_on_disk` para ver o que o agente salvou). Testes em `editor.rs`, `lib.rs` e
   `tests/layout_props.rs` (proptest).
-- `nodo-mcp`: `Session` = `Option<Editor>`; 18 ferramentas (`toggle_fold` e `set_map_theme` novas; `set_side`/`relayout` passam pelo
+- `nodo-mcp`: `Session` = `Option<Editor>`; 19 ferramentas (`toggle_fold`, `set_map_theme` e `move_sibling` novas; `set_side`/`relayout` passam pelo
   histórico); `setup.rs` registra no Claude Desktop.
-- `nodo-app`: 26 comandos (com `update_supported`/`update_check`/`update_install`) em `src/lib.rs` sobre o `Editor` (`set_side`, `reload_map`, `quit_app` novos); snapshot
+- `nodo-app`: 27 comandos (com `reorder_node`) (com `update_supported`/`update_check`/`update_install`) em `src/lib.rs` sobre o `Editor` (`set_side`, `reload_map`, `quit_app` novos); snapshot
   esconde filhos de nó recolhido e diz se o arquivo mudou no disco (`stale`); fechar/Cmd+Q com algo não salvo pergunta
   na interface (evento `close-requested`); `.minder` associado no instalador e aberto por argumento ou pelo evento do
   macOS (`open-file`). Ícones de todas as plataformas em `icons/`, `bundle.targets = all`.
@@ -118,7 +120,7 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   palettes, theme, render com `traceBranch` curvas/em ângulo, measure, font, preview). `ideario.css` + `map.css`.
 - **Preview** (`ui/src/lib/preview.ts`): espelha o núcleo (mesmo layout, recolhidos escondidos); `?preview`, e
   `?select=Texto` abre com o nó selecionado. Mapa de exemplo "Lançamento do app", inventado.
-- **Testes:** 66 Rust + 38 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
+- **Testes:** 69 Rust + 39 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
   `.AppImage`; a janela abre um `.minder` passado como argumento) e `nodo --mcp` testado de ponta a ponta.
 - **CI/Release:** `.github/workflows/build.yml` (verificação + instaladores dos três sistemas nos Artifacts) e
   `release.yml` (rascunho → publicar); `scripts/check-version.sh` e `scripts/bump-version.sh`; guia em
@@ -144,4 +146,8 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
 - **Repositórios apt e dnf** (D20): `scripts/linux-repos.sh` (cópia do Ideario), `.github/workflows/linux-repos.yml`
   (chamado pelo Release e à mão), `site/_redirects`, `site/linux/` (chave pública e `nodo.repo`), seção Linux no site e
   no README. Segredo `NODO_GPG_PRIVATE_KEY`, conferido no `check-secrets.yml`.
+- **Atalhos** (D21): ⌘0 tamanho real (centrado na seleção), ⌘=/⌘- zoom, ⇧1 ver o mapa inteiro, ⇧2 enquadrar a
+  seleção com o ramo visível (`Canvas.svelte`: `fit`, `fitSelection`, `actualSize`), ⌥↑/⌥↓ sobe/desce entre irmãos
+  (`Action::Reorder` no núcleo, `reorder_node` no app, `move_sibling` no MCP; na raiz só troca com o mesmo lado),
+  Home seleciona a raiz. O rótulo de zoom é botão para 100%. Lista no Inspector.
 - **Próximo:** Fase 3 (importação e exportação).

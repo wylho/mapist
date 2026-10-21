@@ -114,6 +114,9 @@ export const api = {
 
   toggleFold: (id: number) => call<Snapshot>('toggle_fold', { id }),
 
+  /** Sobe (`delta < 0`) ou desce o nó entre os irmãos; na raiz, só entre os ramos do mesmo lado. */
+  reorder: (id: number, delta: number) => call<Snapshot>('reorder_node', { id, delta }),
+
   setSide: (id: number, side: 'left' | 'right') => call<Snapshot>('set_side', { id, side }),
 
   setMapStyle: (style: string | null) => call<Snapshot>('set_map_style', { style }),

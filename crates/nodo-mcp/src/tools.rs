@@ -146,6 +146,18 @@ pub fn catalog() -> Vec<Value> {
             }),
         ),
         tool(
+            "move_sibling",
+            "Move a node up or down among its siblings (Alt+Up/Alt+Down in the app). Under the root, it swaps with the nearest branch on the same side.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "id": { "type": "integer" },
+                    "direction": { "type": "string", "enum": ["up", "down"] }
+                },
+                "required": ["id", "direction"]
+            }),
+        ),
+        tool(
             "relayout",
             "Discard positions placed by hand and lay the whole map out again. Positions are already recomputed after every edit.",
             json!({ "type": "object", "properties": {} }),
@@ -287,6 +299,20 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
                 .map(|n| n.folded)
                 .unwrap_or(false);
             json!({ "ok": true, "id": id, "folded": folded })
+        }
+        "move_sibling" => {
+            let id = int_arg(&args, "id")?;
+            let delta = match str_arg(&args, "direction")?.as_str() {
+                "up" => -1,
+                "down" => 1,
+                other => {
+                    return Err(format!(
+                        "direction must be \"up\" or \"down\", got {other:?}"
+                    ))
+                }
+            };
+            mutate(session, Action::Reorder { id, delta })?;
+            json!({ "ok": true, "id": id })
         }
         "relayout" => {
             mutate(session, Action::Relayout)?;

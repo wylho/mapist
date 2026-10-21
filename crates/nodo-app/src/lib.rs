@@ -316,6 +316,12 @@ fn toggle_fold(state: State<'_, AppState>, id: u64) -> Result<Snapshot, String> 
     mutate(state, Action::ToggleFold { id })
 }
 
+/// Move a node up (`delta < 0`) or down among its siblings.
+#[tauri::command]
+fn reorder_node(state: State<'_, AppState>, id: u64, delta: i64) -> Result<Snapshot, String> {
+    mutate(state, Action::Reorder { id, delta })
+}
+
 /// Move a node to an absolute position. It stays there until the next edit
 /// that changes the tree's shape.
 #[tauri::command]
@@ -535,6 +541,7 @@ pub fn run() {
             set_side,
             set_map_style,
             toggle_fold,
+            reorder_node,
             move_node,
             undo,
             redo,

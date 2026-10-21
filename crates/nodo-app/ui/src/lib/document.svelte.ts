@@ -281,6 +281,24 @@ class Document {
     return this.addAndEdit(n.parent, text)
   }
 
+  /** Sobe ou desce o nó selecionado entre os irmãos (⌥↑ / ⌥↓, como no XMind). Na ponta, não faz nada. */
+  async reorder(delta: number) {
+    const n = this.selectedNode
+    if (!n || n.parent === null) return
+    const id = n.id
+    try {
+      await this.adopt(await api.reorder(id, delta))
+    } catch {
+      // Já é o primeiro ou o último do seu lado: fica onde está.
+    }
+  }
+
+  /** Seleciona a raiz (Home). */
+  selectRoot() {
+    const root = this.snapshot.nodes.find((n) => n.parent === null)
+    if (root) this.selected = root.id
+  }
+
   remove() {
     const n = this.selectedNode
     if (!n || n.parent === null) return Promise.resolve()

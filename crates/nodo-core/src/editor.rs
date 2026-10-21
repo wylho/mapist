@@ -200,6 +200,94 @@ mod tests {
     use super::*;
     use crate::model::NodeSide;
 
+    fn add(ed: &mut Editor, parent: u64, text: &str) -> u64 {
+        ed.apply(Action::AddChild {
+            parent,
+            text: text.into(),
+        })
+        .unwrap()
+        .unwrap()
+    }
+
+    fn order(ed: &Editor, parent: u64) -> Vec<String> {
+        ed.map()
+            .find(parent)
+            .unwrap()
+            .children
+            .iter()
+            .map(|c| c.text.clone())
+            .collect()
+    }
+
+    #[test]
+    fn reorder_moves_a_topic_among_its_siblings_and_undoes() {
+        let mut ed = Editor::new("Raiz");
+        let p = add(&mut ed, 0, "P");
+        add(&mut ed, p, "A");
+        add(&mut ed, p, "B");
+        let c = add(&mut ed, p, "C");
+
+        ed.apply(Action::Reorder { id: c, delta: -1 }).unwrap();
+        assert_eq!(order(&ed, p), ["A", "C", "B"]);
+        // O layout acompanha: C fica acima de B.
+        let y = |ed: &Editor, t: &str| {
+            ed.map()
+                .find(p)
+                .unwrap()
+                .children
+                .iter()
+                .find(|n| n.text == t)
+                .unwrap()
+                .pos
+                .y
+        };
+        assert!(y(&ed, "C") < y(&ed, "B"));
+
+        ed.apply(Action::Reorder { id: c, delta: -1 }).unwrap();
+        assert_eq!(order(&ed, p), ["C", "A", "B"]);
+        // Já é o primeiro: nada muda e nada entra no histórico.
+        let depth = ed.undo_depth();
+        assert!(matches!(
+            ed.apply(Action::Reorder { id: c, delta: -1 }),
+            Err(crate::Error::NoSiblingThere)
+        ));
+        assert_eq!(ed.undo_depth(), depth);
+
+        ed.undo();
+        ed.undo();
+        assert_eq!(order(&ed, p), ["A", "B", "C"]);
+    }
+
+    #[test]
+    fn reorder_on_the_root_only_swaps_with_branches_on_the_same_side() {
+        let mut ed = Editor::new("Raiz");
+        let a = add(&mut ed, 0, "A");
+        let b = add(&mut ed, 0, "B");
+        let c = add(&mut ed, 0, "C");
+        ed.apply(Action::SetSide {
+            id: a,
+            side: NodeSide::Right,
+        })
+        .unwrap();
+        ed.apply(Action::SetSide {
+            id: b,
+            side: NodeSide::Left,
+        })
+        .unwrap();
+        ed.apply(Action::SetSide {
+            id: c,
+            side: NodeSide::Right,
+        })
+        .unwrap();
+
+        // C sobe para antes de A (o vizinho do mesmo lado), passando por cima de B, que é do outro lado.
+        ed.apply(Action::Reorder { id: c, delta: -1 }).unwrap();
+        assert_eq!(order(&ed, 0), ["C", "B", "A"]);
+        // B é o único à esquerda: não tem para onde ir.
+        assert!(ed.apply(Action::Reorder { id: b, delta: 1 }).is_err());
+        assert!(ed.apply(Action::Reorder { id: 0, delta: 1 }).is_err());
+    }
+
     #[test]
     fn fold_survives_the_next_edit_and_undoes() {
         let mut ed = Editor::new("Raiz");

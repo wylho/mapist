@@ -59,6 +59,9 @@ pub enum Error {
     #[error("cannot remove the root node")]
     CannotRemoveRoot,
 
+    #[error("there is no sibling in that direction to swap with")]
+    NoSiblingThere,
+
     #[error("unknown map theme {0:?}; use one of: classico, contorno, sublinhado, vibrante, pilulas, mono")]
     UnknownStyle(String),
 

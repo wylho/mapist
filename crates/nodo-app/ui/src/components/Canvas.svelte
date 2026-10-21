@@ -47,20 +47,8 @@
     scheduleRender()
   }
 
-  export function fit(animate = true) {
-    const b = doc.snapshot.bounds
-    const r = stageEl.getBoundingClientRect()
-    if (!doc.hasDocument) return
-    // Margem proporcional: 110 px fixos numa tela de celular deixavam o mapa em 16%.
-    const pad = Math.min(110, Math.max(16, Math.min(r.width, r.height) * 0.08))
-    const w = b.max_x - b.min_x || 1
-    const h = b.max_y - b.min_y || 1
-    const target = Math.max(0.12, Math.min((r.width - pad * 2) / w, (r.height - pad * 2) / h, 1.35))
-    const to = {
-      scale: target,
-      x: r.width / 2 - ((b.min_x + b.max_x) / 2) * target,
-      y: r.height / 2 - ((b.min_y + b.max_y) / 2) * target,
-    }
+  /** Leva a vista até `to`, com uma animação curta (ou na hora). */
+  function animateTo(to: { scale: number; x: number; y: number }, animate: boolean) {
     if (!animate) {
       Object.assign(view, to)
       render()
@@ -79,6 +67,57 @@
       if (k < 1) requestAnimationFrame(step)
     }
     requestAnimationFrame(step)
+  }
+
+  /** Enquadra uma caixa do mundo na tela, sem passar de `maxScale`. */
+  function frameBox(b: { min_x: number; min_y: number; max_x: number; max_y: number }, maxScale: number, animate: boolean) {
+    const r = stageEl.getBoundingClientRect()
+    // Margem proporcional: 110 px fixos numa tela de celular deixavam o mapa em 16%.
+    const pad = Math.min(110, Math.max(16, Math.min(r.width, r.height) * 0.08))
+    const w = b.max_x - b.min_x || 1
+    const h = b.max_y - b.min_y || 1
+    const target = Math.max(0.12, Math.min((r.width - pad * 2) / w, (r.height - pad * 2) / h, maxScale))
+    animateTo(
+      {
+        scale: target,
+        x: r.width / 2 - ((b.min_x + b.max_x) / 2) * target,
+        y: r.height / 2 - ((b.min_y + b.max_y) / 2) * target,
+      },
+      animate,
+    )
+  }
+
+  /** O mapa inteiro na tela (⇧1). */
+  export function fit(animate = true) {
+    if (!doc.hasDocument) return
+    frameBox(doc.snapshot.bounds, 1.35, animate)
+  }
+
+  /** O nó selecionado e o ramo visível abaixo dele na tela (⇧2). */
+  export function fitSelection() {
+    const sel = doc.selectedNode
+    if (!sel) return
+    const ids = new Set([sel.id])
+    const box = { min_x: sel.x, min_y: sel.y, max_x: sel.x + sel.width, max_y: sel.y + sel.height }
+    // Pré-ordem: o pai vem antes dos filhos, então uma passada acha o ramo inteiro.
+    for (const n of doc.nodes) {
+      if (n.parent === null || !ids.has(n.parent)) continue
+      ids.add(n.id)
+      box.min_x = Math.min(box.min_x, n.x)
+      box.min_y = Math.min(box.min_y, n.y)
+      box.max_x = Math.max(box.max_x, n.x + n.width)
+      box.max_y = Math.max(box.max_y, n.y + n.height)
+    }
+    frameBox(box, 2, true)
+  }
+
+  /** Tamanho real (⌘0), centrado no nó selecionado, ou no centro da tela se não houver. */
+  export function actualSize() {
+    const r = stageEl.getBoundingClientRect()
+    const sel = doc.selectedNode
+    const cx = sel ? sel.x + sel.width / 2 : (r.width / 2 - view.x) / view.scale
+    const cy = sel ? sel.y + sel.height / 2 : (r.height / 2 - view.y) / view.scale
+    animateTo({ scale: 1, x: r.width / 2 - cx, y: r.height / 2 - cy }, true)
   }
 
   function render() {
