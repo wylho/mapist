@@ -7,8 +7,8 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
 
 ## Regras do projeto
 - **Local-first**: o mapa vive num arquivo no disco do usuário. Nada de servidor, conta ou rede para abrir, editar ou salvar.
-- **O arquivo é do usuário**: texto legível sem o app, gravado de forma atômica, ida e volta sem perda. Hoje é o XML
-  `.minder` herdado do começo; compatibilidade com o Minder original **não** é mais requisito (D27).
+- **O arquivo é do usuário**: texto legível sem o app, gravado de forma atômica, ida e volta sem perda. É o `.nodo`
+  (JSON, D28); compatibilidade com o Minder original **não** é requisito (D27).
 - **Um núcleo, duas portas**: o aplicativo e o servidor MCP usam o mesmo `nodo-core`. Um agente editando por MCP
   produz exatamente o mesmo resultado que uma pessoa editando na janela, inclusive no histórico de desfazer.
 - **Um binário, dois modos**: `nodo` abre a janela; `nodo --mcp` fala o protocolo. O instalador leva um arquivo só.
@@ -49,8 +49,7 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
 - **D2:** desktop primeiro (macOS, Linux, Windows). O Minder original é GTK4 e não roda bem no macOS, que é o alvo principal.
 - **D3:** nome **Nodo**. Binário `nodo`; crates `nodo-core`, `nodo-mcp`, `nodo-app`.
 - **D4:** licença **GPL-3.0-or-later**, herdada do Minder (é obra derivada; o copyleft vale).
-- **D5:** formato **`.minder`** (XML do Minder 2.0.9), não um formato próprio — manter os mapas existentes abríveis vale
-  mais que a liberdade de inventar. Campos novos entram como atributos ignorados pelo Minder original.
+- **D5:** (substituída pela D28) o formato era o `.minder` do Minder 2.0.9.
 - **D6:** o servidor MCP é o **próprio executável** com `--mcp` (padrão copiado do Ideario), não um segundo binário.
   O `nodo-mcp` continua existindo como binário enxuto para uso sem interface.
 - **D7:** **paletas nomeadas + tema Sistema**, hoje **do Atrio** (Atrio, Papel, Grafite, Floresta; a Atrio é a
@@ -114,9 +113,14 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   transferência** (HTML com `data-atrio-card` + Markdown). Mudança de visual compartilhado se faz lá, e aqui só sobe
   a tag. Licença MIT (o Nodo é GPL e o Ideario não).
 - **D27:** **o Nodo não é mais preso ao Minder** (pedido do usuário: "esquece o Minder"; foi inspiração, não é fork).
-  Funcionalidade nova não precisa caber no formato nem no comportamento do Minder. Ainda em aberto com o usuário: o
-  formato e a extensão do arquivo daqui para a frente (os `.minder` existentes continuam abrindo) e a licença (a GPL
-  veio do Minder).
+  Funcionalidade nova não precisa caber no formato nem no comportamento do Minder. Ainda em aberto com o usuário: a
+  licença (a GPL veio do Minder; trocar pede conferir que nenhum código dele foi copiado). O rodapé do site mantém a
+  atribuição enquanto isso.
+- **D28:** **formato próprio `.nodo`** (escolha do usuário): JSON legível e versionado (`format: "nodo"`, `version`),
+  só com o que o Nodo modela, sem posições (o layout é recalculado ao abrir). `nodo_core::nodofile` (`to_nodo`,
+  `from_nodo`; aceita versão até `VERSION` e ignora campos desconhecidos), `load`/`save` gravam `.nodo`. Um `.minder`
+  abre como importação (como Markdown/OPML: sem caminho, salvar pergunta); salvar com outra extensão grava o `.nodo`
+  ao lado e devolve o caminho. Associação de arquivo: `.nodo` (editor) e `.minder` (leitor).
 - **D18:** **o canvas redesenha no máximo uma vez por quadro**, e o que o desenho lê não pode ser `$state` escrito no
   mesmo efeito. Motivo: um laço assim (`colors`) fazia centenas de redesenhos por tecla e deixava a edição travando.
 
@@ -141,7 +145,7 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   palettes, theme, render com `traceBranch` curvas/em ângulo, measure, font, preview). `atrio.css` (do Atrio) + `map.css`.
 - **Preview** (`ui/src/lib/preview.ts`): espelha o núcleo (mesmo layout, recolhidos escondidos); `?preview`, e
   `?select=Texto` abre com o nó selecionado. Mapa de exemplo "Lançamento do app", inventado.
-- **Testes:** 91 Rust + 44 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
+- **Testes:** 98 Rust + 44 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
   `.AppImage`; a janela abre um `.minder` passado como argumento) e `nodo --mcp` testado de ponta a ponta.
 - **CI/Release:** `.github/workflows/build.yml` (verificação + instaladores dos três sistemas nos Artifacts) e
   `release.yml` (rascunho → publicar); `scripts/check-version.sh` e `scripts/bump-version.sh`; guia em
@@ -208,7 +212,12 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   (`Action::AddTopic`, comando `add_topic`, `add_node` do MCP aceita `note`), e "Copiar como card"/"Colar card"
   nos menus. A cor da nota vira a cor do ramo e volta. Desde o Atrio 0.3.0, `MenuAt`, `MenuList`, `Picker` e
   `SEP`/`MenuEntry` vêm de lá (as cópias saíram de `components/` e `lib/menu.ts`).
-- **Próximo:** estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore);
+- **Formato `.nodo`** (D28): `nodo-core/src/nodofile.rs` (testes de ida e volta, versão nova recusada, campos
+  desconhecidos ignorados; proptest em `tests/layout_props.rs`), `Editor::open_or_import` (`.minder` vira importação;
+  sem extensão conhecida, decide pelo conteúdo) e `Editor::save` (sempre `.nodo`). App: diálogos e
+  `tauri.conf.json`; MCP: `open_map`/`save_map` e instruções. Site e README sem o Minder como argumento.
+- **Próximo:** antes de mexer nos apps, o **card unificado no Atrio** (pedido do usuário: o grande componente card com
+  editor, etiquetas, data, status, anexos, gravações); depois os apps passam a usá-lo. estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore);
   o card inteiro vindo do Atrio, com `features({ category: false })` no Nodo: falta o componente `NoteEditor` no Atrio
   e, aqui, os campos do nó no núcleo (etiquetas, data/lembrete, status, emoji, anexos) gravados no `.minder`;
   aba Estrutura na barra lateral com colar lista; abrir `.xmind`.
