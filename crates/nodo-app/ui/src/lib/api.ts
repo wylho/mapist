@@ -120,6 +120,9 @@ export const api = {
 
   addNode: (parent: number, text: string) => call<Snapshot>('add_node', { parent, text }),
 
+  /** Filho já com nota (um card colado), num passo só do desfazer. */
+  addTopic: (parent: number, text: string, note: string) => call<Snapshot>('add_topic', { parent, text, note }),
+
   removeNode: (id: number) => call<Snapshot>('remove_node', { id }),
 
   setText: (id: number, text: string) => call<Snapshot>('set_text', { id, text }),

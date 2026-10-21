@@ -154,7 +154,7 @@ impl Editor {
             | Action::SetFreeNote { .. }
             | Action::PlaceFreeNote { .. }
             | Action::RemoveFreeNote { .. } => {}
-            Action::AddChild { .. } | Action::SetText { .. } => {
+            Action::AddChild { .. } | Action::AddTopic { .. } | Action::SetText { .. } => {
                 // Only the touched node gets the core's estimate; every other box
                 // keeps the size the renderer measured.
                 if let Some(node) = id.and_then(|id| map.find_mut(id)) {
@@ -273,6 +273,30 @@ mod tests {
 
     fn node(ed: &Editor, id: u64) -> &crate::model::Node {
         ed.map().find(id).unwrap()
+    }
+
+    #[test]
+    fn a_topic_with_a_note_is_one_undo_step() {
+        let mut ed = Editor::new("Mapa");
+        let id = ed
+            .apply(Action::AddTopic {
+                parent: 0,
+                text: "Ideias".into(),
+                note: "- [ ] Revisar".into(),
+            })
+            .unwrap()
+            .unwrap();
+        assert_eq!(node(&ed, id).note, "- [ ] Revisar");
+        assert!(ed.undo());
+        assert!(ed.map().find(id).is_none());
+        assert!(matches!(
+            ed.apply(Action::AddTopic {
+                parent: 99,
+                text: String::new(),
+                note: String::new()
+            }),
+            Err(crate::Error::NodeNotFound(99))
+        ));
     }
 
     #[test]

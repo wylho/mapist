@@ -4,7 +4,8 @@
   import { doc } from '../lib/document.svelte'
   import { theme } from '../lib/theme.svelte'
   import { cardFill, draw, hitNoteDot, hitTest, readThemeColors, resolveColor, type Viewport } from '../lib/render'
-  import { CARD, cardHtml, isCard } from '../lib/cardtext'
+  import { CARD, isCard } from '../lib/cardtext'
+  import { CardBody, previewFromMarkdown } from '@wylho/atrio'
   import { notes } from '../lib/notes.svelte'
   import NoteCard from './NoteCard.svelte'
   import { prefs } from '../lib/prefs.svelte'
@@ -326,14 +327,9 @@
     if (list.length === 0) return []
     const c = readThemeColors()
     const branch = branchColors(doc.snapshot.nodes, mapTheme(doc.snapshot.style), theme.mode, c.nodeColors, (x) => resolveColor(x, c))
-    return list.map((n) => ({ n, fill: cardFill(branch.get(n.id) ?? c.muted, c.surface, theme.mode), html: cardHtml(n.text, n.note) }))
+    return list.map((n) => ({ n, fill: cardFill(branch.get(n.id) ?? c.muted, c.surface, theme.mode), blocks: previewFromMarkdown(n.note) }))
   })
 
-  /** Como o `watchClip` do Ideario: marca a prévia que passou da altura, para o CSS esmaecer o fim. */
-  function clip(el: HTMLElement) {
-    const p = el.querySelector<HTMLElement>('.preview')
-    p?.toggleAttribute('data-clipped', p.scrollHeight > p.clientHeight + 2)
-  }
 
   // Abre o campo no lugar do nó sempre que o documento pede (tecla, Tab/Enter, duplo clique).
   $effect(() => {
@@ -441,7 +437,6 @@
 >
   <canvas bind:this={canvas}></canvas>
   {#each cardNodes as c (c.n.id)}
-    <!-- eslint-disable-next-line svelte/no-at-html-tags -- cardHtml escapa todo o texto da nota -->
     <div
       class="card map-card"
       style:left="{c.n.x * view.scale + view.x}px"
@@ -450,8 +445,7 @@
       style:background={c.fill}
       style:transform="scale({view.scale})"
       aria-hidden="true"
-      {@attach (el) => (void c.html, clip(el))}
-    >{@html c.html}</div>
+    ><CardBody title={c.n.text} blocks={c.blocks} /></div>
   {/each}
   {#if doc.editing && editorBox}
     <input

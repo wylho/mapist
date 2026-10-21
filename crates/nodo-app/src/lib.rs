@@ -320,6 +320,17 @@ fn add_node(state: State<'_, AppState>, parent: u64, text: String) -> Result<Sna
     mutate(state, Action::AddChild { parent, text })
 }
 
+/// Add a child with a note already in it (a pasted card), as one undo step.
+#[tauri::command]
+fn add_topic(
+    state: State<'_, AppState>,
+    parent: u64,
+    text: String,
+    note: String,
+) -> Result<Snapshot, String> {
+    mutate(state, Action::AddTopic { parent, text, note })
+}
+
 /// Remove a node and its subtree.
 #[tauri::command]
 fn remove_node(state: State<'_, AppState>, id: u64) -> Result<Snapshot, String> {
@@ -655,6 +666,7 @@ pub fn run() {
             reload_map,
             save_map,
             add_node,
+            add_topic,
             remove_node,
             set_text,
             set_note,

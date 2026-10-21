@@ -8,6 +8,9 @@ import { api, hasHost, isPreview, type Snapshot } from './api'
 import { measureAll } from './measure'
 import { mapTheme } from './maptheme'
 import { ui } from './ui.svelte'
+import type { ClipCard, NoteColor } from '@wylho/atrio'
+import { NODE_COLOR_TOKENS, resolveNodeColor } from './palettes'
+import { theme } from './theme.svelte'
 
 const EMPTY: Snapshot = {
   nodes: [],
@@ -320,6 +323,34 @@ class Document {
     if (!n || n.parent === null) return Promise.resolve()
     const id = n.id
     return this.run(() => api.removeNode(id))
+  }
+
+  /** O nó selecionado como card do Atrio, para copiar (o Ideario cola como nota). */
+  selectedCard(): ClipCard | null {
+    const n = this.selectedNode
+    if (!n) return null
+    // A cor do ramo é guardada já resolvida (hex do tema); volta a ser a cor de nota de mesmo lugar na paleta.
+    const i = n.color ? theme.colors.notes.findIndex((c) => c.toLowerCase() === n.color?.toLowerCase()) : -1
+    const color = i >= 0 ? (NODE_COLOR_TOKENS[i].slice(4) as NoteColor) : undefined
+    return { title: n.text, markdown: n.note, ...(color ? { color } : {}) }
+  }
+
+  /** Cola um card (do Ideario, ou de outro nó) como filho do nó selecionado, ou da raiz. Seleciona o novo nó. */
+  async pasteCard(card: ClipCard) {
+    const parent = this.selected ?? this.snapshot.nodes.find((n) => n.parent === null)?.id
+    if (parent === undefined) return
+    const before = new Set(this.snapshot.nodes.map((n) => n.id))
+    const tags = (card.tags ?? []).filter((t) => !new RegExp(`#${t}(?![\\p{L}\\d_-])`, 'u').test(card.markdown))
+    const note = [card.markdown.trim(), tags.map((t) => `#${t}`).join(' ')].filter(Boolean).join('\n\n')
+    const title = [card.emoji, card.title.trim()].filter(Boolean).join(' ') || 'Nota'
+    await this.run(() => api.addTopic(parent, title, note))
+    const id = this.snapshot.nodes.find((n) => !before.has(n.id))?.id
+    if (id === undefined) return
+    this.selected = id
+    if (card.color && card.color !== 'none') {
+      const hex = resolveNodeColor(`--n-${card.color}`, theme.colors)
+      await this.run(() => api.setColor(id, hex))
+    }
   }
 
   setText(id: number, text: string) {

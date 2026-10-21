@@ -1,6 +1,6 @@
 /* Nodo: só o que é de um app de mapa (canvas, barra de zoom, inspetor de nó).
    O design system (tokens, .topbar, .icon-btn, .btn, .seg, .card, .sheet, .set-row, .switch, .toast, .theme-grid…)
-   vem de ideario.css, cópia literal do app.css do Ideario: quando o Ideario mudar, copiar de novo, não editar lá. */
+   vem do Atrio (`@wylho/atrio/atrio.css`), o design system compartilhado com o Ideario: mudou lá, sobe a versão aqui. */
 
 /* ── casca ────────────────────────────────────────────────────────────── */
 

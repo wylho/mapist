@@ -555,3 +555,24 @@ describe('notas soltas no mapa', () => {
     expect(snap.notes[0].text).toBe('**Prazo** sexta')
   })
 })
+
+describe('card do Atrio entre o Ideario e o Nodo', () => {
+  it('colar um card cria um filho com a nota (um passo do desfazer) e copiar devolve o mesmo card', async () => {
+    const { seedDemo } = await import('../src/lib/preview')
+    const { doc } = await import('../src/lib/document.svelte')
+    const { cardFromHtml, cardToClipboard } = await import('@wylho/atrio')
+    seedDemo()
+    await doc.load()
+    const root = doc.snapshot.nodes.find((n) => n.parent === null)!
+    doc.selected = root.id
+    const copied = cardFromHtml(cardToClipboard({ title: 'Feira', markdown: '- [ ] Arroz #casa', tags: ['casa', 'mercado'] }).html)!
+    await doc.pasteCard(copied)
+    const n = doc.selectedNode!
+    expect(n.parent).toBe(root.id)
+    expect(n.text).toBe('Feira')
+    expect(n.note).toBe('- [ ] Arroz #casa\n\n#mercado')
+    expect(doc.selectedCard()).toEqual({ title: 'Feira', markdown: '- [ ] Arroz #casa\n\n#mercado' })
+    await doc.undo()
+    expect(doc.snapshot.nodes.some((x) => x.id === n.id)).toBe(false)
+  })
+})

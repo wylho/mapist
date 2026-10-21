@@ -11,7 +11,9 @@ import type { FlatNode } from './api'
 
 import { fontStack, levelFont } from './font'
 import { levelStyle, mapTheme, type MapTheme } from './maptheme'
-import { CARD, cardHtml, isCard } from './cardtext'
+import { flushSync, mount, unmount } from 'svelte'
+import { CardBody, previewFromMarkdown } from '@wylho/atrio'
+import { CARD, isCard } from './cardtext'
 
 /** Altura de linha, proporcional ao tamanho do texto do nível. */
 const LINE_RATIO = 1.4
@@ -75,7 +77,7 @@ let host: HTMLElement | null = null
 const cardSizes = new Map<string, { width: number; height: number }>()
 
 /**
- * Mede o card de um nó com nota no próprio DOM, com a marcação e o CSS que a tela usa (`cardHtml` + `ideario.css`).
+ * Mede o card de um nó com nota no próprio DOM, com o mesmo componente e o mesmo CSS da tela (`CardBody` do Atrio).
  * Fora do zoom: o card na tela é escalado por `transform`, então a medida aqui já é em unidades de mundo.
  */
 export function measureCard(title: string, note: string): { width: number; height: number } {
@@ -88,8 +90,12 @@ export function measureCard(title: string, note: string): { width: number; heigh
     host.style.cssText = `position:absolute;left:-10000px;top:0;visibility:hidden;pointer-events:none;width:${CARD.width}px`
     document.body.appendChild(host)
   }
-  host.innerHTML = `<div class="card">${cardHtml(title, note)}</div>`
-  const size = { width: CARD.width, height: Math.ceil((host.firstElementChild as HTMLElement).getBoundingClientRect().height) }
+  host.innerHTML = '<div class="card"></div>'
+  const card = host.firstElementChild as HTMLElement
+  const app = mount(CardBody, { target: card, props: { title, blocks: previewFromMarkdown(note) } })
+  flushSync()
+  const size = { width: CARD.width, height: Math.ceil(card.getBoundingClientRect().height) }
+  unmount(app)
   if (cardSizes.size > 500) cardSizes.clear()
   cardSizes.set(key, size)
   return size

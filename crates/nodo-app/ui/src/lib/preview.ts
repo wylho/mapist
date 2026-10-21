@@ -394,6 +394,18 @@ export const previewBackend = {
     return snapshotOf()
   },
 
+  add_topic: ({ parent, text, note }: { parent: number; text: string; note: string }) => {
+    const parentNode = nodes.get(parent)
+    if (!parentNode) throw new Error(`node ${parent} not found`)
+    commit(() => {
+      const n = makeNode(text, parentNode.side, note)
+      n.parent = parent
+      nodes.set(n.id, n)
+      parentNode.children.push(n.id)
+    })
+    return snapshotOf()
+  },
+
   remove_node: ({ id }: { id: number }) => {
     if (id === rootId) throw new Error('cannot remove the root node')
     commit(() => {

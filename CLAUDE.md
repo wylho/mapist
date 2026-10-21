@@ -63,8 +63,8 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
 - **D10:** **um `Editor` no núcleo** (`nodo-core/src/editor.rs`) é o dono do mapa, do histórico, do arquivo e do
   estado salvo; o app e o MCP só o chamam. Motivo: cada porta guardava uma cópia do mapa ao lado do histórico, e
   recolher, mudar de lado e medidas se perdiam na edição seguinte.
-- **D11:** **design system do Ideario por cópia literal** (`ui/src/ideario.css` = `ideario/src/app.css`; `map.css` só
-  com o que é de mapa) e a **estrutura de UX do Ideario como padrão dos nossos apps**: TopBar, folha de
+- **D11:** **design system do Ideario, hoje pelo Atrio** (D26; antes era cópia literal em `ui/src/ideario.css`;
+  `map.css` só com o que é de mapa) e a **estrutura de UX do Ideario como padrão dos nossos apps**: TopBar, folha de
   Configurações, toast, ConfirmDialog (bits-ui), ícones `@lucide/svelte`. Pedido do usuário.
 - **D12:** **ícone "raiz e ramos"** (Figma `Windows-11-UI-Kit`, Page 20, escolha do usuário: verde, azul, amarelo, na
   linguagem do ícone do Ideario). Fontes em `crates/nodo-app/icons/source/` (placa arredondada, quadrado inteiro,
@@ -106,6 +106,11 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
 - **D25:** **nó com nota é o card do Ideario** (escolha do usuário, opção A: fundo na cor do ramo clara), em HTML
   com o CSS do Ideario por cima do canvas, para ser idêntico; a nota se edita num card flutuante, e há notas soltas
   no mapa, gravadas no arquivo.
+- **D26:** **Atrio** (`wylho/atrio`, pacote `@wylho/atrio`, nome escolhido pelo usuário): a biblioteca de
+  componentes do Ideario e do Nodo, por dependência git numa tag (`github:wylho/atrio#vX.Y.Z`). Tem o `atrio.css`, o
+  `CardBody` (miolo do card de nota), a prévia de Markdown com as regras do Ideario e o **card na área de
+  transferência** (HTML com `data-atrio-card` + Markdown). Mudança de visual compartilhado se faz lá, e aqui só sobe
+  a tag. Licença MIT (o Nodo é GPL e o Ideario não).
 - **D18:** **o canvas redesenha no máximo uma vez por quadro**, e o que o desenho lê não pode ser `$state` escrito no
   mesmo efeito. Motivo: um laço assim (`colors`) fazia centenas de redesenhos por tecla e deixava a edição travando.
 
@@ -130,7 +135,7 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   palettes, theme, render com `traceBranch` curvas/em ângulo, measure, font, preview). `ideario.css` + `map.css`.
 - **Preview** (`ui/src/lib/preview.ts`): espelha o núcleo (mesmo layout, recolhidos escondidos); `?preview`, e
   `?select=Texto` abre com o nó selecionado. Mapa de exemplo "Lançamento do app", inventado.
-- **Testes:** 90 Rust + 43 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
+- **Testes:** 91 Rust + 44 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
   `.AppImage`; a janela abre um `.minder` passado como argumento) e `nodo --mcp` testado de ponta a ponta.
 - **CI/Release:** `.github/workflows/build.yml` (verificação + instaladores dos três sistemas nos Artifacts) e
   `release.yml` (rascunho → publicar); `scripts/check-version.sh` e `scripts/bump-version.sh`; guia em
@@ -184,14 +189,18 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   `.md`, `.markdown`, `.txt` e `.opml`. Ida e volta: o Markdown e o OPML exportados voltam à mesma árvore.
 - **Notas** (D25): nó com nota vira **o card do Ideario** (opção A do usuário: card na cor do ramo bem clara):
   `lib/cardtext.ts` (`cardHtml` = marcação do `NoteCard.svelte` do Ideario com os blocos `pv-*` e os limites do
-  `preview_of`; `layoutCard` desenha o mesmo card no canvas/SVG para exportar), medido no DOM (`measureCard` em
-  `measure.ts`) e posto por cima do canvas em `Canvas.svelte` (`.map-card`, sem mouse; o canvas desenha ramos e
+  `preview_of`; hoje o `CardBody` do Atrio; `layoutCard` desenha o mesmo card no canvas/SVG para exportar), medido no
+  DOM (`measureCard` em `measure.ts`, montando o `CardBody`) e posto por cima do canvas em `Canvas.svelte` (`.map-card`, sem mouse; o canvas desenha ramos e
   seleção). Duplo clique no título edita o título; no corpo, abre a nota. A nota se escreve num card flutuante ao
   lado do nó (`components/NoteCard.svelte`, translúcido, Markdown formatado com `lib/markdown.ts`, um clique edita,
   salva sozinho; `lib/notes.svelte.ts`). **Notas soltas** no fundo do mapa: `model::FreeNote`, `<nodo-notes>` no
   arquivo (o Minder ignora), `Action::AddFreeNote/SetFreeNote/PlaceFreeNote/RemoveFreeNote`, comandos
   `add_free_note`/`set_free_note`/`place_free_note`/`remove_free_note`, ferramentas MCP; "Nova nota aqui" no menu do
   fundo, "Adicionar nota" no do nó. O inspetor só mostra a prévia da nota e o botão para abrir.
+- **Atrio no Nodo** (D26): `main.ts` importa `@wylho/atrio/atrio.css` (o `ideario.css` saiu); cards pelo `CardBody`;
+  ⌘C num nó copia como card e ⌘V cola um card (do Ideario ou de outro nó) como filho com a nota
+  (`Action::AddTopic`, comando `add_topic`, `add_node` do MCP aceita `note`), e "Copiar como card"/"Colar card"
+  nos menus. A cor da nota vira a cor do ramo e volta.
 - **Próximo:** estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore);
   componentes e formato de área de transferência compartilhados com o Ideario (decisão pendente com o usuário);
   aba Estrutura na barra lateral com colar lista; abrir `.xmind`.

@@ -20,6 +20,9 @@ importers:
       '@tauri-apps/plugin-opener':
         specifier: 2.7.2
         version: 2.7.2
+      '@wylho/atrio':
+        specifier: github:wylho/atrio#v0.1.0
+        version: https://codeload.github.com/wylho/atrio/tar.gz/0546659cbecc6ce237b941eadb8e192c831e64ef(@lucide/svelte@1.61.0(svelte@5.57.2))(svelte@5.57.2)
       bits-ui:
         specifier: ^2.20.0
         version: 2.20.0(@internationalized/date@3.12.4)(svelte@5.57.2)
@@ -389,6 +392,13 @@ packages:
 
   '@vitest/spy@5.0.5':
     resolution: {integrity: sha512-lwJRExuH417257Q5wv9QYugN9IMJkoxcrKrYxGPQkBzl7wlNpTUxD/5yNX4ESKVUIShKPgkGchYPFMWOOk0wzw==}
+
+  '@wylho/atrio@https://codeload.github.com/wylho/atrio/tar.gz/0546659cbecc6ce237b941eadb8e192c831e64ef':
+    resolution: {tarball: https://codeload.github.com/wylho/atrio/tar.gz/0546659cbecc6ce237b941eadb8e192c831e64ef}
+    version: 0.1.0
+    peerDependencies:
+      '@lucide/svelte': '>=1.0.0'
+      svelte: ^5.57.0
 
   acorn@8.19.0:
     resolution: {integrity: sha512-oJlA3XiRm7Cyk6qFD2Jn8ak9B7jSy0qy00ADO3+8dpT0LSjFihQYv4C02LFCSYJV3Q37xYwwRy5m+IpIiUzqWw==}
@@ -1178,6 +1188,11 @@ snapshots:
       vite: 8.3.4
 
   '@vitest/spy@5.0.5': {}
+
+  '@wylho/atrio@https://codeload.github.com/wylho/atrio/tar.gz/0546659cbecc6ce237b941eadb8e192c831e64ef(@lucide/svelte@1.61.0(svelte@5.57.2))(svelte@5.57.2)':
+    dependencies:
+      '@lucide/svelte': 1.61.0(svelte@5.57.2)
+      svelte: 5.57.2
 
   acorn@8.19.0: {}
 

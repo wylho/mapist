@@ -1,4 +1,4 @@
-import './ideario.css'
+import '@wylho/atrio/atrio.css'
 import './map.css'
 import { mount } from 'svelte'
 import './lib/theme.svelte' // instancia o tema e aplica as variáveis antes da primeira pintura

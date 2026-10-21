@@ -64,7 +64,8 @@ pub fn catalog() -> Vec<Value> {
                 "type": "object",
                 "properties": {
                     "parent": { "type": "integer", "description": "Id of the parent node." },
-                    "text": { "type": "string", "description": "Text of the new node." }
+                    "text": { "type": "string", "description": "Text of the new node." },
+                    "note": { "type": "string", "description": "Optional Markdown note; a node with a note is drawn as a card." }
                 },
                 "required": ["parent", "text"]
             }),
@@ -309,7 +310,15 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
         "add_node" => {
             let parent = int_arg(&args, "parent")?;
             let text = str_arg(&args, "text")?;
-            let id = mutate(session, Action::AddChild { parent, text })?;
+            let action = match args.get("note").and_then(|v| v.as_str()) {
+                Some(note) => Action::AddTopic {
+                    parent,
+                    text,
+                    note: note.to_string(),
+                },
+                None => Action::AddChild { parent, text },
+            };
+            let id = mutate(session, action)?;
             json!({ "ok": true, "id": id })
         }
         "remove_node" => {

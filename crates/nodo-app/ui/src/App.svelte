@@ -12,6 +12,7 @@
   import MenuAt from './components/MenuAt.svelte'
   import ExportSheet from './components/ExportSheet.svelte'
   import { backgroundMenu, nodeMenu, type ViewActions } from './lib/mapmenus'
+  import { cardToClipboard, readCard } from '@wylho/atrio'
   import { doc } from './lib/document.svelte'
   import { hasHost, isPreview } from './lib/api'
   import { prefs } from './lib/prefs.svelte'
@@ -35,7 +36,28 @@
   const zoomPct = $derived(Math.round(zoom * 100))
   const modKey = /Mac/.test(navigator.platform) ? '⌘' : 'Ctrl+'
 
-  const typing = (e: KeyboardEvent) => !!(e.target as Element | null)?.closest?.('input, textarea, [contenteditable="true"]')
+  const typing = (e: Event) => !!(e.target as Element | null)?.closest?.('input, textarea, [contenteditable="true"]')
+
+  // Copiar e colar um nó como card do Atrio: o Ideario cola como nota, e uma nota copiada no Ideario cola aqui como nó.
+  // Num campo de texto, copiar e colar são do campo.
+  function onCopy(e: ClipboardEvent) {
+    if (typing(e) || !e.clipboardData) return
+    const card = doc.selectedCard()
+    if (!card) return
+    e.preventDefault()
+    const { html, text } = cardToClipboard(card)
+    e.clipboardData.setData('text/html', html)
+    e.clipboardData.setData('text/plain', text)
+    ui.say('Copiado como card')
+  }
+
+  function onPaste(e: ClipboardEvent) {
+    if (typing(e)) return
+    const card = readCard(e.clipboardData)
+    if (!card) return
+    e.preventDefault()
+    void doc.pasteCard(card)
+  }
 
   function onKeydown(e: KeyboardEvent) {
     // Com uma folha ou confirmação aberta, as teclas são dela.
@@ -166,7 +188,7 @@
 </script>
 
 <!-- Ao voltar para a janela, confere se um agente salvou o arquivo pelo MCP. -->
-<svelte:window onkeydown={onKeydown} onfocus={() => void doc.checkDisk()} />
+<svelte:window onkeydown={onKeydown} oncopy={onCopy} onpaste={onPaste} onfocus={() => void doc.checkDisk()} />
 
 <div class="shell map-shell">
   <TopBar />

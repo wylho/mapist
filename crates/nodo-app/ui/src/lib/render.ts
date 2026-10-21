@@ -7,6 +7,7 @@ import type { Snapshot } from './api'
 import type { FlatNode } from './api'
 import { fitText, measureRun } from './measure'
 import { CARD, isCard, layoutCard } from './cardtext'
+import { previewFromMarkdown } from '@wylho/atrio'
 import { fontStack, levelFont, uiFont } from './font'
 import { mix, NODE_COLOR_TOKENS } from './palettes'
 import { branchColors, levelStyle, lineWidth, mapTheme, softFill, textOn, type LevelStyle, type MapTheme } from './maptheme'
@@ -366,18 +367,22 @@ function drawCard(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
     ctx.lineWidth = 1
     ctx.stroke()
     const font = fontStack()
-    const lay = layoutCard(n.text, n.note, measureRun)
+    const lay = layoutCard(n.text, previewFromMarkdown(n.note), measureRun)
     ctx.textAlign = 'left'
     ctx.textBaseline = 'alphabetic'
     for (const l of lay.lines) {
       const done = l.kind === 'task' && l.done
-      const ink = done ? colors.muted : colors.fg
-      ctx.globalAlpha = l.alpha * (l.kind === 'p' || l.kind === 'li' || l.kind === 'ol' ? 0.85 : 1)
-      const size = l.kind === 'title' ? CARD.titleSize : l.kind === 'code' ? 11.5 : CARD.bodySize
-      if (l.first && (l.kind === 'li' || l.kind === 'ol')) {
+      const quiet = done || l.kind === 'more'
+      const ink = quiet ? colors.muted : colors.fg
+      // Como o CSS do card: parágrafos e tópicos a 85%.
+      ctx.globalAlpha = l.alpha * (l.kind === 'text' || l.kind === 'bullet' || l.kind === 'ordered' ? 0.85 : 1)
+      const size = l.kind === 'title' ? CARD.titleSize : l.kind === 'code' ? 11.5 : l.kind === 'more' ? 12 : CARD.bodySize
+      const weight = l.kind === 'title' ? 600 : l.kind === 'heading' ? 650 : 400
+      const mono = l.kind === 'code'
+      if (l.first && l.mark) {
         ctx.font = `400 ${size}px ${font}`
         ctx.fillStyle = colors.muted
-        ctx.fillText(l.mark ?? '•', x + l.markX, y + l.y)
+        ctx.fillText(l.mark, x + l.markX, y + l.y)
       }
       if (l.first && l.kind === 'task') {
         roundRect(ctx, x + l.markX + 0.75, y + l.y - 11.25, 12.5, 12.5, 4)
@@ -392,21 +397,18 @@ function drawCard(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
           ctx.stroke()
         }
       }
-      for (const r of l.runs) {
-        const weight = l.kind === 'title' ? 600 : l.kind === 'h' ? 650 : r.bold ? 600 : 400
-        ctx.font = `${weight} ${size}px ${l.kind === 'code' ? 'ui-monospace, monospace' : font}`
-        ctx.fillStyle = ink
-        ctx.fillText(r.text, x + l.x + r.x, y + l.y)
-        if (done) {
-          // Tarefa feita: riscada, como no card do Ideario.
-          const tw = measureRun(r.text, size, weight)
-          ctx.beginPath()
-          ctx.moveTo(x + l.x + r.x, y + l.y - size * 0.3)
-          ctx.lineTo(x + l.x + r.x + tw, y + l.y - size * 0.3)
-          ctx.strokeStyle = ink
-          ctx.lineWidth = 1
-          ctx.stroke()
-        }
+      ctx.font = `${weight} ${size}px ${mono ? 'ui-monospace, monospace' : font}`
+      ctx.fillStyle = ink
+      ctx.fillText(l.text, x + l.x, y + l.y)
+      if (done) {
+        // Tarefa feita: riscada, como no card.
+        const tw = measureRun(l.text, size, weight)
+        ctx.beginPath()
+        ctx.moveTo(x + l.x, y + l.y - size * 0.3)
+        ctx.lineTo(x + l.x + tw, y + l.y - size * 0.3)
+        ctx.strokeStyle = ink
+        ctx.lineWidth = 1
+        ctx.stroke()
       }
     }
     ctx.globalAlpha = 1

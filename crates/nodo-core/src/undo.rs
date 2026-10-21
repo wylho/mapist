@@ -17,6 +17,12 @@ use crate::model::{FreeNote, MindMap, Node, NodeSide, Point, FREE_NOTE_HEIGHT, F
 pub enum Action {
     /// Add a child under `parent` with the given text.
     AddChild { parent: u64, text: String },
+    /// Add a child that already has a note (a card pasted from the Ideario, say), as one undo step.
+    AddTopic {
+        parent: u64,
+        text: String,
+        note: String,
+    },
     /// Remove a node and its subtree.
     RemoveNode { id: u64 },
     /// Replace a node's text.
@@ -69,6 +75,15 @@ impl Action {
                     return Err(crate::Error::NodeNotFound(*parent));
                 }
                 Ok(map.add_child(*parent, text.clone()))
+            }
+            Action::AddTopic { parent, text, note } => {
+                let id = map
+                    .add_child(*parent, text.clone())
+                    .ok_or(crate::Error::NodeNotFound(*parent))?;
+                if let Some(n) = map.find_mut(id) {
+                    n.note = note.clone();
+                }
+                Ok(Some(id))
             }
             Action::RemoveNode { id } => {
                 if *id == map.root.id {

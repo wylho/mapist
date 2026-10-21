@@ -1,6 +1,8 @@
 // Menus de contexto do mapa (clique direito, tecla de menu, ⇧F10), no formato dos menus do Ideario (MenuEntry).
 // Cada item repete uma ação que já existe por atalho ou na barra, com o atalho ao lado para quem quiser aprender.
 import {
+  ClipboardPaste,
+  Copy,
   ArrowDown,
   ArrowUp,
   ChevronsDownUp,
@@ -32,6 +34,7 @@ import { ui } from './ui.svelte'
 import { prefs } from './prefs.svelte'
 import { theme } from './theme.svelte'
 import { notes } from './notes.svelte'
+import { readClipboardCard, writeCard } from '@wylho/atrio'
 import { resolveNodeColor } from './palettes'
 
 const mac = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform)
@@ -58,6 +61,39 @@ const COLORS: [string, string][] = [
 
 function tokenColor(token: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(token).trim() || 'transparent'
+}
+
+/** Copiar o nó como card do Atrio e colar um card (do Ideario ou de outro nó) como filho. */
+function clipItems(withCopy: boolean): MenuEntry[] {
+  const paste: MenuEntry = {
+    label: 'Colar card',
+    icon: ClipboardPaste,
+    hint: `${mod}V`,
+    onSelect: async () => {
+      const card = await readClipboardCard()
+      if (card) await doc.pasteCard(card)
+      else ui.say('Nenhum card copiado. No Ideario, copie a nota com ⌘C')
+    },
+  }
+  if (!withCopy) return [paste]
+  return [
+    {
+      label: 'Copiar como card',
+      icon: Copy,
+      hint: `${mod}C`,
+      onSelect: async () => {
+        const card = doc.selectedCard()
+        if (!card) return
+        try {
+          await writeCard(card)
+          ui.say('Copiado como card')
+        } catch {
+          ui.say('Não foi possível copiar')
+        }
+      },
+    },
+    paste,
+  ]
 }
 
 /** Menu de um nó. Seleciona o nó antes de abrir, para que as ações (e os atalhos) valham para ele. */
@@ -121,6 +157,7 @@ export function nodeMenu(id: number, view: ViewActions): MenuEntry[] {
     )
   }
   items.push({ label: 'Enquadrar este ramo', icon: Focus, hint: '⇧2', onSelect: view.fitSelection })
+  items.push(SEP, ...clipItems(true))
   if (!isRoot) {
     items.push(SEP, { label: 'Excluir', icon: Trash2, hint: 'Delete', danger: true, onSelect: () => void doc.remove() })
   }
@@ -131,6 +168,7 @@ export function nodeMenu(id: number, view: ViewActions): MenuEntry[] {
 export function backgroundMenu(view: ViewActions, at: { x: number; y: number }): MenuEntry[] {
   return [
     { label: 'Nova nota aqui', icon: StickyNote, onSelect: () => view.addNoteAt(at.x, at.y) },
+    ...clipItems(false),
     SEP,
     { label: 'Ver o mapa inteiro', icon: Maximize, hint: '⇧1', onSelect: view.fit },
     { label: 'Tamanho real', icon: ZoomIn, hint: `${mod}0`, onSelect: view.actualSize },
