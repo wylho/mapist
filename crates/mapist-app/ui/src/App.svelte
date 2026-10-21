@@ -93,11 +93,13 @@
     doc.load()
     if (!hasHost) return
     // Fechar (ou Cmd+Q) com alterações não salvas: o núcleo segura e pergunta aqui.
-    let unlisten: (() => void) | undefined
-    void import('@tauri-apps/api/event').then(({ listen }) =>
-      listen('close-requested', () => void doc.confirmQuit()).then((u) => (unlisten = u)),
-    )
-    return () => unlisten?.()
+    const unlisten: (() => void)[] = []
+    void import('@tauri-apps/api/event').then(async ({ listen }) => {
+      unlisten.push(await listen('close-requested', () => void doc.confirmQuit()))
+      // macOS: um .minder aberto pelo Finder com o app já aberto.
+      unlisten.push(await listen<string>('open-file', (e) => void doc.openPath(e.payload)))
+    })
+    return () => unlisten.forEach((u) => u())
   })
 </script>
 

@@ -30,8 +30,13 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   Antes de aplicar, mostrar prévias (prints, opções A/B/C); conferir o print da interface de verdade, não só o código.
 - **Verificação antes de dizer "pronto":** `cargo fmt --all --check`, `cargo clippy --all-targets -- -D warnings`,
   `cargo test --workspace`, `pnpm --dir crates/mapist-app/ui run check`, `pnpm --dir crates/mapist-app/ui run test`,
-  e para mudança que afeta o app: `cargo tauri build` (o `beforeBuildCommand` gera o frontend; `cargo build` sozinho
-  **não** embute a interface e produz uma janela vazia).
+  e para mudança que afeta o app: `crates/mapist-app/ui/node_modules/.bin/tauri build` na raiz (o `beforeBuildCommand`
+  gera o frontend; `cargo build` sozinho **não** embute a interface e produz uma janela vazia). No Linux sem tela:
+  `xvfb-run -a target/release/mapist arquivo.minder` e um print com `import -window root`.
+- **Skills do usuário para todas as fases** (em `.claude/skills/`): `rust-testing` (teste antes do código; proptest
+  para propriedades; provar que o teste pega o erro quebrando o código de propósito; clippy sem avisos) e
+  `rust-patterns` (nada de `unwrap` em produção; `pub` só no necessário; erros com tipo próprio). `sync-site` mantém
+  site e README juntos.
 - Ao terminar cada tarefa, atualizar a seção "Estado atual" deste arquivo (o que mudou e em quais arquivos).
 
 ## Decisões tomadas
@@ -44,30 +49,51 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   mais que a liberdade de inventar. Campos novos entram como atributos ignorados pelo Minder original.
 - **D6:** o servidor MCP é o **próprio executável** com `--mcp` (padrão copiado do Ideario), não um segundo binário.
   O `mapist-mcp` continua existindo como binário enxuto para uso sem interface.
-- **D7:** **três paletas nomeadas + tema Sistema** (Ideario, Papel, Grafite, Floresta; Sistema imita GNOME, KDE, Windows,
+- **D7:** **paletas nomeadas + tema Sistema** (Mapist, Papel, Grafite, Floresta; a Mapist é a paleta-base do Ideario
+  com o nome do app, pedido do usuário; Sistema imita GNOME, KDE, Windows,
   macOS), cada uma clara e escura. Os tokens são copiados de `ideario/src/lib/palettes.ts`; o `fitAccent` garante que
   qualquer destaque do sistema continue legível.
 - **D8:** **medição de texto no frontend** (`set_sizes`), não no Rust. Uma crate de fontes no núcleo duplicaria a pilha e
   divergiria do que a tela desenha.
-- **D9:** preferências (tema, zoom, painel, busca) em `localStorage`. O documento nunca passa por lá — ele é do Rust.
+- **D9:** preferências (tema, zoom, painel, busca, traçado das linhas) em `localStorage`. O documento nunca passa por
+  lá — ele é do Rust.
+- **D10:** **um `Editor` no núcleo** (`mapist-core/src/editor.rs`) é o dono do mapa, do histórico, do arquivo e do
+  estado salvo; o app e o MCP só o chamam. Motivo: cada porta guardava uma cópia do mapa ao lado do histórico, e
+  recolher, mudar de lado e medidas se perdiam na edição seguinte.
+- **D11:** **design system do Ideario por cópia literal** (`ui/src/ideario.css` = `ideario/src/app.css`; `map.css` só
+  com o que é de mapa) e a **estrutura de UX do Ideario como padrão dos nossos apps**: TopBar, folha de
+  Configurações, toast, ConfirmDialog (bits-ui), ícones `@lucide/svelte`. Pedido do usuário.
+- **D12:** **ícone "raiz e ramos"** (Figma `Windows-11-UI-Kit`, Page 20, escolha do usuário: verde, azul, amarelo, na
+  linguagem do ícone do Ideario). Fontes em `crates/mapist-app/icons/source/` (placa arredondada, quadrado inteiro,
+  grade do macOS e Linux sem placa a 1,12×). Regenerar: `tauri icon icons/source/mapist.svg -o icons`, o `.icns` de
+  `macos.svg` e os quatro PNG do Linux de `linux.svg` (ver o commit que os gerou).
+- **D13:** **site em mapist.pages.dev** (`site/`, Cloudflare Pages sem build), mesma estrutura e `style.css` do site
+  do Ideario; README com o mesmo conteúdo (skill `sync-site`).
 
 ## Estado atual
-- **Fase 1 (núcleo) e Fase 2 (janela) concluídas.** O app abre, desenha e edita mapas; o MCP responde no mesmo binário.
-- `mapist-core` (`crates/mapist-core/src/`): modelo (`model.rs` — `Node`, `MindMap`, `Style`, enums), I/O do `.minder`
-  (`document.rs`, parser manual com quick-xml), layout (`layout.rs` — `layout` mede e posiciona, `reposition` só
-  posiciona quando as medidas vieram do frontend), histórico (`undo.rs` — `Action` + `History` por instantâneos).
-  15 testes. Verificado contra um arquivo real do Minder: 498 nós, profundidade 4, ida e volta sem perda.
-- `mapist-mcp` (`crates/mapist-mcp/src/`): servidor JSON-RPC sobre stdio (`lib.rs`, `serve()`), 16 ferramentas
-  (`tools.rs`), registro no cliente (`setup.rs` — recusa JSON inválido e escreve por arquivo temporário + rename).
-  25 testes. Negocia a versão do protocolo e envia `instructions` no `initialize`.
-- `mapist-app` (`crates/mapist-app/`): janela Tauri com 18 comandos (`src/lib.rs`), gerenciador de diálogo, estado de
-  janela e abertura de links. Interface em `ui/src/`: `App.svelte`, `components/` (Canvas, Toolbar, Inspector,
-  ThemeSheet, McpPanel) e `lib/` (palettes, theme, api, document, measure, render, font, prefs). 5 testes Rust + 24 do
-  frontend (Vitest).
-- **46 testes Rust + 24 do frontend = 70.** `cargo clippy -D warnings` e `svelte-check` limpos.
-- **Preview** (`ui/src/lib/preview.ts`): backend simulado em memória que espelha o núcleo, sobre um mapa de exemplo.
-  Ativa com `?preview` e é o caminho para validar qualquer mudança visual antes de compilar.
-- **Pendente:** os workflows de CI (`build.yml`, `release.yml`) estão escritos e validados, mas não versionados — o
-  token OAuth do `gh` não tem o escopo `workflow`. Cópias em `/tmp/mapist-ci/`.
-- **Próximo:** Fase 3 (importação e exportação: Markdown, OPML, FreeMind, Mermaid, SVG, PNG). Antes dela, revisar a
-  lista de lacunas conhecidas no README (diálogo nativo de arquivo, medição no render, testes E2E nativos).
+- **Fases 1 e 2 concluídas; preparado para o primeiro release** (falta só a decisão P5, atualização automática).
+- `mapist-core`: modelo (`model.rs`), `.minder` (`document.rs`), layout (`layout.rs`: faixa por sub-árvore, lado de cada
+  ramo, descendentes de nó recolhido sem posição), histórico (`undo.rs`: `Action` inclui `SetSide`, `ToggleFold`,
+  `Relayout`), **`Editor`** (`editor.rs`: histórico + arquivo + revisões; sujo segue o desfazer até o salvo; salvar é
+  atômico; `changed_on_disk` para ver o que o agente salvou). Testes em `editor.rs`, `lib.rs` e
+  `tests/layout_props.rs` (proptest).
+- `mapist-mcp`: `Session` = `Option<Editor>`; 17 ferramentas (`toggle_fold` nova; `set_side`/`relayout` passam pelo
+  histórico); `setup.rs` registra no Claude Desktop.
+- `mapist-app`: 21 comandos em `src/lib.rs` sobre o `Editor` (`set_side`, `reload_map`, `quit_app` novos); snapshot
+  esconde filhos de nó recolhido e diz se o arquivo mudou no disco (`stale`); fechar/Cmd+Q com algo não salvo pergunta
+  na interface (evento `close-requested`); `.minder` associado no instalador e aberto por argumento ou pelo evento do
+  macOS (`open-file`). Ícones de todas as plataformas em `icons/`, `bundle.targets = all`.
+- Interface (`ui/src/`): `App.svelte` (casca do Ideario, atalhos ⌘N/⌘O/⌘S/⌘⇧S/⌘F/⌘,/⌘0), `components/` (TopBar,
+  Canvas, Inspector com lado do ramo, SettingsSheet, ConfirmDialog, Picker) e `lib/` (api, document, ui, prefs,
+  palettes, theme, render com `traceBranch` curvas/em ângulo, measure, font, preview). `ideario.css` + `map.css`.
+- **Preview** (`ui/src/lib/preview.ts`): espelha o núcleo (mesmo layout, recolhidos escondidos); `?preview`, e
+  `?select=Texto` abre com o nó selecionado. Mapa de exemplo "Lançamento do app", inventado.
+- **Testes:** 60 Rust + 33 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
+  `.AppImage`; a janela abre um `.minder` passado como argumento) e `mapist --mcp` testado de ponta a ponta.
+- **CI/Release:** `.github/workflows/build.yml` (verificação + instaladores dos três sistemas nos Artifacts) e
+  `release.yml` (rascunho → publicar); `scripts/check-version.sh` e `scripts/bump-version.sh`; guia em
+  `docs/RELEASE.md`.
+- **Site:** `site/` (index, privacidade, prints de `ui/scripts/site-shots.mjs`). Precisa ligar o projeto no Cloudflare
+  Pages (pasta `site`, sem build) para ir ao ar.
+- **Próximo:** decidir P5 (atualização automática) antes do primeiro release; depois a Fase 3 (importação e
+  exportação).

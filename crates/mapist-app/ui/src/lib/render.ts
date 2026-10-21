@@ -121,7 +121,8 @@ function drawBranch(
   const by = child.y + child.height / 2
 
   ctx.save()
-  ctx.strokeStyle = child.color ? resolveColor(child.color, colors) : colors.line
+  // Sem cor de ramo, o traço usa o texto secundário: --line some contra o fundo do palco.
+  ctx.strokeStyle = child.color ? resolveColor(child.color, colors) : colors.muted
   ctx.lineWidth = 2.4
   ctx.lineCap = 'round'
   ctx.beginPath()

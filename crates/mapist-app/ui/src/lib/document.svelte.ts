@@ -107,6 +107,9 @@ class Document {
       const snap = await api.snapshot()
       if (snap.nodes.length > 0) await this.adopt(snap)
       else await this.create('Tópico central')
+      // Prévia: `?select=Texto do nó` já abre com ele selecionado (prints do site, scripts/site-shots.mjs).
+      const pick = isPreview ? new URLSearchParams(location.search).get('select') : null
+      if (pick) this.selected = this.snapshot.nodes.find((n) => n.text === pick)?.id ?? null
     } catch (e) {
       this.error = String(e)
     }
@@ -141,6 +144,11 @@ class Document {
   /** Novo mapa (⌘N), depois de confirmar o descarte. */
   async newMap() {
     if (await this.confirmDiscard()) await this.create('Tópico central')
+  }
+
+  /** Abre um arquivo vindo de fora (Finder), depois de confirmar o descarte. */
+  async openPath(path: string) {
+    if (await this.confirmDiscard()) await this.open(path)
   }
 
   /** Abrir (⌘O): diálogo nativo do sistema; no preview, um prompt. */

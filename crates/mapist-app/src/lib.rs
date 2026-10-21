@@ -406,8 +406,28 @@ fn has_unsaved(app: &tauri::AppHandle) -> bool {
     dirty
 }
 
+/// A `.minder` path among the program arguments (double-click on Windows and
+/// Linux, or `mapist arquivo.minder` in a terminal).
+fn file_from_args() -> Option<std::path::PathBuf> {
+    std::env::args_os()
+        .skip(1)
+        .map(std::path::PathBuf::from)
+        .find(|p| {
+            p.extension()
+                .is_some_and(|e| e.eq_ignore_ascii_case("minder"))
+        })
+}
+
 /// Run the application.
 pub fn run() {
+    // Opened with a file: it is the document from the first frame.
+    let state = AppState::default();
+    if let Some(path) = file_from_args() {
+        if let (Ok(ed), Ok(mut doc)) = (Editor::open(&path), state.inner.lock()) {
+            *doc = Some(ed);
+        }
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         // Opens links in the user's browser rather than inside the webview.
@@ -423,7 +443,7 @@ pub fn run() {
                 )
                 .build(),
         )
-        .manage(AppState::default())
+        .manage(state)
         // Unsaved work: the window asks, with the app's own confirmation dialog
         // (a native dialog here would block the main thread that runs it).
         .on_window_event(|window, event| {

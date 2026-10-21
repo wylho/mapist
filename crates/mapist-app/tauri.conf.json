@@ -43,7 +43,18 @@
     "shortDescription": "Mapas mentais, local-first",
     "longDescription": "Mapist é um aplicativo de mapas mentais local-first, compatível com o formato do Minder, com servidor MCP embutido.",
     "copyright": "GPL-3.0-or-later",
-    "license": "GPL-3.0-or-later"
+    "license": "GPL-3.0-or-later",
+    "fileAssociations": [
+      {
+        "ext": [
+          "minder"
+        ],
+        "name": "Mapa mental",
+        "description": "Mapa mental (formato do Minder)",
+        "role": "Editor",
+        "mimeType": "application/x-minder"
+      }
+    ]
   },
   "mainBinaryName": "mapist"
 }

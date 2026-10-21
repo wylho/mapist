@@ -236,13 +236,14 @@ export function seedDemo() {
   dirty = false
   path = 'exemplo.minder'
 
-  const root = makeNode('Product Roadmap', 'right', 'Planejamento Q4. **Owner:** plataforma.')
+  // Um mapa inventado (o repositório é público): o lançamento de um app fictício, com ramos dos dois lados.
+  const root = makeNode('Lançamento do app', 'right', 'Plano do trimestre. **Responsável:** time de produto.')
   rootId = root.id
   root.parent = null
   nodes.set(root.id, root)
 
-  const branch = (parent: PNode, text: string, token: string, children: string[] = []) => {
-    const n = makeNode(text, parent.side, '', token)
+  const branch = (parent: PNode, text: string, token: string, children: string[] = [], side = parent.side) => {
+    const n = makeNode(text, side, '', token)
     n.parent = parent.id
     n.color = token
     parent.children.push(n.id)
@@ -251,27 +252,18 @@ export function seedDemo() {
     return n
   }
 
-  const discovery = branch(root, 'Discovery', '#6eb0f7', ['Entrevistas', 'Análise de mercado'])
-  discovery.children.length = 2
+  branch(root, 'Descoberta', '#6eb0f7', ['Entrevistas', 'Análise de mercado'])
   const design = branch(root, 'Design', '#b28ee6', ['Wireframes', 'Design system'])
   const ds = nodes.get(design.children[1])!
-  branch(ds, 'Tokens', '#b28ee6')
+  branch(ds, 'Cores', '#b28ee6')
   branch(ds, 'Componentes', '#b28ee6')
+  const build = branch(root, 'Construção', '#7fbf7f', ['Núcleo', 'Layout', 'Servidor MCP', 'Janela'])
+  branch(root, 'Lançamento', '#e8c547', ['Beta', 'Documentação', 'Versão 1.0'], 'left')
+  branch(root, 'Divulgação', '#f0a36b', ['Site', 'Vídeo curto', 'Comunidade'], 'left')
+  branch(root, 'Pesquisa', '#e5818d', ['Concorrentes', 'Artigos'], 'left')
 
-  branch(root, 'Build', '#7fbf7f', ['Core model', 'Layout engine', 'Servidor MCP', 'Shell desktop'])
-  branch(root, 'Lançamento', '#e8c547', ['Beta', 'Documentação', 'v1.0'])
-
-  const research = makeNode('Pesquisa', 'left', '', '#e5818d')
-  research.parent = root.id
-  research.color = '#e5818d'
-  root.children.push(research.id)
-  nodes.set(research.id, research)
-  branch(research, 'Concorrentes', '#e5818d')
-  branch(research, 'Artigos', '#e5818d')
-
-  // Uma nota e um nó dobrado, para os marcadores aparecerem.
-  const mcp = nodes.get(nodes.get(root.children.find((id) => nodes.get(id)?.text === 'Build')!)!.children[2])!
-  mcp.note = 'Dezesseis ferramentas.'
+  // Uma nota e um ramo recolhido, para os marcadores aparecerem.
+  nodes.get(build.children[2])!.note = 'Dezessete ferramentas, o mesmo desfazer da janela.'
   nodes.get(root.children[root.children.length - 1])!.folded = true
 
   relayout()

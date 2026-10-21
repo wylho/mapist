@@ -40,7 +40,8 @@
     const b = doc.snapshot.bounds
     const r = stageEl.getBoundingClientRect()
     if (!doc.hasDocument) return
-    const pad = 110
+    // Margem proporcional: 110 px fixos numa tela de celular deixavam o mapa em 16%.
+    const pad = Math.min(110, Math.max(16, Math.min(r.width, r.height) * 0.08))
     const w = b.max_x - b.min_x || 1
     const h = b.max_y - b.min_y || 1
     const target = Math.max(0.12, Math.min((r.width - pad * 2) / w, (r.height - pad * 2) / h, 1.35))
