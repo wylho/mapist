@@ -22,7 +22,7 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   usuário. O repositório é público. Antes de publicar um print, olhar o print inteiro.
 - **Git (combinado com o usuário, como no Ideario):** commit e push ao terminar cada tarefa, no branch de trabalho **e
   no `main`** (o ambiente é temporário). O `main` é o branch de produção do Cloudflare Pages: push com mudança em
-  `site/` publica o site em usenodo.pages.dev. O push não chega a quem usa o app: só o workflow Release lança versão,
+  `site/` publica o site em nodo-1c7.pages.dev. O push não chega a quem usa o app: só o workflow Release lança versão,
   e só quando o usuário pedir.
 - **Nada de controles que ainda não funcionam**; só mostrar o que tem motivo para aparecer.
 - Trabalhar por fases (SPEC §10). Antes de começar uma fase, conferir as decisões pendentes (SPEC §11) e perguntar o que
@@ -70,7 +70,7 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   linguagem do ícone do Ideario). Fontes em `crates/nodo-app/icons/source/` (placa arredondada, quadrado inteiro,
   grade do macOS e Linux sem placa a 1,12×). Regenerar: `tauri icon icons/source/nodo.svg -o icons`, o `.icns` de
   `macos.svg` e os quatro PNG do Linux de `linux.svg` (ver o commit que os gerou).
-- **D13:** **site em usenodo.pages.dev** (`site/`, Cloudflare Pages sem build), mesma estrutura e `style.css` do site
+- **D13:** **site em nodo-1c7.pages.dev** (`site/`, Cloudflare Pages sem build), mesma estrutura e `style.css` do site
   do Ideario; README com o mesmo conteúdo (skill `sync-site`).
 
 - **D14:** **edição como no XMind** (pedido do usuário: "não sei se já posso digitar"): sempre há um nó selecionado,

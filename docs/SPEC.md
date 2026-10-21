@@ -213,7 +213,7 @@ evento de abertura no macOS). Guia de lançamento: `docs/RELEASE.md`.
 
 ## 8. Site
 
-`site/` é publicado em **usenodo.pages.dev** pelo Cloudflare Pages (pasta estática, sem build), com a mesma estrutura e
+`site/` é publicado em **nodo-1c7.pages.dev** pelo Cloudflare Pages (pasta estática, sem build), com a mesma estrutura e
 o mesmo `style.css` do site do Ideario. O `README.md` tem o mesmo conteúdo (skill `sync-site`); os prints saem da
 prévia por `crates/nodo-app/ui/scripts/site-shots.mjs`, com o mapa de exemplo inventado.
 

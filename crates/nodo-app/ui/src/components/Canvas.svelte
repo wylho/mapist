@@ -17,7 +17,20 @@
 
 
   const view = $state<Viewport>({ x: 0, y: 0, scale: 1 })
-  let colors = $state(readThemeColors())
+  // Cores do tema já resolvidas. Não é estado reativo de propósito: o redesenho lê `colors`, e se ela fosse $state o
+  // efeito que a atualiza passaria a depender dela e se dispararia sem parar (era isso que deixava a edição lenta:
+  // centenas de redesenhos por tecla, até o Svelte abortar com effect_update_depth_exceeded).
+  let colors = readThemeColors()
+  let frame = 0
+
+  /** Pede um redesenho no próximo quadro. Várias mudanças no mesmo quadro (snapshot, seleção, hover) viram um só. */
+  function scheduleRender() {
+    if (frame) return
+    frame = requestAnimationFrame(() => {
+      frame = 0
+      render()
+    })
+  }
   let panning: { x: number; y: number } | null = null
   let dragging: { id: number; dx: number; dy: number; ox: number; oy: number } | null = null
   let draggedFar = false
@@ -31,7 +44,7 @@
     view.scale = Math.min(4, Math.max(0.1, view.scale * factor))
     view.x = px - wx * view.scale
     view.y = py - wy * view.scale
-    render()
+    scheduleRender()
   }
 
   export function fit(animate = true) {
@@ -98,18 +111,25 @@
     } as never)
   }
 
-  // Redesenha quando o documento ou o tema mudam.
+  // As cores só mudam com o tema (paleta, claro/escuro, área de trabalho imitada).
+  $effect(() => {
+    void theme.palette
+    void theme.pref
+    void theme.simDesktop
+    void theme.mode
+    colors = readThemeColors()
+    scheduleRender()
+  })
+
+  // Redesenha quando o que aparece no mapa muda. O desenho em si roda fora do efeito (no quadro seguinte), então o que
+  // ele lê não vira dependência.
   $effect(() => {
     void doc.snapshot
     void doc.selected
     void doc.hovered
     void doc.matches
-    void theme.palette
-    void theme.pref
-    void theme.simDesktop
     void prefs.linkStyle
-    colors = readThemeColors()
-    render()
+    scheduleRender()
   })
 
   function onPointerDown(e: PointerEvent) {
@@ -144,13 +164,13 @@
       // Só vale como edição depois de um movimento perceptível, senão todo
       // clique viraria uma entrada no histórico de desfazer.
       if (Math.abs(n.x - dragging.ox) > 2 || Math.abs(n.y - dragging.oy) > 2) draggedFar = true
-      render()
+      scheduleRender()
       return
     }
     if (panning) {
       view.x = e.clientX - panning.x
       view.y = e.clientY - panning.y
-      render()
+      scheduleRender()
       return
     }
     const r = stageEl.getBoundingClientRect()
@@ -232,11 +252,10 @@
   let ro: ResizeObserver | undefined
 
   onMount(() => {
-    colors = readThemeColors()
     // Retoma a escala da sessão anterior; `fit` a substitui se for a estreia.
     view.scale = prefs.zoom
     render()
-    ro = new ResizeObserver(() => render())
+    ro = new ResizeObserver(() => scheduleRender())
     ro.observe(stageEl)
     return () => ro?.disconnect()
   })
