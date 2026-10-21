@@ -1,7 +1,9 @@
 // Preferências da interface que sobrevivem entre sessões.
 //
-// Só o que é do aparelho mora aqui: tema, zoom e o painel. O documento em si
+// Só o que é do aparelho mora aqui: zoom, painel, busca e traçado das linhas. O documento em si
 // nunca passa por isto — ele é do Rust.
+
+import type { LinkStyle } from './render'
 
 const PREFIX = 'mapist.ui.'
 
@@ -30,6 +32,8 @@ class Prefs {
   inspectorOpen = $state(read('inspector', true))
   /** Última busca usada, restaurada no campo. */
   search = $state(read('search', ''))
+  /** Traçado das linhas entre os nós. */
+  linkStyle = $state<LinkStyle>(read<LinkStyle>('linkStyle', 'curved') === 'orthogonal' ? 'orthogonal' : 'curved')
 
   setZoom(z: number) {
     this.zoom = z
@@ -39,6 +43,11 @@ class Prefs {
   toggleInspector() {
     this.inspectorOpen = !this.inspectorOpen
     write('inspector', this.inspectorOpen)
+  }
+
+  setLinkStyle(style: LinkStyle) {
+    this.linkStyle = style
+    write('linkStyle', style)
   }
 
   setSearch(q: string) {

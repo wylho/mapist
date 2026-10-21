@@ -65,6 +65,7 @@ button { cursor: pointer; }
   flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 6px 0 14px;
   background: var(--surface); border: 1px solid var(--line); border-radius: 999px; color: var(--muted);
 }
+.search.inline { flex: 0 1 280px; min-width: 180px; height: 40px; }
 .search input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: var(--fg); font: inherit; }
 .search input::placeholder { color: var(--muted); }
 /* 10 px no alto: a bolinha de seleção sai 7 px do canto do card e a rolagem cortaria. */
@@ -890,36 +891,12 @@ body:has(.cat-drop) { cursor: grabbing; }
   z-index: 10;
 }
 
-.mapbar .brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding-right: 14px;
-  margin-right: 4px;
-  border-right: 1px solid var(--line);
-  flex: none;
-}
-
-.brand-mark {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  background: var(--accent);
-  color: var(--on-accent);
-  flex: none;
-}
-
-.brand-name {
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -.02em;
-}
-
-.mapbar .top-left { display: flex; align-items: center; gap: 4px; flex: none; }
-.mapbar .top-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; flex: 1; min-width: 0; }
+.mapbar { z-index: 10; }
+.mapbar .top-left { gap: 2px; }
+.mapbar .search { flex: none; color: var(--muted); }
+.bar-sep { width: 1px; height: 24px; background: var(--line); margin: 0 6px; flex: none; }
+.icon-btn:disabled { opacity: .35; pointer-events: none; }
+.top-actions .icon-btn.on { background: var(--accent-soft); color: var(--accent); }
 
 /* Botão com rótulo: pílula, como o .seg-item do Ideario. */
 .btn {
@@ -941,7 +918,6 @@ body:has(.cat-drop) { cursor: grabbing; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
 .btn.primary:hover { background: color-mix(in oklab, var(--accent) 88%, black); }
 .btn[disabled] { opacity: .4; pointer-events: none; }
-.btn svg { width: 17px; height: 17px; }
 
 /* ── corpo ────────────────────────────────────────────────────────────── */
 
@@ -971,6 +947,17 @@ body:has(.cat-drop) { cursor: grabbing; }
   pointer-events: none;
   max-width: calc(100% - 32px);
 }
+
+/* Mesmos tokens da .scope-pill do Ideario; aqui flutua sobre o canvas. */
+.scope-pill {
+  display: inline-flex; align-items: center; gap: 8px; padding: 5px 6px 5px 12px; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 13px;
+  pointer-events: auto; min-width: 0;
+}
+.scope-pill .dot { width: 7px; height: 7px; border-radius: 999px; background: currentColor; flex: none; }
+.scope-pill .grow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scope-pill button { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 999px; color: inherit; }
+.scope-pill button:hover { background: rgb(0 0 0 / .08); }
 
 /* Barra de zoom: pílula flutuante, como a .tabbar do Ideario. */
 .zoombar {
@@ -1030,6 +1017,9 @@ body:has(.cat-drop) { cursor: grabbing; }
 .theme-toggle button:hover { background: var(--raised); }
 .theme-toggle button.icon { padding: 0; width: 32px; justify-content: center; }
 .theme-toggle svg { width: 16px; height: 16px; }
+/* O seletor é o próprio botão (ThemeSheet): mesmo desenho dos botões internos acima. */
+button.theme-toggle { height: 40px; padding: 0 14px 0 12px; gap: 7px; font-size: 12.5px; font-weight: 600; color: var(--fg); }
+button.theme-toggle:hover { background: var(--raised); }
 
 /* ── inspetor ─────────────────────────────────────────────────────────── */
 
@@ -1191,7 +1181,15 @@ kbd {
     z-index: 8;
   }
   .inspector-body { padding-bottom: 12px; }
-  .mapbar .brand-name { display: none; }
+}
+/* Celular: a busca encolhe primeiro; os botões ficam mais justos para caber tudo. */
+@media (max-width: 640px) {
+  /* Duas linhas: botões em cima, busca inteira embaixo. */
+  .mapbar { padding: 6px; gap: 2px; height: auto; flex-wrap: wrap; }
+  .mapbar .top-actions { display: contents; }
+  .mapbar .search.inline { order: 9; flex: 1 0 100%; width: auto; height: 38px; }
+  .mapbar .icon-btn { width: 34px; height: 34px; }
+  .mapbar .bar-sep { margin: 0 2px; }
 }
 
 /* ── regras que o Mapist usa e o Ideario definia para outros contextos ──── */
@@ -1210,6 +1208,14 @@ kbd {
 .seg.tight { gap: 0; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--surface); }
 .seg.tight button, .seg.tight .seg-item { border: 0; height: 30px; padding: 0 10px; background: transparent; border-radius: 999px; }
 .seg.tight button[aria-pressed="true"], .seg.tight .seg-item[data-state="on"] { background: var(--accent-soft); color: var(--accent); }
+
+/* Gaveta lateral do Ideario (folha de tema). */
+.drawer {
+  position: fixed; top: 0; bottom: 0; left: 0; z-index: 21; width: min(84vw, 330px);
+  background: var(--bg); display: flex; flex-direction: column; border-radius: 0 24px 24px 0;
+  padding-top: env(safe-area-inset-top, 0px); animation: slide-in .2s ease;
+}
+.drawer .drawer-scroll { flex: 1; overflow-y: auto; padding: 0 14px 24px; display: flex; flex-direction: column; gap: 8px; }
 
 /* Cabeçalho da folha de temas, reaproveitado do antigo .drawer-head. */
 .drawer-head { padding: 20px 18px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -1236,9 +1242,8 @@ kbd {
 /* Etiqueta do modo preview, só para deixar claro que os dados são de exemplo. */
 .preview-tag {
   position: absolute;
-  top: 76px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 16px;
+  left: 16px;
   z-index: 9;
   display: inline-flex;
   align-items: center;

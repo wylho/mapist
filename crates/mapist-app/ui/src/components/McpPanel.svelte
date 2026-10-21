@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Check, Copy } from '@lucide/svelte'
   // Página de MCP: mostra como ligar o Mapist a um agente e registra no
   // Claude Desktop com um clique, como faz o Ideario.
   import { onMount } from 'svelte'
@@ -96,11 +97,11 @@
         </span>
         <div class="cmd">
           <code>{info.claudeCode}</code>
-          <button class="icon-btn sm" title="Copiar" onclick={copyCommand}>
+          <button class="icon-btn sm" aria-label="Copiar comando" title="Copiar" onclick={copyCommand}>
             {#if copied}
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+              <Check size={14} strokeWidth={2.4} />
             {:else}
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>
+              <Copy size={14} />
             {/if}
           </button>
         </div>

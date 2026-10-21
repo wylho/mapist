@@ -28,8 +28,16 @@ export interface ThemeColors {
   nodeColors: string[]
 }
 
+/**
+ * Traçado das linhas entre pai e filho: `curved` é a curva Bézier solta;
+ * `orthogonal` anda em degrau (horizontal, vertical, horizontal) com cantos
+ * arredondados.
+ */
+export type LinkStyle = 'curved' | 'orthogonal'
+
 export interface DrawOptions {
   snapshot: Snapshot
+  linkStyle?: LinkStyle
   colors: ThemeColors
   view: Viewport
   selected: number | null
@@ -56,6 +64,7 @@ export function resolveColor(token: string | null, colors: ThemeColors): string 
 
 export function draw(o: DrawOptions) {
   const { snapshot, colors, view, selected, hovered, matches, width, height, dpr } = o
+  const linkStyle = o.linkStyle ?? 'curved'
   const canvas = o as DrawOptions & { ctx?: CanvasRenderingContext2D }
   const ctx = canvas.ctx
   if (!ctx) return
@@ -85,7 +94,7 @@ export function draw(o: DrawOptions) {
   for (const n of snapshot.nodes) {
     if (n.parent === null) continue
     const p = byId.get(n.parent)
-    if (p) drawBranch(ctx, p, n, colors)
+    if (p) drawBranch(ctx, p, n, colors, linkStyle)
   }
 
   for (const n of snapshot.nodes) {
@@ -103,6 +112,7 @@ function drawBranch(
   parent: { x: number; y: number; width: number; height: number },
   child: { x: number; y: number; width: number; height: number; side: string; color: string | null },
   colors: ThemeColors,
+  style: LinkStyle,
 ) {
   const left = child.side === 'left'
   const ax = left ? parent.x : parent.x + parent.width
@@ -115,11 +125,42 @@ function drawBranch(
   ctx.lineWidth = 2.4
   ctx.lineCap = 'round'
   ctx.beginPath()
-  ctx.moveTo(ax, ay)
-  const mid = (ax + bx) / 2
-  ctx.bezierCurveTo(mid, ay, mid, by, bx, by)
+  traceBranch(ctx, style, ax, ay, bx, by)
   ctx.stroke()
   ctx.restore()
+}
+
+/** Raio máximo dos cantos do traçado ortogonal, em unidades de mundo. */
+const CORNER_RADIUS = 14
+
+/**
+ * Traça o caminho de (ax, ay) a (bx, by) no estilo pedido. Só monta o caminho:
+ * quem chama decide traço e cor. Separado para poder ser testado sem canvas.
+ */
+export function traceBranch(
+  ctx: Pick<CanvasRenderingContext2D, 'moveTo' | 'lineTo' | 'bezierCurveTo' | 'arcTo'>,
+  style: LinkStyle,
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+) {
+  ctx.moveTo(ax, ay)
+  const mid = (ax + bx) / 2
+  if (style === 'curved') {
+    ctx.bezierCurveTo(mid, ay, mid, by, bx, by)
+    return
+  }
+  // O canto não pode passar da metade do desnível nem da metade do trecho
+  // horizontal, senão os dois arcos se cruzam. Alinhados, vira uma reta.
+  const r = Math.min(CORNER_RADIUS, Math.abs(by - ay) / 2, Math.abs(mid - ax))
+  if (r < 0.5) {
+    ctx.lineTo(bx, by)
+    return
+  }
+  ctx.arcTo(mid, ay, mid, by, r)
+  ctx.arcTo(mid, by, bx, by, r)
+  ctx.lineTo(bx, by)
 }
 
 interface NodeOpts {

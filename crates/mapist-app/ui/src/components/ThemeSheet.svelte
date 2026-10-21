@@ -1,7 +1,9 @@
 <script lang="ts">
   // Folha de temas: paleta, área de trabalho imitada e aparência.
   // Mesma estrutura do theme-grid do Ideario.
+  import { Palette, X } from '@lucide/svelte'
   import { theme } from '../lib/theme.svelte'
+  import { prefs } from '../lib/prefs.svelte'
   import { DESKTOPS, PALETTES, systemColors, type Colors, type DesktopId, type PaletteId } from '../lib/palettes'
 
   let open = $state(false)
@@ -26,11 +28,8 @@
 
 <svelte:window onkeydown={onKey} />
 
-<button class="theme-toggle" title="Tema" onclick={() => (open = true)}>
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-    <circle cx="12" cy="12" r="9" />
-    <path d="M12 3a9 9 0 0 0 0 18 4.5 4.5 0 0 1 0-9 4.5 4.5 0 0 0 0-9" />
-  </svg>
+<button class="theme-toggle" title="Tema e linhas" onclick={() => (open = true)}>
+  <Palette size={16} />
   <span>{theme.label}</span>
 </button>
 
@@ -44,10 +43,8 @@
   <div class="drawer" role="dialog" aria-label="Tema">
     <div class="drawer-head">
       <span class="brand">Tema</span>
-      <button class="icon-btn sm" title="Fechar" onclick={close}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <path d="M18 6 6 18M6 6l12 12" />
-        </svg>
+      <button class="icon-btn sm" aria-label="Fechar" title="Fechar" onclick={close}>
+        <X size={16} />
       </button>
     </div>
 
@@ -111,6 +108,19 @@
             data-state={theme.pref === m.v ? 'on' : 'off'}
             aria-checked={theme.pref === m.v}
             onclick={() => theme.set(m.v as 'system' | 'light' | 'dark')}>{m.l}</button
+          >
+        {/each}
+      </div>
+
+      <div class="theme-group-label">Linhas</div>
+      <div class="seg tight" role="radiogroup" aria-label="Traçado das linhas">
+        {#each [{ v: 'curved', l: 'Curvas' }, { v: 'orthogonal', l: 'Em ângulo' }] as m (m.v)}
+          <button
+            class="seg-item"
+            role="radio"
+            data-state={prefs.linkStyle === m.v ? 'on' : 'off'}
+            aria-checked={prefs.linkStyle === m.v}
+            onclick={() => prefs.setLinkStyle(m.v as 'curved' | 'orthogonal')}>{m.l}</button
           >
         {/each}
       </div>

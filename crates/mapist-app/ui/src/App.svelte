@@ -1,6 +1,7 @@
 <script lang="ts">
   // Raiz da aplicação: barra, canvas, inspetor e atalhos globais.
   import { onMount } from 'svelte'
+  import { X, Minus, Plus, Maximize } from '@lucide/svelte'
   import Toolbar from './components/Toolbar.svelte'
   import Canvas from './components/Canvas.svelte'
   import Inspector from './components/Inspector.svelte'
@@ -29,12 +30,17 @@
     }
     if (mod && e.key.toLowerCase() === 's') {
       e.preventDefault()
-      doc.save(doc.snapshot.path ?? undefined)
+      doc.saveDialog(e.shiftKey)
+      return
+    }
+    if (mod && e.key.toLowerCase() === 'o') {
+      e.preventDefault()
+      doc.openDialog()
       return
     }
     if (mod && e.key.toLowerCase() === 'n') {
       e.preventDefault()
-      doc.create('Tópico central')
+      doc.newMap()
       return
     }
     if (typing) return
@@ -94,22 +100,22 @@
         <span class="scope-pill">
           <span class="dot"></span>
           <span class="grow">{doc.snapshot.title || 'Sem título'}{doc.snapshot.dirty ? ' •' : ''}</span>
-          <button title="Limpar seleção" onclick={() => (doc.selected = null)}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          <button aria-label="Limpar seleção" title="Limpar seleção" onclick={() => (doc.selected = null)}>
+            <X size={12} strokeWidth={2.5} />
           </button>
         </span>
       </div>
 
       <div class="zoombar">
-        <button title="Diminuir" onclick={() => canvasRef?.zoomBy(1 / 1.2)}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14" /></svg>
+        <button aria-label="Diminuir zoom" title="Diminuir" onclick={() => canvasRef?.zoomBy(1 / 1.2)}>
+          <Minus size={17} />
         </button>
         <span class="zoomlevel">{zoomPct}%</span>
-        <button title="Aumentar" onclick={() => canvasRef?.zoomBy(1.2)}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+        <button aria-label="Aumentar zoom" title="Aumentar" onclick={() => canvasRef?.zoomBy(1.2)}>
+          <Plus size={17} />
         </button>
-        <button title="Ajustar à tela" onclick={() => canvasRef?.fit(true)}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M16 21h3a2 2 0 0 0 2-2v-3M8 21H5a2 2 0 0 1-2-2v-3" /></svg>
+        <button aria-label="Ajustar à tela" title="Ajustar à tela" onclick={() => canvasRef?.fit(true)}>
+          <Maximize size={17} />
         </button>
       </div>
     </Canvas>

@@ -15,7 +15,7 @@ import {
   resolveNodeColor,
   systemColors,
 } from '../src/lib/palettes'
-import { hitTest, resolveColor } from '../src/lib/render'
+import { hitTest, resolveColor, traceBranch } from '../src/lib/render'
 import type { Snapshot } from '../src/lib/api'
 
 describe('mix', () => {
@@ -277,3 +277,46 @@ describe('cor de nó: token vira hex, nunca o contrário', () => {
 })
 
 const NOTES_FIRST = PALETTES.ideario.light.notes[0]
+
+describe('traceBranch', () => {
+  function recorder() {
+    const calls: string[] = []
+    return {
+      calls,
+      ctx: {
+        moveTo: (x: number, y: number) => calls.push(`M ${x} ${y}`),
+        lineTo: (x: number, y: number) => calls.push(`L ${x} ${y}`),
+        bezierCurveTo: (...a: number[]) => calls.push(`C ${a.join(' ')}`),
+        arcTo: (...a: number[]) => calls.push(`A ${a.join(' ')}`),
+      },
+    }
+  }
+
+  it('curvas: uma Bézier com controles no meio', () => {
+    const r = recorder()
+    traceBranch(r.ctx, 'curved', 0, 0, 100, 60)
+    expect(r.calls).toEqual(['M 0 0', 'C 50 0 50 60 100 60'])
+  })
+
+  it('em ângulo: degrau com dois cantos arredondados que termina no filho', () => {
+    const r = recorder()
+    traceBranch(r.ctx, 'orthogonal', 0, 0, 100, 60)
+    expect(r.calls).toEqual(['M 0 0', 'A 50 0 50 60 14', 'A 50 60 100 60 14', 'L 100 60'])
+  })
+
+  it('em ângulo: o canto encolhe com desnível pequeno e vira reta quando alinhado', () => {
+    const small = recorder()
+    traceBranch(small.ctx, 'orthogonal', 0, 0, 100, 10)
+    expect(small.calls[1]).toBe('A 50 0 50 10 5')
+
+    const flat = recorder()
+    traceBranch(flat.ctx, 'orthogonal', 0, 20, 100, 20)
+    expect(flat.calls).toEqual(['M 0 20', 'L 100 20'])
+  })
+
+  it('em ângulo: funciona para o lado esquerdo (x decrescente)', () => {
+    const r = recorder()
+    traceBranch(r.ctx, 'orthogonal', 0, 0, -100, -60)
+    expect(r.calls.at(-1)).toBe('L -100 -60')
+  })
+})

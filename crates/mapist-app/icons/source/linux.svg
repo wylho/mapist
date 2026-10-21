@@ -1,0 +1,13 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- Linux (.deb, .rpm, AppImage e ícone da janela): sem placa, desenho a 1,12x, como os ícones do GNOME. -->
+<g transform="translate(256 256) scale(1.12) translate(-256 -256)">
+<rect x="86" y="156" width="220" height="200" rx="40" fill="url(#g0)"/>
+<rect x="266" y="76" width="160" height="160" rx="32" fill="url(#g1)"/>
+<rect x="266" y="276" width="160" height="160" rx="32" fill="url(#g2)"/>
+</g>
+<defs>
+<linearGradient id="g0" x1="86" y1="356" x2="306" y2="156" gradientUnits="userSpaceOnUse"><stop stop-color="#00B378"/><stop offset="1" stop-color="#00B378" stop-opacity="0.7"/></linearGradient>
+<linearGradient id="g1" x1="266" y1="236" x2="426" y2="76" gradientUnits="userSpaceOnUse"><stop stop-color="#0068FF"/><stop offset="1" stop-color="#0068FF" stop-opacity="0.7"/></linearGradient>
+<linearGradient id="g2" x1="266" y1="436" x2="426" y2="276" gradientUnits="userSpaceOnUse"><stop stop-color="#FF5C36"/><stop offset="1" stop-color="#FF5C36" stop-opacity="0.8"/></linearGradient>
+</defs>
+</svg>

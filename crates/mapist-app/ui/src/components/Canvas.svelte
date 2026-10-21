@@ -85,6 +85,7 @@
     if (!ctx) return
     draw({
       snapshot: doc.snapshot,
+      linkStyle: prefs.linkStyle,
       colors,
       view,
       selected: doc.selected,
@@ -106,6 +107,7 @@
     void theme.palette
     void theme.pref
     void theme.simDesktop
+    void prefs.linkStyle
     colors = readThemeColors()
     render()
   })

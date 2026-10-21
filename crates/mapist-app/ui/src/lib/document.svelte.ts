@@ -121,6 +121,55 @@ class Document {
     return this.run(() => api.save(path))
   }
 
+  /**
+   * Pergunta antes de descartar alterações não salvas. No app usa o diálogo
+   * nativo; no preview, o `confirm` do navegador.
+   */
+  async confirmDiscard(): Promise<boolean> {
+    if (!this.snapshot.dirty) return true
+    const message = 'Este mapa tem alterações que não foram salvas. Descartar e continuar?'
+    if (hasHost) {
+      const { ask } = await import('@tauri-apps/plugin-dialog')
+      return ask(message, { title: 'Descartar alterações?', kind: 'warning', okLabel: 'Descartar', cancelLabel: 'Continuar editando' })
+    }
+    return window.confirm(message)
+  }
+
+  /** Novo mapa (⌘N), depois de confirmar o descarte. */
+  async newMap() {
+    if (await this.confirmDiscard()) await this.create('Tópico central')
+  }
+
+  /** Abrir (⌘O): diálogo nativo do sistema; no preview, um prompt. */
+  async openDialog() {
+    if (!(await this.confirmDiscard())) return
+    let path: string | null = null
+    if (hasHost) {
+      const { open } = await import('@tauri-apps/plugin-dialog')
+      const picked = await open({ multiple: false, filters: [{ name: 'Mapa mental', extensions: ['minder'] }] })
+      path = typeof picked === 'string' ? picked : null
+    } else {
+      path = window.prompt('Caminho do arquivo .minder')
+    }
+    if (path) await this.open(path)
+  }
+
+  /** Salvar (⌘S): grava no arquivo atual; mapa novo ou `as` pede o caminho. */
+  async saveDialog(as = false) {
+    if (this.snapshot.path && !as) return this.save()
+    let path: string | null = null
+    if (hasHost) {
+      const { save } = await import('@tauri-apps/plugin-dialog')
+      path = await save({
+        defaultPath: `${(this.snapshot.title || 'mapa').replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'mapa'}.minder`,
+        filters: [{ name: 'Mapa mental', extensions: ['minder'] }],
+      })
+    } else {
+      path = window.prompt('Salvar como (caminho)')
+    }
+    if (path) await this.save(path.endsWith('.minder') ? path : `${path}.minder`)
+  }
+
   addChild(text = 'Nova ideia') {
     const id = this.selected
     if (id === null) return Promise.resolve()
