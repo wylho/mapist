@@ -34,6 +34,14 @@ impl Default for AppState {
     }
 }
 
+/// A node's measured box, reported by the renderer.
+#[derive(serde::Deserialize)]
+pub struct NodeSize {
+    id: u64,
+    width: f64,
+    height: f64,
+}
+
 /// A node flattened for the renderer, with absolute geometry.
 #[derive(Serialize)]
 pub struct FlatNode {
@@ -333,6 +341,31 @@ fn search_nodes(
         .collect())
 }
 
+/// Apply node dimensions measured by the frontend, then relayout.
+///
+/// The webview measures text with real font metrics, which the core cannot do
+/// without duplicating the font stack. So the renderer measures and reports
+/// back, and positioning stays here.
+#[tauri::command]
+fn set_sizes(state: State<'_, AppState>, sizes: Vec<NodeSize>) -> Result<Snapshot, String> {
+    let mut doc = state.inner.lock().map_err(|_| "state poisoned")?;
+    if doc.map.is_none() {
+        return Err("no document is open".into());
+    }
+    {
+        let map = doc.map.as_mut().ok_or("no document is open")?;
+        for s in &sizes {
+            if let Some(node) = map.find_mut(s.id) {
+                node.width = s.width;
+                node.height = s.height;
+            }
+        }
+        // Positions only; measuring already happened in the renderer.
+        layout::reposition(map);
+    }
+    Ok(snapshot(&doc))
+}
+
 /// Apply a mutating action through history, then relayout.
 fn mutate(state: State<'_, AppState>, action: undo::Action) -> Result<Snapshot, String> {
     let mut doc = state.inner.lock().map_err(|_| "state poisoned")?;
@@ -347,9 +380,35 @@ fn mutate(state: State<'_, AppState>, action: undo::Action) -> Result<Snapshot, 
     Ok(snapshot(&doc))
 }
 
+/// Describe the MCP registration state, for the settings page.
+#[tauri::command]
+fn mcp_info() -> Result<mapist_mcp::setup::McpInfo, String> {
+    mapist_mcp::setup::info()
+}
+
+/// Register Mapist with Claude Desktop. Takes effect after Claude restarts.
+#[tauri::command]
+fn mcp_install() -> Result<mapist_mcp::setup::McpInfo, String> {
+    let config = mapist_mcp::setup::desktop_config()
+        .ok_or("could not locate the user's config directory")?;
+    let cmd = mapist_mcp::setup::command()?.display().to_string();
+    mapist_mcp::setup::install(&config, &cmd)?;
+    mapist_mcp::setup::info()
+}
+
+/// Remove Mapist from Claude Desktop's config.
+#[tauri::command]
+fn mcp_uninstall() -> Result<mapist_mcp::setup::McpInfo, String> {
+    let config = mapist_mcp::setup::desktop_config()
+        .ok_or("could not locate the user's config directory")?;
+    mapist_mcp::setup::uninstall(&config)?;
+    mapist_mcp::setup::info()
+}
+
 /// Run the application.
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .manage(AppState::default())
         .invoke_handler(tauri::generate_handler![
             get_snapshot,
@@ -364,7 +423,11 @@ pub fn run() {
             toggle_fold,
             undo,
             redo,
-            search_nodes
+            search_nodes,
+            set_sizes,
+            mcp_info,
+            mcp_install,
+            mcp_uninstall
         ])
         .run(tauri::generate_context!())
         .expect("error while running Mapist");

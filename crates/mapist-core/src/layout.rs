@@ -40,6 +40,15 @@ pub fn measure(node: &mut Node) {
 /// `measure` runs first so every box is sized before positions are assigned.
 pub fn layout(map: &mut MindMap) {
     for_each_mut(&mut map.root, &mut measure);
+    reposition(map);
+}
+
+/// Assign positions using the box sizes already on each node.
+///
+/// Use this when sizes came from somewhere better than [`measure`] — the
+/// renderer measures text with real font metrics and reports back, so the core
+/// must not overwrite those sizes with its own estimate.
+pub fn reposition(map: &mut MindMap) {
     let mut root = std::mem::replace(&mut map.root, Node::new(0, ""));
     place(&mut root, 0.0, 0.0);
     map.root = root;
