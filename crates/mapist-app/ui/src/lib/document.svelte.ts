@@ -6,6 +6,7 @@
 
 import { api, hasHost, isPreview, type Snapshot } from './api'
 import { measureAll } from './measure'
+import { ui } from './ui.svelte'
 
 const EMPTY: Snapshot = {
   nodes: [],
@@ -92,6 +93,7 @@ class Document {
       this.error = null
     } catch (e) {
       this.error = String(e)
+      ui.say(String(e instanceof Error ? e.message : e))
       console.error(e)
     } finally {
       this.busy = false
@@ -117,22 +119,22 @@ class Document {
     return this.run(() => api.open(path))
   }
 
-  save(path?: string) {
-    return this.run(() => api.save(path))
+  async save(path?: string) {
+    await this.run(() => api.save(path))
+    if (!this.error) ui.say('Mapa salvo')
   }
 
   /**
-   * Pergunta antes de descartar alterações não salvas. No app usa o diálogo
-   * nativo; no preview, o `confirm` do navegador.
+   * Pergunta antes de descartar alterações não salvas, no diálogo de
+   * confirmação do Ideario.
    */
   async confirmDiscard(): Promise<boolean> {
     if (!this.snapshot.dirty) return true
-    const message = 'Este mapa tem alterações que não foram salvas. Descartar e continuar?'
-    if (hasHost) {
-      const { ask } = await import('@tauri-apps/plugin-dialog')
-      return ask(message, { title: 'Descartar alterações?', kind: 'warning', okLabel: 'Descartar', cancelLabel: 'Continuar editando' })
-    }
-    return window.confirm(message)
+    return ui.ask({
+      title: 'Descartar alterações?',
+      text: 'Este mapa tem alterações que não foram salvas.',
+      confirm: 'Descartar',
+    })
   }
 
   /** Novo mapa (⌘N), depois de confirmar o descarte. */

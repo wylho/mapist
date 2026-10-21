@@ -3,7 +3,6 @@
   import { doc } from '../lib/document.svelte'
   import { theme } from '../lib/theme.svelte'
   import { NODE_COLOR_TOKENS, resolveNodeColor } from '../lib/palettes'
-  import McpPanel from './McpPanel.svelte'
 
   let text = $state('')
   let note = $state('')
@@ -12,6 +11,15 @@
   let noteTimer: ReturnType<typeof setTimeout> | undefined
 
   const node = $derived(doc.selectedNode)
+  const mod = /Mac/.test(navigator.platform) ? '⌘' : 'Ctrl+'
+  const COLOR_NAMES: Record<string, string> = {
+    '--n-sand': 'Areia',
+    '--n-sage': 'Sálvia',
+    '--n-sky': 'Céu',
+    '--n-rose': 'Rosa',
+    '--n-lilac': 'Lilás',
+    '--n-butter': 'Manteiga',
+  }
 
   // Sincroniza os campos quando a seleção muda, sem atropelar quem está digitando.
   $effect(() => {
@@ -54,9 +62,6 @@
 <aside class="inspector">
   <div class="inspector-head">
     <span class="inspector-title">Inspetor</span>
-    {#if node}
-      <span class="pill tag">#{node.id}</span>
-    {/if}
   </div>
 
   <div class="inspector-body">
@@ -95,7 +100,8 @@
               <button
                 class="swatch"
                 style:background={swatchColor(token)}
-                title={token}
+                title={COLOR_NAMES[token] ?? token}
+                aria-label={COLOR_NAMES[token] ?? token}
                 aria-pressed={node.color === resolveNodeColor(token, theme.colors)}
                 onclick={() => doc.setColor(node.id, resolveNodeColor(token, theme.colors))}
               ></button>
@@ -110,7 +116,6 @@
           <div class="stats">
             <div><b>{node.child_ids.length}</b><span>filhos</span></div>
             <div><b>{node.depth}</b><span>nível</span></div>
-            <div><b>{Math.round(node.width)}×{Math.round(node.height)}</b><span>tamanho</span></div>
           </div>
         </div>
       </div>
@@ -121,16 +126,15 @@
       <div class="keys">
         <div class="keys-row"><span>Adicionar filho</span><kbd>Tab</kbd></div>
         <div class="keys-row"><span>Adicionar irmão</span><kbd>↵</kbd></div>
-        <div class="keys-row"><span>Excluir</span><kbd>⌫</kbd></div>
-        <div class="keys-row"><span>Dobrar</span><kbd>Space</kbd></div>
-        <div class="keys-row"><span>Desfazer</span><kbd>⌘Z</kbd></div>
+        <div class="keys-row"><span>Excluir</span><kbd>Delete</kbd></div>
+        <div class="keys-row"><span>Recolher ou expandir</span><kbd>Espaço</kbd></div>
+        <div class="keys-row"><span>Desfazer</span><kbd>{mod}Z</kbd></div>
+        <div class="keys-row"><span>Buscar</span><kbd>{mod}F</kbd></div>
       </div>
     </div>
 
-    <McpPanel />
-
     <div class="banner">
-      {doc.snapshot.nodes.length === 1 ? '1 nó' : `${doc.snapshot.nodes.length} nós`} · tema {theme.label}
+      {doc.snapshot.nodes.length === 1 ? '1 nó' : `${doc.snapshot.nodes.length} nós`}
     </div>
   </div>
 </aside>

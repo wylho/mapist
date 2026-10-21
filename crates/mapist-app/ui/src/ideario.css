@@ -1,3 +1,4 @@
+/* Cópia literal de ideario/src/app.css (o design system dos nossos apps). Não editar aqui: copiar de novo quando o Ideario mudar. */
 /* Tokens e estilos portados de prototype/index.css (referência visual, SPEC §9). Tipografia: fonte do sistema. */
 
 /* reset (equivale ao preflight que o protótipo usava) */
@@ -13,21 +14,55 @@ b, strong { font-weight: bolder; }
 
 /* Layout: coluna de celular (máx. 440px) com barra de busca no topo, conteúdo em masonry e abas embaixo; no desktop a coluna fica centralizada sobre um fundo neutro. */
 :root {
-  /* Fallback do tema Ideario claro. O tema ativo é gravado como variáveis
-     inline no <html> por src/lib/theme.svelte.ts, exatamente como no Ideario. */
-  --bg: #eef1ef; --stage: #dfe4e1; --surface: #ffffff; --raised: #f7f9f8;
-  --fg: #16201c; --muted: #5d6a65; --line: #d6ddd9; --card-edge: rgb(22 32 28 / .09);
-  --accent: #2547c9; --accent-soft: #e2e8fb; --on-accent: #ffffff;
-  --late: #c03b2b; --late-soft: #fbe3df; --good: #217a4b;
-  --st-todo: #e5484d; --st-doing: #e8a400; --st-done: #2f9e5c;
+  --bg: #eef1ef;
+  --stage: #dfe4e1;
+  --surface: #ffffff;
+  --raised: #f7f9f8;
+  --fg: #16201c;
+  --muted: #5d6a65;
+  --line: #d6ddd9;
+  /* contorno de todos os cards: translúcido, então acompanha a cor de cada um */
+  --card-edge: rgb(22 32 28 / .09);
+  --accent: #2547c9;
+  --accent-soft: #e2e8fb;
+  --on-accent: #ffffff;
+  --late: #c03b2b;
+  --late-soft: #fbe3df;
+  --good: #217a4b;
+  /* status do lembrete: vermelho, amarelo, verde */
+  --st-todo: #e5484d;
+  --st-doing: #e8a400;
+  --st-done: #2f9e5c;
   --shadow: 0 1px 2px rgb(22 32 28 / .06), 0 4px 14px rgb(22 32 28 / .06);
   --float-shadow: 0 10px 30px rgb(22 32 28 / .14), 0 1px 3px rgb(22 32 28 / .06);
   --n-none: var(--surface);
-  --n-sand: #f6e9d6; --n-sage: #e1eedd; --n-sky: #dde8f8;
-  --n-rose: #f8e0e4; --n-lilac: #e9e2f6; --n-butter: #f8f0c8;
+  --n-sand: #f6e9d6;
+  --n-sage: #e1eedd;
+  --n-sky: #dde8f8;
+  --n-rose: #f8e0e4;
+  --n-lilac: #e9e2f6;
+  --n-butter: #f8f0c8;
+  /* Tipografia do sistema: a UI deve parecer nativa em cada plataforma.
+     --font-system / --font-system-mono são injetadas no Linux com a fonte do GNOME/KDE. */
   --font-body: var(--font-system, system-ui), -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Noto Sans', sans-serif;
   --font-display: var(--font-body);
   --font-mono: var(--font-system-mono, ui-monospace), 'SF Mono', 'Cascadia Mono', Consolas, 'Ubuntu Mono', 'Noto Sans Mono', 'DejaVu Sans Mono', Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101513; --stage: #0a0e0d; --surface: #19211e; --raised: #1f2825; --fg: #e5ebe8; --muted: #93a19b; --line: #2b3632; --card-edge: rgb(255 255 255 / .07);
+    --accent: #8ea4ff; --accent-soft: #232c4d; --on-accent: #0d1430; --late: #ff8a78; --late-soft: #3a1f1b; --good: #6fd09a; --st-todo: #ff6369; --st-doing: #ffc53d; --st-done: #4cc38a;
+    --shadow: 0 1px 2px rgb(0 0 0 / .4); --float-shadow: 0 12px 32px rgb(0 0 0 / .55), 0 1px 3px rgb(0 0 0 / .4);
+    --n-sand: #3a3125; --n-sage: #26352a; --n-sky: #22304a; --n-rose: #3d262c; --n-lilac: #2f2842; --n-butter: #39351e;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101513; --stage: #0a0e0d; --surface: #19211e; --raised: #1f2825; --fg: #e5ebe8; --muted: #93a19b; --line: #2b3632; --card-edge: rgb(255 255 255 / .07);
+  --accent: #8ea4ff; --accent-soft: #232c4d; --on-accent: #0d1430; --late: #ff8a78; --late-soft: #3a1f1b; --good: #6fd09a; --st-todo: #ff6369; --st-doing: #ffc53d; --st-done: #4cc38a;
+  --shadow: 0 1px 2px rgb(0 0 0 / .4); --float-shadow: 0 12px 32px rgb(0 0 0 / .55), 0 1px 3px rgb(0 0 0 / .4);
+  --n-sand: #3a3125; --n-sage: #26352a; --n-sky: #22304a; --n-rose: #3d262c; --n-lilac: #2f2842; --n-butter: #39351e;
+  color-scheme: dark;
 }
 
 html, body, #app { height: 100%; }
@@ -37,21 +72,48 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font-body); f
 body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; cursor: default; }
 input, textarea, [contenteditable="true"], [contenteditable="true"] * { -webkit-user-select: text; user-select: text; cursor: auto; }
 img { -webkit-user-drag: none; }
+.ProseMirror img, .ProseMirror [draggable="true"] { -webkit-user-drag: element; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* Casca responsiva (SPEC §9.1). Até 959px: topo, conteúdo e abas embaixo, com a gaveta.
    A partir de 960px (desktop): barra lateral fixa e conteúdo largo. Abaixo de 640px é o layout de celular do protótipo. */
 .shell { position: relative; height: 100%; display: flex; background: var(--bg); overflow: hidden; }
+.main { position: relative; flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; --content-max: 1480px; }
+.main.view-reminders, .main.list { --content-max: 720px; }
+.main.view-files { --content-max: 920px; }
 /* Desktop como no Keep: barra superior fixa (☰, marca, busca) e, abaixo, a lateral e o conteúdo.
    A lateral recolhe para um trilho de ícones; o topo não se move. */
 .body { flex: 1; min-height: 0; display: flex; position: relative; }
+.shell { flex-direction: column; }
+.topbar.appbar {
+  /* ☰ e visões à esquerda; ações ancoradas à direita. A folga livre fica no meio e é ali que
+     crescem a busca e a nuvem, sem mover nada que já estava na barra. */
+  display: flex; align-items: center; gap: 8px;
+  height: 64px; padding: 0 14px; border-bottom: 1px solid var(--line); flex: none;
+}
+.top-left { display: flex; align-items: center; gap: 6px; min-width: 0; flex: none; }
+.topbar:not(.appbar) .top-left { flex: 1; }
+.topbar:not(.appbar) { gap: 6px; }
+.search.inline { flex: 0 1 280px; min-width: 180px; height: 40px; transform-origin: right; animation: search-in .18s cubic-bezier(.2, .8, .2, 1); }
 @keyframes search-in { from { opacity: 0; transform: scaleX(.85); } }
-:root { --side-w: 320px; }
+:root { --side-w: 272px; }
 .top-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-width: 0; flex: none; }
+.appbar .top-actions { flex: 1; }
+.filter-group { display: flex; align-items: center; gap: 2px; margin-right: 10px; }
+.top-actions .icon-btn.on { background: var(--accent-soft); color: var(--accent); }
+.fg-swatch { display: block; width: 18px; height: 18px; border-radius: 999px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .08); }
+.menu-item .fg-swatch { width: 16px; height: 16px; }
 .icon-btn.on .fg-swatch { box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--accent); }
+.sidebar {
+  flex: none; width: var(--side-w); height: 100%; overflow-x: hidden; overflow-y: auto; background: var(--bg);
+  transition: width .24s cubic-bezier(.2, .8, .2, 1);
+}
+.sidebar .drawer-scroll { padding: 10px 10px 24px; overflow: visible; }
+.sidebar { min-width: 0; }
 /* fechada: some deslizando (as categorias aparecem em pílulas acima das notas); fora do Tab depois de fechar */
 .rail .sidebar { width: 0; visibility: hidden; transition: width .24s cubic-bezier(.2, .8, .2, 1), visibility 0s .24s; }
+.rail .sidebar .drawer-scroll { width: var(--side-w); }
 
 /* topo */
 .topbar { display: flex; align-items: center; gap: 6px; padding: 10px 10px 8px 6px; }
@@ -61,71 +123,178 @@ button { cursor: pointer; }
 .icon-btn:hover { background: var(--raised); }
 .icon-btn.sm { width: 26px; height: 26px; color: var(--muted); }
 .icon-btn.active { color: var(--accent); background: var(--accent-soft); }
+.icon-btn.on-dark { color: #fff; }
+.icon-btn.on-dark:hover { background: rgb(255 255 255 / .12); }
 .search {
   flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 6px 0 14px;
   background: var(--surface); border: 1px solid var(--line); border-radius: 999px; color: var(--muted);
 }
-.search.inline { flex: 0 1 280px; min-width: 180px; height: 40px; }
 .search input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: var(--fg); font: inherit; }
 .search input::placeholder { color: var(--muted); }
+
+.scope-bar { padding: 0 16px 6px; width: 100%; max-width: calc(var(--content-max) + 32px); margin-inline: auto; }
+.shell.wide .scope-bar { padding-inline: 24px; max-width: calc(var(--content-max) + 48px); }
+.scope-pill {
+  display: inline-flex; align-items: center; gap: 8px; padding: 5px 6px 5px 12px; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 13px;
+}
+.scope-pill button { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 999px; }
+.scope-pill button:hover { background: rgb(0 0 0 / .08); }
+
+.content { flex: 1; overflow-y: auto; padding: 10px 12px 110px; display: flex; flex-direction: column; gap: 10px; }
 /* 10 px no alto: a bolinha de seleção sai 7 px do canto do card e a rolagem cortaria. */
 /* Sem isso, as fileiras com rolagem horizontal encolhem e cortam (bug herdado do protótipo). */
 .content > * { flex-shrink: 0; width: 100%; max-width: var(--content-max); margin-inline: auto; }
 @media (min-width: 640px) { .content { padding-inline: 16px; } }
 /* desktop: os cards começam a 24px da barra superior, o mesmo respiro da lateral; com a barra de filtro, ela ocupa esse respiro */
 .shell.wide .content { padding: 24px 24px 40px; gap: 12px; }
+.shell.wide :is(.filter-bar, .filter-row) + .content { padding-top: 6px; }
 /* Janela larga: a linha de pílulas (lateral fechada) e o título do filtro não colam na linha da barra de cima. */
 .shell.wide :is(.filter-bar, .filter-row) { padding-top: 12px; }
+
+.section-label {
+  display: flex; align-items: center; gap: 8px; margin-top: 8px; padding-inline: 4px; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .09em; color: var(--muted);
+}
+.section-label.late { color: var(--late); }
+.count { font-size: 11px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 999px; flex: none; }
+.dot.lg { width: 10px; height: 10px; margin: 0 5px; }
 /* "Sem categoria": um círculo vazio no lugar da cor */
 .dot.none { background: transparent; box-shadow: inset 0 0 0 1.5px var(--muted); }
+.chip.no-tags:not(.on) { border-style: dashed; color: var(--muted); }
+.banner { margin-block: 4px; padding: 10px 14px; border-radius: 12px; background: var(--raised); color: var(--muted); font-size: 13px; }
 
 /* notas */
 .masonry { position: relative; }
+.m-item { position: absolute; left: 0; top: 0; min-width: 0; }
 /* enquanto se arrasta um card, os outros deslizam até o lugar novo */
 .masonry.animate .m-item { transition: transform .22s cubic-bezier(.2, .8, .2, 1); }
 @media (prefers-reduced-motion: reduce) { .masonry.animate .m-item { transition: none; } }
+.stack { display: flex; flex-direction: column; gap: 10px; }
+.card {
+  container-type: inline-size;
+  /* sem overflow: hidden, para o check de seleção ficar no canto, metade para fora (como no Keep);
+     a capa arredonda os próprios cantos */
+  position: relative; display: block; width: 100%; border-radius: 16px; background: var(--n-none);
+  border: 1px solid var(--card-edge); cursor: pointer; transition: transform .12s ease, box-shadow .12s ease;
+}
 /* seleção múltipla: check no canto e alfinete aparecem só com o mouse por cima (ou com a nota já marcada) */
 .card-check, .card-pin {
   position: absolute; z-index: 2; display: grid; place-items: center; border-radius: 999px; opacity: 0;
   transition: opacity .12s ease, background .12s ease, transform .12s ease;
 }
+.card-check {
+  /* 18 px, um terço para fora do canto; o anel da cor do fundo separa a bolinha da borda do card */
+  top: -7px; left: -7px; width: 18px; height: 18px; color: transparent;
+  background: var(--bg); box-shadow: inset 0 0 0 1px var(--muted), 0 0 0 2px var(--bg);
+}
+.card-check:hover { color: var(--muted); }
+.card-pin { top: 6px; right: 6px; width: 32px; height: 32px; color: var(--fg); background: color-mix(in oklab, var(--surface) 82%, transparent); }
+.card-pin:hover { background: var(--surface); }
 @media (hover: hover) {
   .card:hover .card-check, .card:hover .card-pin, .card:focus-visible .card-check { opacity: 1; }
 }
+.card-check:focus-visible, .card-pin:focus-visible { opacity: 1; }
+.card.selected { border-color: var(--accent); box-shadow: 0 0 0 1.5px var(--accent); }
+.card.selected .card-check { opacity: 1; color: var(--on-accent); background: var(--accent); box-shadow: 0 0 0 2px var(--bg); }
 /* com seleção ativa, todos os checks ficam à vista (dá para marcar sem caçar o canto) */
 .selecting-notes .card .card-check { opacity: 1; }
 /* retângulo de seleção com o mouse */
 .menu-anchor { position: fixed; top: 0; left: 0; width: 0; height: 0; pointer-events: none; }
+.marquee { position: fixed; z-index: 8; pointer-events: none; border: 1px solid var(--accent); background: color-mix(in oklab, var(--accent) 12%, transparent); border-radius: 4px; }
+.marquee-active, .marquee-active * { user-select: none !important; }
 /* barra de ações em lote, no lugar da barra superior */
 .sel-left { display: flex; align-items: center; gap: 8px; min-width: 0; flex: none; }
+.sel-count { font-size: 17px; font-weight: 600; }
 /* celular: só o número, para as seis ações caberem com margem */
 @media (max-width: 639px) {
   .sel-word { display: none; }
   .sel-actions { gap: 0; }
   .topbar.selecting { padding-right: 8px; }
 }
+.topbar.selecting { background: color-mix(in oklab, var(--accent) 8%, var(--bg)); }
+.topbar:not(.appbar) .sel-actions { margin-left: auto; }
+.swatch-dot { width: 16px; height: 16px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); flex: none; }
+.card:hover { box-shadow: var(--shadow); }
+.card:active { transform: scale(.985); }
+.c-none { background: var(--n-none); } .c-sand { background: var(--n-sand); } .c-sage { background: var(--n-sage); }
+.c-sky { background: var(--n-sky); } .c-rose { background: var(--n-rose); } .c-lilac { background: var(--n-lilac); } .c-butter { background: var(--n-butter); }
+.card-media { position: relative; overflow: hidden; border-radius: 15px 15px 0 0; }
 /* nota que é só um anexo: miniatura quadrada do arquivo (mesmas cores da visão Arquivos) */
 .card-file {
   /* largura toda do card; quadrada até 220 px de altura (antes encolhia e deixava um vão do lado) */
   display: grid; place-items: center; height: min(100cqw, 220px); border-radius: 15px 15px 0 0;
   background: color-mix(in oklab, currentColor 9%, var(--raised)); color: var(--muted);
 }
+.card-file.t-pdf { color: #c4473a; } .card-file.t-video { color: #c2410c; } .card-file.t-sheet { color: #2f8a57; }
+.card-file.t-audio { color: #8a6bc4; } .card-file.t-doc { color: #3d63d6; }
+.card-file-name { margin: 0; font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stack .card-file { height: 120px; }
 /* prévia de PDF (página do topo) ou vídeo (quadro) por cima do ícone, recortada no quadrado */
 .card-file, .f-prev { position: relative; overflow: hidden; }
+.card-file .file-preview, .f-prev .file-preview { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.file-preview.video { object-position: center; }
+.f-prev { display: block; flex: none; border-radius: 10px; }
+.f-prev.big { border-radius: 12px; width: 100%; }
+.f-prev .file-preview { outline: 1px solid var(--card-edge); outline-offset: -1px; border-radius: inherit; }
+.card-media:last-child { border-radius: 15px; }
+.card-media img { display: block; width: 100%; height: auto; max-height: 260px; object-fit: cover; }
+.card-media.row { display: flex; gap: 2px; }
+.card-media.row img { width: 0; flex-basis: 0; min-width: 0; }
+.card-media .more {
+  position: absolute; right: 8px; bottom: 8px; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  background: rgb(0 0 0 / .55); color: #fff;
+}
+.card-body { padding: 12px 13px 12px; display: flex; flex-direction: column; gap: 6px; }
+.card h3 { font-family: var(--font-display); font-weight: 600; font-size: 16px; line-height: 1.25; letter-spacing: -.01em; text-wrap: balance; overflow-wrap: anywhere; }
+.card-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
+.card-meta > * { flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; }
+.pill {
+  display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 500;
+  background: rgb(127 140 135 / .14); color: var(--fg); white-space: nowrap; max-width: 100%;
+}
+.pill.late { background: var(--late-soft); color: var(--late); }
+.pill.done { text-decoration: line-through; color: var(--muted); }
+.pill.tag { color: var(--accent); background: transparent; border: 1px solid color-mix(in oklab, var(--accent) 30%, transparent); }
+.pill button { display: grid; place-items: center; margin-right: -3px; border-radius: 999px; color: inherit; }
+.stack .card { display: grid; grid-template-columns: 1fr; }
+.stack .card-media img { max-height: 140px; }
 
 /* vazio */
 .empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 56px 24px; color: var(--muted); }
+.empty-ico { width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; background: var(--raised); color: var(--muted); margin-bottom: 6px; }
+.empty h3 { font-family: var(--font-display); color: var(--fg); font-size: 18px; font-weight: 600; }
 
 /* fab + abas */
 .fab-wrap {
   position: absolute; right: 16px; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); z-index: 7;
   display: flex; flex-direction: column; align-items: flex-end; gap: 12px;
 }
+.fab {
+  width: 58px; height: 58px; border-radius: 20px; display: grid; place-items: center;
+  background: var(--accent); color: var(--on-accent); box-shadow: 0 6px 20px color-mix(in oklab, var(--accent) 40%, transparent);
+  transition: transform .12s ease;
+}
+.fab svg { transition: transform .2s cubic-bezier(.2, .8, .2, 1); }
+.fab-wrap.open .fab svg { transform: rotate(45deg); }
+.fab:active { transform: scale(.94); }
 /* véu atrás do leque, para os atalhos lerem bem por cima dos cards */
 .fab-scrim { position: fixed; inset: 0; z-index: -1; background: color-mix(in oklab, var(--bg) 72%, transparent); animation: fade .15s ease; }
 /* leque: atalhos sobem do "+", um depois do outro, com o nome ao lado */
 .fab-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; margin-right: 5px; }
+.fab-items li { animation: fab-in .2s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i) * 28ms); }
 @keyframes fab-in { from { opacity: 0; transform: translateY(14px) scale(.9); } }
+.fab-items button { display: flex; align-items: center; gap: 10px; }
+.fab-label {
+  padding: 6px 12px; border-radius: 999px; background: var(--surface); color: var(--fg); font-size: 14px; font-weight: 600;
+  box-shadow: var(--float-shadow); white-space: nowrap;
+}
+.fab-mini {
+  width: 48px; height: 48px; border-radius: 16px; display: grid; place-items: center;
+  background: var(--surface); color: var(--accent); box-shadow: var(--float-shadow); border: 1px solid var(--card-edge);
+}
+.fab-items button:hover .fab-mini, .fab-items button:focus-visible .fab-mini { background: var(--accent-soft); }
 /* Celular: visões numa barra flutuante (pílula suspensa), não grudada na borda. */
 .tabbar {
   position: absolute; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 6;
@@ -133,23 +302,123 @@ button { cursor: pointer; }
   border-radius: 26px; background: color-mix(in oklab, var(--surface) 92%, transparent); backdrop-filter: blur(16px);
   border: 1px solid var(--line); box-shadow: var(--float-shadow);
 }
+.tabbar button { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; padding: 3px 0 2px; font-size: 10px; letter-spacing: -.01em; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.tab-ico { display: grid; place-items: center; width: min(52px, 100%); height: 32px; border-radius: 999px; transition: background .15s; }
+.tabbar button.on { color: var(--fg); }
+.tabbar button.on .tab-ico { background: var(--accent-soft); color: var(--accent); }
 
 /* gaveta */
 .overlay { position: fixed; inset: 0; background: rgb(10 14 13 / .38); z-index: 20; animation: fade .15s ease; }
+.overlay.dark { background: rgb(6 8 8 / .92); }
+.drawer {
+  position: fixed; top: 0; bottom: 0; left: 0; z-index: 21; width: min(84vw, 330px);
+  background: var(--bg); display: flex; flex-direction: column; border-radius: 0 24px 24px 0;
+  padding-top: env(safe-area-inset-top, 0px); animation: slide-in .2s ease;
+}
+.drawer-head { padding: 22px 24px 14px; display: flex; align-items: center; gap: 10px; }
+.drawer-head .brand-mark { width: 32px; height: 32px; flex: none; }
 .brand { font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
+.meta { font-size: 12px; color: var(--good); font-weight: 600; }
+.drawer-scroll { flex: 1; overflow-y: auto; padding: 0 10px 24px; display: flex; flex-direction: column; gap: 2px; }
+.d-item { display: flex; align-items: center; gap: 16px; padding: 0 16px; min-height: 46px; border-radius: 999px; text-align: left; font-weight: 500; color: var(--fg); }
+.d-item:hover { background: var(--raised); }
+.d-item.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.d-item.muted { color: var(--muted); }
+.d-item .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.d-sep { height: 1px; background: var(--line); margin: 10px 16px; }
+.d-label { display: flex; justify-content: space-between; align-items: center; padding: 4px 16px 6px; font-size: 13px; color: var(--muted); font-weight: 600; }
+.link { color: var(--accent); font-weight: 600; font-size: 13px; }
+.d-label .d-add { width: 28px; height: 28px; margin: -6px -8px -6px 0; color: var(--muted); }
+.d-label > span:first-child { flex: 1; }
+.d-label .icon-btn.sm:not(.d-add) { width: 28px; height: 28px; margin: -6px 6px -6px 0; color: var(--muted); }
+.d-label .d-add:hover { color: var(--fg); }
+.tag-cloud { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 4px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); font-size: 13px; color: var(--fg); }
+.chip.on { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
 
 /* lembretes */
 .hint { font-size: 12.5px; color: var(--muted); flex: 1; min-width: 180px; }
+.switch-row { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; }
+.switch { width: 38px; height: 22px; border-radius: 999px; background: var(--line); position: relative; flex: none; transition: background .15s; }
+.switch[data-state="checked"] { background: var(--accent); }
+.thumb { display: block; width: 18px; height: 18px; border-radius: 999px; background: var(--surface); transform: translateX(2px); transition: transform .15s; box-shadow: 0 1px 2px rgb(0 0 0 / .2); }
+.thumb[data-state="checked"] { transform: translateX(18px); }
+.r-group { display: flex; flex-direction: column; gap: 8px; }
+.r-list { background: var(--surface); border: 1px solid var(--card-edge); border-radius: 16px; overflow: hidden; }
+.r-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+.r-item + .r-item { border-top: 1px solid var(--line); }
+.r-item .status-toggle { flex: none; }
+.r-main { flex: 1; min-width: 0; text-align: left; display: flex; flex-direction: column; gap: 2px; }
+.r-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.r-item.done .r-title { text-decoration: line-through; color: var(--muted); }
+.r-sub { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); overflow: hidden; white-space: nowrap; }
+.r-time { display: flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; }
+.r-time b { font-weight: 600; font-size: 14px; }
+.r-time small { font-size: 11px; color: var(--muted); }
+.r-time.late, .r-time.late small { color: var(--late); }
 
 /* arquivos */
 .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stats > div { background: var(--surface); border: 1px solid var(--card-edge); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stats b { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.stats span { font-size: 11.5px; color: var(--muted); line-height: 1.25; }
+.stats .good b { color: var(--good); }
+.seg { display: flex; gap: 6px; }
+.seg-item {
+  display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 13px; border-radius: 999px; white-space: nowrap;
+  border: 1px solid var(--line); background: var(--surface); font-size: 13px; font-weight: 500; color: var(--fg);
+}
+.seg-item[data-state="on"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.seg-item[data-state="on"] .count { color: inherit; opacity: .7; }
+.seg.tight { gap: 0; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--surface); }
+.seg.tight .seg-item { border: 0; height: 30px; padding: 0 10px; background: transparent; }
+.seg.tight .seg-item[data-state="on"] { background: var(--accent-soft); color: var(--accent); }
+.picker {
+  display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px 0 12px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface); font-size: 13px; font-weight: 500; color: var(--fg); max-width: 100%;
+}
+.picker > span:not(.muted) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .muted { color: var(--muted); }
+.f-list { background: var(--surface); border: 1px solid var(--card-edge); border-radius: 16px; overflow: hidden; }
+.f-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; width: 100%; text-align: left; }
+.f-row + .f-row { border-top: 1px solid var(--line); }
+.f-row:hover { background: var(--raised); }
+.f-thumb { width: 42px; height: 42px; border-radius: 10px; object-fit: cover; flex: none; }
+.f-ico { width: 42px; height: 42px; border-radius: 10px; display: grid; place-items: center; flex: none; background: var(--raised); color: var(--muted); }
+.f-ico.t-pdf { color: #c4473a; } .f-ico.t-video { color: #c2410c; } .f-ico.t-sheet { color: #2f8a57; } .f-ico.t-audio { color: #8a6bc4; } .f-ico.t-doc { color: #3d63d6; }
+.f-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.f-name { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.f-sub { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); overflow: hidden; white-space: nowrap; }
+.f-size { display: flex; flex-direction: column; align-items: flex-end; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.f-size small { color: var(--muted); font-size: 10.5px; text-decoration: line-through; }
+.f-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 @media (min-width: 640px) { .f-grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 12px; } }
+.f-tile { display: flex; flex-direction: column; gap: 4px; text-align: left; min-width: 0; }
+.f-tile img, .f-ico.big { width: 100%; height: auto; aspect-ratio: 1; border-radius: 12px; object-fit: cover; }
+.f-ico.big svg { width: 30%; height: 30%; }
+.f-tile .f-name { font-size: 12px; }
+.f-tile .f-sub { font-size: 11px; }
 
 /* moodboard */
 .mood-tile { display: block; width: 100%; position: relative; border-radius: 12px; overflow: hidden; text-align: left; }
 /* mesmo contorno translúcido dos cards, por cima da imagem (o outline segue o arredondamento) */
 .mood-tile::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--card-edge); pointer-events: none; }
+.f-tile img, .f-ico.big, .f-thumb { outline: 1px solid var(--card-edge); outline-offset: -1px; }
+.mood-tile img { display: block; width: 100%; height: auto; transition: transform .25s ease; }
+.mood-tile:hover img { transform: scale(1.03); }
+.mood-pal { position: absolute; left: 8px; bottom: 8px; display: flex; border-radius: 999px; overflow: hidden; box-shadow: 0 0 0 2px rgb(255 255 255 / .85); }
+.mood-pal i { width: 12px; height: 12px; }
+.mood-cap {
+  position: absolute; left: 0; right: 0; top: 0; padding: 8px 10px 18px; font-size: 11.5px; font-weight: 600; color: #fff;
+  background: linear-gradient(rgb(0 0 0 / .45), transparent); opacity: 0; transition: opacity .15s;
+}
+.mood-tile:hover .mood-cap, .mood-tile:focus-visible .mood-cap { opacity: 1; }
+
+.lightbox {
+  position: fixed; inset: 0; z-index: 31; width: 100%; max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column;
+  padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px); color: #fff;
+}
+.lb-top { display: flex; align-items: center; gap: 8px; padding: 10px 8px; }
 .lb-title { font-size: 12.5px; font-weight: 500; opacity: .8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lb-img { flex: 1; min-height: 0; width: 100%; object-fit: contain; padding: 0 12px; }
 /* leitor de PDF (pdf.js): páginas brancas umas abaixo das outras, rolando dentro do visualizador */
@@ -267,6 +536,7 @@ button { cursor: pointer; }
 .prose li > p + p { margin-top: .25em; }
 .prose img { display: block; width: 100%; border-radius: 14px; margin: 10px 0; outline: 1px solid var(--card-edge); outline-offset: -1px; }
 .prose img.ProseMirror-selectednode { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ProseMirror:not(.ProseMirror-focused) .ProseMirror-selectednode { outline: none !important; }
 /* fotos lado a lado: mesma altura, largura pela proporção de cada uma (flex-grow vem do nó) */
 .prose .img-row { display: flex; gap: 6px; margin: 10px 0; }
 .prose .img-row img { margin: 0; width: 0; min-width: 0; flex-basis: 0; height: auto; object-fit: cover; border-radius: 10px; }
@@ -358,6 +628,7 @@ button { cursor: pointer; }
 .pin-hint.bad { color: var(--late); }
 /* categoria oculta ou com PIN: um ícone pequeno ao lado do nome */
 .cat-flag { flex: none; color: var(--muted); }
+.d-item.is-hidden .grow { color: var(--muted); }
 /* abre para cima: as tags ficam no fim da nota, perto da borda de baixo */
 .tag-suggest { position: absolute; left: -8px; bottom: calc(100% + 6px); min-width: 220px; max-height: 320px; overflow-y: auto; }
 .tag-suggest-head { padding: 6px 12px 4px; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
@@ -374,6 +645,12 @@ button { cursor: pointer; }
   z-index: 40; min-width: 200px; max-width: calc(100vw - 32px); background: var(--surface); color: var(--fg);
   border: 1px solid var(--line); border-radius: 16px; padding: 6px; box-shadow: 0 12px 32px rgb(0 0 0 / .16); animation: pop .12s ease;
 }
+.menu-item {
+  display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 12px; border-radius: 10px; font-size: 14px; outline: 0; cursor: pointer; user-select: none;
+}
+.menu-item[data-highlighted] { background: var(--raised); }
+.menu-item[data-disabled] { opacity: .45; }
+.menu-item.danger { color: var(--late); }
 .menu-check { margin-left: auto; color: var(--accent); display: grid; }
 .menu-sep { height: 1px; background: var(--line); margin: 4px 6px; }
 .pop { padding: 14px; width: 344px; display: flex; flex-direction: column; gap: 10px; }
@@ -468,6 +745,7 @@ button { cursor: pointer; }
 
 /* desktop: sem abas embaixo */
 .shell.wide .fab-wrap { bottom: 28px; right: 28px; }
+.shell.wide .toast { bottom: 32px; }
 .late-count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; display: grid; place-items: center; background: var(--late-soft); color: var(--late); font-size: 11px; font-weight: 600; }
 
 /* barras de rolagem discretas (WebKitGTK e WebView2 mostram as do sistema por padrão) */
@@ -481,12 +759,19 @@ button { cursor: pointer; }
 
 /* filtro (o que ver): proposta A */
 .filter-bar, .filter-row { display: flex; align-items: center; gap: 6px; flex: none; width: 100%; max-width: calc(var(--content-max) + 32px); margin-inline: auto; padding: 0 16px 8px; }
+.filter-bar { flex-wrap: wrap; }
+.shell.wide .filter-bar { padding: 18px 24px 10px; max-width: calc(var(--content-max) + 48px); gap: 8px; }
+.filter-row { overflow-x: auto; scrollbar-width: none; }
 /* abaixo da barra de seleção (que tem fundo), as pílulas não colam nela */
 .topbar.selecting ~ .filter-row, .topbar.selecting ~ .filter-bar { padding-top: 6px; }
+.filter-row .chip, .filter-bar .chip { flex: none; white-space: nowrap; }
+.chip svg { flex: none; }
+.chip .dot { margin-right: 1px; }
 .filter-title { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: -.02em; margin-right: 6px; }
 .filter-title .dot { width: 12px; height: 12px; }
 .filter-title .icon-btn { margin-left: -4px; }
 .filter-hint { font-size: 13px; color: var(--muted); }
+.filter-bar .link, .filter-row .link { white-space: nowrap; padding: 0 6px; }
 
 /* visão (como ver): barra centralizada no desktop */
 .view-switch { display: flex; align-items: center; gap: 2px; flex: none; }
@@ -514,6 +799,9 @@ button { cursor: pointer; }
 }
 .tab-n.zero { background: var(--line); color: var(--muted); }
 .tab-n.late { background: var(--late); color: #fff; }
+
+.empty-acts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
+.empty .btn.primary { flex: none; }
 .sheet-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .sheet .tag-cloud { padding: 0; }
 
@@ -523,6 +811,7 @@ button { cursor: pointer; }
   display: flex; flex-direction: column; gap: 3px; font-size: 13.5px; line-height: 1.45;
   max-height: var(--pv-max); overflow: hidden;
 }
+.card-media + .card-body .preview { --pv-max: 190px; }
 @container (max-width: 199px) { .preview { --pv-max: 220px; } .card-media + .card-body .preview { --pv-max: 150px; } }
 .preview[data-clipped] {
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 64px), transparent);
@@ -547,9 +836,11 @@ button { cursor: pointer; }
 .preview .pv-task.done { color: var(--muted); text-decoration: line-through; }
 .preview .pv-more { color: var(--muted); font-size: 12px; padding-left: 22px; }
 .preview .hashtag, .card .hashtag { color: var(--accent); font-weight: 500; }
+.pill.cat:hover { background: rgb(127 140 135 / .26); }
 
 /* pílula de lembrete do editor: o corpo abre o menu do lembrete, o X remove */
 .rem-pill { padding-block: 0; padding-right: 6px; }
+.pill .rem-pill-btn { display: inline-flex; align-items: center; gap: 5px; padding: 3px 0; margin: 0; border-radius: 0; color: inherit; font: inherit; white-space: nowrap; }
 .rem-pill.done .rem-pill-btn { text-decoration: line-through; }
 .rem-pill:hover { filter: brightness(.97); }
 .pop-actions { display: flex; gap: 8px; }
@@ -559,9 +850,13 @@ button { cursor: pointer; }
 
 /* menus de contexto */
 .menu.ctx { min-width: 228px; }
+.menu-item .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-item[data-state="open"] { background: var(--raised); }
 .menu-chev { margin-left: auto; color: var(--muted); display: grid; }
 .menu-hint { margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
 .menu-swatch { width: 16px; height: 16px; border-radius: 999px; flex: none; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .12); }
+.menu-item svg { flex: none; color: var(--muted); }
+.menu-item.danger svg { color: inherit; }
 /* sem seleção de texto nem balão nativo ao segurar o dedo em itens com menu */
 .card[data-state="open"], .r-item[data-state="open"], .f-row[data-state="open"], .f-tile[data-state="open"], .mood-tile[data-state="open"] {
   outline: 2px solid var(--accent); outline-offset: 2px;
@@ -570,11 +865,14 @@ button { cursor: pointer; }
 .toast { display: flex; align-items: center; gap: 14px; }
 .toast.has-action { pointer-events: auto; }
 .toast button { color: var(--accent-soft); font-weight: 700; font-size: 13.5px; }
+.r-item[data-state="open"], .f-row[data-state="open"] { outline-offset: -2px; border-radius: 14px; background: var(--raised); }
 
 /* O foco vai para o contêiner do menu/popover ao abrir; o item destacado já mostra onde se está.
    O anel azul fica só nos elementos (cards, botões, campos). */
 .menu:focus, .menu:focus-visible, .pop:focus, .pop:focus-visible,
 .sheet:focus-visible, .drawer:focus-visible, .editor:focus-visible, .lightbox:focus-visible { outline: none; }
+.menu-item:focus-visible { outline: none; }
+.menu-item[data-highlighted] { background: color-mix(in oklab, var(--fg) 8%, transparent); }
 
 /* indicador de sincronização: só existe quando não está tudo certo */
 .sync-ind { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 999px; flex: none; color: var(--muted); animation: fade .2s ease; }
@@ -594,6 +892,7 @@ button { cursor: pointer; }
   position: fixed; left: 0; top: 0; z-index: 60; margin: 0; pointer-events: none;
   box-shadow: 0 18px 48px rgb(0 0 0 / .22), 0 2px 6px rgb(0 0 0 / .08); transition: none; will-change: transform;
 }
+.stack { display: flex; flex-direction: column; gap: 10px; }
 .menu-heading { padding: 8px 12px 4px; font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
 .menu-check.hidden { visibility: hidden; }
 .d-toggle { display: inline-flex; align-items: center; gap: 4px; color: inherit; font: inherit; border-radius: 6px; padding: 2px 4px; margin-left: -4px; }
@@ -619,6 +918,7 @@ button { cursor: pointer; }
   white-space: nowrap; overflow: hidden; min-width: 240px;
 }
 .task-bar i { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--accent); transition: width .2s; }
+.shell.wide .task-bar { bottom: 32px; }
 .info-lines { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; color: var(--muted); }
 
 /* lembretes que acabaram de vencer: cartões no canto, acima do "+" */
@@ -680,6 +980,13 @@ button { cursor: pointer; }
   background: var(--surface); border: 1px solid var(--card-edge); color: var(--fg); text-decoration: none; user-select: none;
   transition: background-color .12s;
 }
+.link-card:hover { background: var(--raised); }
+.link-card .lc-img { width: 104px; height: 72px; object-fit: cover; border-radius: 10px; flex: none; }
+.link-card .lc-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.link-card .lc-title { font-size: 15px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.link-card .lc-desc { font-size: 13px; color: var(--muted); line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.link-card .lc-site { font-size: 12px; color: var(--muted); }
+.ProseMirror-selectednode.link-card { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* no card da lista: uma linha com o ícone, o título e o site */
 .pv-link { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--fg); }
 .pv-link svg { flex: none; color: var(--muted); }
@@ -714,6 +1021,7 @@ body.blk-grabbing, body.blk-grabbing * { cursor: grabbing !important; user-selec
 .photo-drop-line { position: fixed; height: 3px; border-radius: 2px; background: var(--accent); pointer-events: none; z-index: 70; }
 body.photo-dragging, body.photo-dragging * { cursor: grabbing !important; user-select: none; }
 .photo-dragged { opacity: .5; }
+.ProseMirror img[data-hash] { -webkit-user-drag: none; }
 /* Menus e listas que podem ser maiores que a janela (ex.: as categorias): cabem no espaço que sobra e rolam por
    dentro. Cada componente do Bits UI informa esse espaço numa variável própria. */
 .menu {
@@ -767,6 +1075,7 @@ body.photo-dragging, body.photo-dragging * { cursor: grabbing !important; user-s
 .menu-back .grow { font-weight: 600; }
 /* lateral: arrastar categoria (linha onde vai cair) */
 .drawer-scroll { position: relative; }
+.d-item.cat.dragging { opacity: .5; }
 .cat-drop { position: absolute; left: 14px; right: 14px; height: 2px; border-radius: 2px; background: var(--accent); pointer-events: none; }
 body:has(.cat-drop) { cursor: grabbing; }
 
@@ -779,6 +1088,7 @@ body:has(.cat-drop) { cursor: grabbing; }
 .st-todo { --st: var(--st-todo); }
 .st-doing { --st: var(--st-doing); }
 .st-done { --st: var(--st-done); }
+.pill.doing { background: color-mix(in oklab, var(--st-doing) 20%, transparent); }
 
 /* Calendário: lembretes no dia deles (Mês ou Semana). No celular a grade mostra pontinhos e a lista do dia fica embaixo. */
 .main.view-calendar, .main.view-kanban { --content-max: 1480px; }
@@ -858,405 +1168,3 @@ body:has(.cat-drop) { cursor: grabbing; }
   .kanban { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: min(84vw, 320px); overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
   .kb-col { scroll-snap-align: start; }
 }
-
-/* ══════════════════════════════════════════════════════════════════════════
-   Mapist — casca própria.
-
-   Tudo acima é o design system do Ideario, reaproveitado inteiro (tokens,
-   .icon-btn, .btn, .chip, .pill, .seg, .card, .stats, .drawer, .overlay,
-   .theme-grid). Abaixo está só o que é específico de um app de mapa:
-   o canvas, a barra de ferramentas e o inspetor de nó.
-   ══════════════════════════════════════════════════════════════════════════ */
-
-/* ── casca ────────────────────────────────────────────────────────────── */
-
-.map-shell {
-  position: relative;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg);
-  overflow: hidden;
-}
-
-/* Barra superior: mesma altura e respiro da appbar do Ideario. */
-.mapbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 64px;
-  padding: 0 14px;
-  border-bottom: 1px solid var(--line);
-  flex: none;
-  z-index: 10;
-}
-
-.mapbar { z-index: 10; }
-.mapbar .top-left { gap: 2px; }
-.mapbar .search { flex: none; color: var(--muted); }
-.bar-sep { width: 1px; height: 24px; background: var(--line); margin: 0 6px; flex: none; }
-.icon-btn:disabled { opacity: .35; pointer-events: none; }
-.top-actions .icon-btn.on { background: var(--accent-soft); color: var(--accent); }
-
-/* Botão com rótulo: pílula, como o .seg-item do Ideario. */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  height: 40px;
-  padding: 0 15px;
-  border-radius: 999px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--fg);
-  white-space: nowrap;
-  transition: background .12s, border-color .12s;
-}
-.btn:hover { background: var(--raised); }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
-.btn.primary:hover { background: color-mix(in oklab, var(--accent) 88%, black); }
-.btn[disabled] { opacity: .4; pointer-events: none; }
-
-/* ── corpo ────────────────────────────────────────────────────────────── */
-
-.map-body { flex: 1; min-height: 0; display: flex; position: relative; }
-
-.stage {
-  flex: 1;
-  min-width: 0;
-  position: relative;
-  overflow: hidden;
-  background: var(--stage);
-}
-.stage canvas { display: block; width: 100%; height: 100%; }
-.stage.panning canvas { cursor: grabbing; }
-.stage.moving canvas { cursor: move; }
-
-/* Pílula de escopo, como a .scope-pill do Ideario. */
-.scope-bar {
-  position: absolute;
-  top: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  z-index: 6;
-  pointer-events: none;
-  max-width: calc(100% - 32px);
-}
-
-/* Mesmos tokens da .scope-pill do Ideario; aqui flutua sobre o canvas. */
-.scope-pill {
-  display: inline-flex; align-items: center; gap: 8px; padding: 5px 6px 5px 12px; border-radius: 999px;
-  background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 13px;
-  pointer-events: auto; min-width: 0;
-}
-.scope-pill .dot { width: 7px; height: 7px; border-radius: 999px; background: currentColor; flex: none; }
-.scope-pill .grow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.scope-pill button { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 999px; color: inherit; }
-.scope-pill button:hover { background: rgb(0 0 0 / .08); }
-
-/* Barra de zoom: pílula flutuante, como a .tabbar do Ideario. */
-.zoombar {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
-  z-index: 6;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 5px;
-  border-radius: 999px;
-  background: color-mix(in oklab, var(--surface) 92%, transparent);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--line);
-  box-shadow: var(--float-shadow);
-}
-.zoombar button { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 999px; color: var(--fg); }
-.zoombar button:hover { background: var(--raised); }
-.zoombar svg { width: 17px; height: 17px; }
-.zoomlevel {
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-  min-width: 46px;
-  text-align: center;
-  font-weight: 600;
-}
-
-/* Seletor de tema, flutuante. */
-.theme-toggle {
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  z-index: 7;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 3px;
-  border-radius: 999px;
-  background: color-mix(in oklab, var(--surface) 92%, transparent);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--line);
-  box-shadow: var(--float-shadow);
-}
-.theme-toggle button {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  height: 32px;
-  padding: 0 12px;
-  border-radius: 999px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--fg);
-}
-.theme-toggle button:hover { background: var(--raised); }
-.theme-toggle button.icon { padding: 0; width: 32px; justify-content: center; }
-.theme-toggle svg { width: 16px; height: 16px; }
-/* O seletor é o próprio botão (ThemeSheet): mesmo desenho dos botões internos acima. */
-button.theme-toggle { height: 40px; padding: 0 14px 0 12px; gap: 7px; font-size: 12.5px; font-weight: 600; color: var(--fg); }
-button.theme-toggle:hover { background: var(--raised); }
-
-/* ── inspetor ─────────────────────────────────────────────────────────── */
-
-.inspector {
-  flex: none;
-  width: var(--side-w);
-  background: var(--bg);
-  border-left: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.inspector-head {
-  padding: 20px 18px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-.inspector-title {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .09em;
-  color: var(--muted);
-}
-.inspector-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0 12px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.inspector-body::-webkit-scrollbar { width: 10px; }
-.inspector-body::-webkit-scrollbar-thumb { background: var(--line); border-radius: 10px; border: 3px solid var(--bg); }
-
-/* Campos dentro de cards, como as notas do Ideario. */
-.card-body.field { padding: 13px 14px; display: flex; flex-direction: column; gap: 9px; }
-.field-label {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .09em;
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.field-hint { font-weight: 500; letter-spacing: 0; text-transform: none; font-size: 11.5px; }
-
-.field textarea,
-.field input[type="text"] {
-  width: 100%;
-  background: var(--raised);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 10px 12px;
-  resize: vertical;
-  outline: none;
-  color: var(--fg);
-  font-size: 14px;
-  font-family: inherit;
-  transition: border-color .12s, box-shadow .12s;
-}
-.field textarea:focus,
-.field input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-.field textarea::placeholder { color: var(--muted); }
-
-/* Swatches: usam as cores de nó do tema (--n-*). */
-.swatches { display: flex; gap: 8px; flex-wrap: wrap; }
-.swatch {
-  width: 30px;
-  height: 30px;
-  border-radius: 10px;
-  border: 1px solid var(--card-edge);
-  position: relative;
-  transition: transform .12s;
-}
-.swatch:hover { transform: scale(1.08); }
-.swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
-.swatch.none {
-  background: var(--raised);
-  border-style: dashed;
-  border-color: var(--muted);
-  display: grid;
-  place-items: center;
-  color: var(--muted);
-  font-size: 14px;
-}
-
-/* Atalhos: linhas como o .r-item do Ideario. */
-.keys { background: var(--surface); border: 1px solid var(--card-edge); border-radius: 16px; overflow: hidden; }
-.keys-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 9px 13px;
-  font-size: 13px;
-  color: var(--muted);
-}
-.keys-row + .keys-row { border-top: 1px solid var(--line); }
-kbd {
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--fg);
-  background: var(--raised);
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  padding: 3px 7px;
-  min-width: 24px;
-  text-align: center;
-}
-
-/* Miniaturas de tema, como o .theme-tile do Ideario. */
-.theme-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.theme-tile {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px;
-  border-radius: 14px;
-  text-align: left;
-  background: var(--surface);
-  border: 1px solid var(--card-edge);
-  transition: border-color .12s, box-shadow .12s;
-}
-.theme-tile:hover { box-shadow: var(--shadow); }
-.theme-tile[aria-checked="true"] { border-color: var(--accent); box-shadow: 0 0 0 1.5px var(--accent); }
-.theme-swatch { position: relative; display: block; height: 46px; border-radius: 9px; overflow: hidden; }
-.theme-card { position: absolute; left: 7px; top: 7px; right: 7px; bottom: 7px; border-radius: 6px; border: 1px solid; }
-.theme-dots { position: absolute; left: 11px; bottom: 11px; display: flex; gap: 3px; }
-.theme-dots i { width: 7px; height: 7px; border-radius: 999px; display: block; }
-.theme-name { font-size: 12.5px; font-weight: 600; }
-.theme-hint { font-size: 11px; color: var(--muted); line-height: 1.3; }
-.theme-group-label {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .09em;
-  color: var(--muted);
-  padding-inline: 4px;
-  margin-top: 6px;
-}
-
-/* Responsivo: abaixo de 900px o inspetor vira gaveta inferior. */
-@media (max-width: 900px) {
-  .inspector {
-    position: absolute;
-    right: 0; bottom: 0; left: 0;
-    width: auto;
-    height: 48%;
-    border-left: 0;
-    border-top: 1px solid var(--line);
-    border-radius: 24px 24px 0 0;
-    box-shadow: var(--float-shadow);
-    z-index: 8;
-  }
-  .inspector-body { padding-bottom: 12px; }
-}
-/* Celular: a busca encolhe primeiro; os botões ficam mais justos para caber tudo. */
-@media (max-width: 640px) {
-  /* Duas linhas: botões em cima, busca inteira embaixo. */
-  .mapbar { padding: 6px; gap: 2px; height: auto; flex-wrap: wrap; }
-  .mapbar .top-actions { display: contents; }
-  .mapbar .search.inline { order: 9; flex: 1 0 100%; width: auto; height: 38px; }
-  .mapbar .icon-btn { width: 34px; height: 34px; }
-  .mapbar .bar-sep { margin: 0 2px; }
-}
-
-/* ── regras que o Mapist usa e o Ideario definia para outros contextos ──── */
-
-/* Mensagem neutra em faixa: usada no inspetor e nos avisos do app. */
-.banner {
-  margin-block: 4px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: var(--raised);
-  color: var(--muted);
-  font-size: 13px;
-}
-
-/* O inspetor usa .seg.tight (pílula com trilho), como o Ideario. */
-.seg.tight { gap: 0; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--surface); }
-.seg.tight button, .seg.tight .seg-item { border: 0; height: 30px; padding: 0 10px; background: transparent; border-radius: 999px; }
-.seg.tight button[aria-pressed="true"], .seg.tight .seg-item[data-state="on"] { background: var(--accent-soft); color: var(--accent); }
-
-/* Gaveta lateral do Ideario (folha de tema). */
-.drawer {
-  position: fixed; top: 0; bottom: 0; left: 0; z-index: 21; width: min(84vw, 330px);
-  background: var(--bg); display: flex; flex-direction: column; border-radius: 0 24px 24px 0;
-  padding-top: env(safe-area-inset-top, 0px); animation: slide-in .2s ease;
-}
-.drawer .drawer-scroll { flex: 1; overflow-y: auto; padding: 0 14px 24px; display: flex; flex-direction: column; gap: 8px; }
-
-/* Cabeçalho da folha de temas, reaproveitado do antigo .drawer-head. */
-.drawer-head { padding: 20px 18px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-
-/* Etiqueta compacta, usada no cabeçalho do inspetor para o id do nó. */
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 9px;
-  border-radius: 999px;
-  font-size: 11.5px;
-  font-weight: 600;
-  background: rgb(127 140 135 / .14);
-  color: var(--fg);
-  white-space: nowrap;
-}
-.pill.tag {
-  color: var(--accent);
-  background: transparent;
-  border: 1px solid color-mix(in oklab, var(--accent) 30%, transparent);
-}
-
-/* Etiqueta do modo preview, só para deixar claro que os dados são de exemplo. */
-.preview-tag {
-  position: absolute;
-  bottom: 16px;
-  left: 16px;
-  z-index: 9;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 13px;
-  border-radius: 999px;
-  background: color-mix(in oklab, var(--surface) 92%, transparent);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow);
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.preview-tag .dot { width: 7px; height: 7px; border-radius: 999px; background: var(--st-doing); flex: none; }

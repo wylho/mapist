@@ -1,0 +1,234 @@
+/* Mapist: só o que é de um app de mapa (canvas, barra de zoom, inspetor de nó).
+   O design system (tokens, .topbar, .icon-btn, .btn, .seg, .card, .sheet, .set-row, .switch, .toast, .theme-grid…)
+   vem de ideario.css, cópia literal do app.css do Ideario: quando o Ideario mudar, copiar de novo, não editar lá. */
+
+/* ── casca ────────────────────────────────────────────────────────────── */
+
+.map-shell {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* ── corpo ────────────────────────────────────────────────────────────── */
+
+.map-body { flex: 1; min-height: 0; display: flex; position: relative; }
+
+.stage {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+  background: var(--stage);
+}
+.stage canvas { display: block; width: 100%; height: 100%; }
+.stage.panning canvas { cursor: grabbing; }
+.stage.moving canvas { cursor: move; }
+
+/* Barra de zoom: pílula flutuante, como a .tabbar do Ideario. */
+.zoombar {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--surface) 92%, transparent);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--line);
+  box-shadow: var(--float-shadow);
+}
+.zoombar button { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 999px; color: var(--fg); }
+.zoombar button:hover { background: var(--raised); }
+.zoombar svg { width: 17px; height: 17px; }
+.zoomlevel {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  min-width: 46px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* ── inspetor ─────────────────────────────────────────────────────────── */
+
+.inspector {
+  flex: none;
+  width: var(--side-w);
+  background: var(--bg);
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.inspector-head {
+  padding: 20px 18px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.inspector-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--muted);
+}
+.inspector-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 12px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.inspector-body::-webkit-scrollbar { width: 10px; }
+.inspector-body::-webkit-scrollbar-thumb { background: var(--line); border-radius: 10px; border: 3px solid var(--bg); }
+
+/* Campos dentro de cards, como as notas do Ideario. */
+.card-body.field { padding: 13px 14px; display: flex; flex-direction: column; gap: 9px; }
+.field-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.field-hint { font-weight: 500; letter-spacing: 0; text-transform: none; font-size: 11.5px; }
+
+.field textarea,
+.field input[type="text"] {
+  width: 100%;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  resize: vertical;
+  outline: none;
+  color: var(--fg);
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color .12s, box-shadow .12s;
+}
+.field textarea:focus,
+.field input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.field textarea::placeholder { color: var(--muted); }
+
+/* Swatches: usam as cores de nó do tema (--n-*). */
+.swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+.swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  border: 1px solid var(--card-edge);
+  position: relative;
+  transition: transform .12s;
+}
+.swatch:hover { transform: scale(1.08); }
+.swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+.swatch.none {
+  background: var(--raised);
+  border-style: dashed;
+  border-color: var(--muted);
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Atalhos: linhas como o .r-item do Ideario. */
+.keys { background: var(--surface); border: 1px solid var(--card-edge); border-radius: 16px; overflow: hidden; }
+.keys-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 13px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.keys-row + .keys-row { border-top: 1px solid var(--line); }
+kbd {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--fg);
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 3px 7px;
+  min-width: 24px;
+  text-align: center;
+}
+
+/* Responsivo: abaixo de 900px o inspetor vira gaveta inferior. */
+@media (max-width: 900px) {
+  .inspector {
+    position: absolute;
+    right: 0; bottom: 0; left: 0;
+    width: auto;
+    height: 48%;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 24px 24px 0 0;
+    box-shadow: var(--float-shadow);
+    z-index: 8;
+  }
+  .inspector-body { padding-bottom: 12px; }
+}
+/* Mensagem neutra em faixa, no inspetor. */
+.banner {
+  margin-block: 4px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--raised);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Etiqueta do modo preview, só para deixar claro que os dados são de exemplo. */
+.preview-tag {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  z-index: 9;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 13px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--surface) 92%, transparent);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.preview-tag .dot { width: 7px; height: 7px; border-radius: 999px; background: var(--st-doing); flex: none; }
+
+/* Título do documento na barra, com o ponto de "não salvo". */
+.doc-title { display: inline-flex; align-items: center; gap: 8px; min-width: 0; margin-left: 8px; font-weight: 600; font-size: 15px; }
+.doc-title .grow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 32vw; }
+.doc-title .dirty { width: 8px; height: 8px; border-radius: 999px; background: var(--accent); flex: none; }
+.top-actions .icon-btn:disabled { opacity: .35; pointer-events: none; }
+
+/* Celular: a barra fica só com os ícones; o título cede o espaço. */
+@media (max-width: 639px) {
+  .topbar.appbar { padding: 0 6px; gap: 2px; }
+  .topbar.appbar .icon-btn { width: 36px; height: 36px; }
+  .topbar.appbar .filter-group { margin-right: 2px; gap: 0; }
+  .doc-title { display: none; }
+  .search.inline { min-width: 0; flex: 1 1 auto; }
+}

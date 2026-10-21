@@ -28,8 +28,8 @@ function write(key: string, value: unknown) {
 class Prefs {
   /** Zoom da última sessão, para reabrir na mesma escala. */
   zoom = $state(read('zoom', 1))
-  /** Painel lateral visível. */
-  inspectorOpen = $state(read('inspector', true))
+  /** Painel lateral visível. Na primeira vez, aberto só quando cabe ao lado do mapa (no celular ele cobre metade). */
+  inspectorOpen = $state(read('inspector', typeof matchMedia !== 'function' || matchMedia('(min-width: 900px)').matches))
   /** Última busca usada, restaurada no campo. */
   search = $state(read('search', ''))
   /** Traçado das linhas entre os nós. */
