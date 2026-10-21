@@ -11,6 +11,7 @@ import { ui } from './ui.svelte'
 
 const EMPTY: Snapshot = {
   nodes: [],
+  notes: [],
   connections: [],
   dirty: false,
   path: null,
@@ -327,6 +328,25 @@ class Document {
 
   setNote(id: number, note: string) {
     return this.run(() => api.setNote(id, note))
+  }
+
+  /** Põe uma nota solta no mapa com o canto em (x, y), em unidades de mundo. Devolve o id dela. */
+  async addFreeNote(x: number, y: number, text = '') {
+    const ids = new Set(this.snapshot.notes.map((n) => n.id))
+    await this.run(() => api.addFreeNote(x, y, text))
+    return this.snapshot.notes.find((n) => !ids.has(n.id))?.id ?? null
+  }
+
+  setFreeNote(id: number, text: string) {
+    return this.run(() => api.setFreeNote(id, text))
+  }
+
+  placeFreeNote(id: number, x: number, y: number, width: number, height: number) {
+    return this.run(() => api.placeFreeNote(id, x, y, width, height))
+  }
+
+  removeFreeNote(id: number) {
+    return this.run(() => api.removeFreeNote(id))
   }
 
   setColor(id: number, color: string | null) {

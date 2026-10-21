@@ -147,7 +147,13 @@ impl Editor {
 
         let map = self.history.current_mut();
         match action {
-            Action::MoveNode { .. } | Action::Relayout => {}
+            // Notas soltas não mexem na árvore: nada a reposicionar.
+            Action::MoveNode { .. }
+            | Action::Relayout
+            | Action::AddFreeNote { .. }
+            | Action::SetFreeNote { .. }
+            | Action::PlaceFreeNote { .. }
+            | Action::RemoveFreeNote { .. } => {}
             Action::AddChild { .. } | Action::SetText { .. } => {
                 // Only the touched node gets the core's estimate; every other box
                 // keeps the size the renderer measured.
@@ -267,6 +273,65 @@ mod tests {
 
     fn node(ed: &Editor, id: u64) -> &crate::model::Node {
         ed.map().find(id).unwrap()
+    }
+
+    #[test]
+    fn free_notes_are_added_edited_moved_and_removed_through_the_history() {
+        let mut ed = Editor::new("Mapa");
+        let before = ed.map().root.clone();
+        let id = ed
+            .apply(Action::AddFreeNote {
+                x: 400.0,
+                y: -80.0,
+                text: String::new(),
+            })
+            .unwrap()
+            .unwrap();
+        ed.apply(Action::SetFreeNote {
+            id,
+            text: "Lembrar do **prazo**".into(),
+        })
+        .unwrap();
+        ed.apply(Action::PlaceFreeNote {
+            id,
+            x: 420.0,
+            y: -60.0,
+            width: 320.0,
+            height: 10.0,
+        })
+        .unwrap();
+        let n = ed.map().free_note(id).unwrap();
+        assert_eq!((n.pos.x, n.pos.y, n.width), (420.0, -60.0, 320.0));
+        assert_eq!(n.height, 80.0, "a note never shrinks out of sight");
+        assert_eq!(n.text, "Lembrar do **prazo**");
+        // Uma nota solta não mexe na árvore.
+        assert_eq!(ed.map().root, before);
+        assert!(ed.is_dirty());
+
+        let second = ed
+            .apply(Action::AddFreeNote {
+                x: 0.0,
+                y: 0.0,
+                text: "Outra".into(),
+            })
+            .unwrap()
+            .unwrap();
+        assert_ne!(second, id);
+        ed.apply(Action::RemoveFreeNote { id }).unwrap();
+        assert!(ed.map().free_note(id).is_none());
+        assert!(matches!(
+            ed.apply(Action::SetFreeNote {
+                id,
+                text: "x".into()
+            }),
+            Err(crate::Error::NoteNotFound(_))
+        ));
+
+        ed.undo();
+        assert_eq!(ed.map().free_note(id).unwrap().text, "Lembrar do **prazo**");
+        while ed.undo() {}
+        assert!(ed.map().notes.is_empty());
+        assert!(!ed.is_dirty());
     }
 
     #[test]

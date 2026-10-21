@@ -3,12 +3,12 @@
   import { doc } from '../lib/document.svelte'
   import { theme } from '../lib/theme.svelte'
   import { NODE_COLOR_TOKENS, resolveNodeColor } from '../lib/palettes'
+  import { notes } from '../lib/notes.svelte'
+  import { StickyNote } from '@lucide/svelte'
 
   let text = $state('')
-  let note = $state('')
   let editingId = $state<number | null>(null)
   let textTimer: ReturnType<typeof setTimeout> | undefined
-  let noteTimer: ReturnType<typeof setTimeout> | undefined
 
   const node = $derived(doc.selectedNode)
   const COLOR_NAMES: Record<string, string> = {
@@ -26,19 +26,16 @@
     if (!n) {
       editingId = null
       text = ''
-      note = ''
       return
     }
     if (n.id !== editingId) {
       editingId = n.id
       text = n.text
-      note = n.note
       return
     }
     // O mesmo nó mudou por fora (edição no mapa, desfazer, o Claude): acompanha, menos o campo onde se está digitando.
     const focused = document.activeElement?.id
     if (focused !== 'node-text') text = n.text
-    if (focused !== 'node-note') note = n.note
   })
 
   function onText(e: Event) {
@@ -47,14 +44,6 @@
     if (!n) return
     clearTimeout(textTimer)
     textTimer = setTimeout(() => doc.setText(n.id, text || ' '), 320)
-  }
-
-  function onNote(e: Event) {
-    note = (e.target as HTMLTextAreaElement).value
-    const n = doc.selectedNode
-    if (!n) return
-    clearTimeout(noteTimer)
-    noteTimer = setTimeout(() => doc.setNote(n.id, note), 420)
   }
 
   function swatchColor(token: string): string {
@@ -82,11 +71,14 @@
 
       <div class="card">
         <div class="card-body field">
-          <label class="field-label" for="node-note">
-            Nota <span class="field-hint">markdown</span>
-          </label>
-          <textarea id="node-note" rows="4" placeholder="Adicione uma nota…" value={note} oninput={onNote}
-          ></textarea>
+          <!-- A nota se escreve no próprio card, ao lado do nó; aqui só a prévia e o atalho para abrir. -->
+          <span class="field-label">Nota</span>
+          {#if node.note.trim()}
+            <p class="note-peek">{node.note}</p>
+          {/if}
+          <button class="btn" onclick={() => notes.show(node.id, !node.note.trim() || notes.isOpen(node.id))}>
+            <StickyNote size={15} />{node.note.trim() ? (notes.isOpen(node.id) ? 'Escrever na nota' : 'Abrir no mapa') : 'Adicionar nota'}
+          </button>
         </div>
       </div>
 

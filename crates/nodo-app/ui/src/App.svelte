@@ -23,11 +23,12 @@
     fit: () => canvasRef?.fit(true),
     fitSelection: () => canvasRef?.fitSelection(),
     actualSize: () => canvasRef?.actualSize(),
+    addNoteAt: (x, y) => void canvasRef?.addNoteAt(x, y),
   }
 
   /** Menu de contexto do mapa: do nó, se houver um, senão do fundo. */
   function openMenu(x: number, y: number, id: number | null) {
-    menuRef?.openAt(x, y, id === null ? backgroundMenu(viewActions) : nodeMenu(id, viewActions))
+    menuRef?.openAt(x, y, id === null ? backgroundMenu(viewActions, { x, y }) : nodeMenu(id, viewActions))
   }
   // O nível de zoom vive no canvas; espelhamos aqui para o rótulo reagir.
   let zoom = $state(prefs.zoom)

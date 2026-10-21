@@ -378,3 +378,35 @@ fn export_map_returns_markdown_and_writes_a_file() {
     assert!(written.contains("<outline text=\"Dia 1\"/>"));
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn loose_notes_are_added_edited_and_removed_like_in_the_window() {
+    let mut s = fresh();
+    let id = call(
+        &mut s,
+        "add_free_note",
+        json!({ "text": "Revisar o **prazo**" }),
+    )["id"]
+        .as_u64()
+        .unwrap();
+    let notes = |s: &mut Session| call(s, "get_map", json!({}))["notes"].clone();
+    assert_eq!(notes(&mut s)[0]["text"], "Revisar o **prazo**");
+    // Sem posição, a nota fica à direita do mapa, não por cima da raiz.
+    assert!(notes(&mut s)[0]["x"].as_f64().unwrap() > 0.0);
+
+    call(
+        &mut s,
+        "set_free_note",
+        json!({ "id": id, "text": "Prazo: sexta", "x": -300.0, "y": 40.0 }),
+    );
+    let n = notes(&mut s);
+    assert_eq!(n[0]["text"], "Prazo: sexta");
+    assert_eq!(n[0]["x"], -300.0);
+
+    call(&mut s, "remove_free_note", json!({ "id": id }));
+    assert_eq!(notes(&mut s).as_array().unwrap().len(), 0);
+    call(&mut s, "undo", json!({}));
+    assert_eq!(notes(&mut s)[0]["text"], "Prazo: sexta");
+    let params = json!({ "name": "remove_free_note", "arguments": { "id": 99 } });
+    assert!(tools::call(&mut s, &params).is_err());
+}

@@ -53,7 +53,7 @@
     a2.y = 36 - a2.height / 2
     const maxX = Math.max(...nodes.map((n) => n.x + n.width))
     return {
-      nodes, connections: [], dirty: false, path: null, title: '', can_undo: false, can_redo: false, stale: false,
+      nodes, connections: [], notes: [], dirty: false, path: null, title: '', can_undo: false, can_redo: false, stale: false,
       style: id, structure: null, spacing: null, bounds: { min_x: 0, min_y: -20, max_x: maxX, max_y: 140 },
     }
   }

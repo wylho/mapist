@@ -103,6 +103,44 @@ pub fn catalog() -> Vec<Value> {
             }),
         ),
         tool(
+            "add_free_note",
+            "Put a loose Markdown note on the canvas, not attached to any node (a node's own note is set_note). Without x/y it goes to the right of the map. Returns the note id.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "text": { "type": "string", "description": "Markdown text of the note." },
+                    "x": { "type": "number", "description": "Left edge, in map units." },
+                    "y": { "type": "number", "description": "Top edge, in map units." }
+                },
+                "required": ["text"]
+            }),
+        ),
+        tool(
+            "set_free_note",
+            "Change a loose note: its text, and optionally where it sits (x, y) and its size (width, height).",
+            json!({
+                "type": "object",
+                "properties": {
+                    "id": { "type": "integer" },
+                    "text": { "type": "string" },
+                    "x": { "type": "number" },
+                    "y": { "type": "number" },
+                    "width": { "type": "number" },
+                    "height": { "type": "number" }
+                },
+                "required": ["id"]
+            }),
+        ),
+        tool(
+            "remove_free_note",
+            "Take a loose note off the canvas.",
+            json!({
+                "type": "object",
+                "properties": { "id": { "type": "integer" } },
+                "required": ["id"]
+            }),
+        ),
+        tool(
             "set_color",
             "Set a node's branch colour as #rrggbb, or null to clear it.",
             json!({
@@ -251,7 +289,15 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
                 "structure": map.theme.structure.as_deref().unwrap_or("mapa"),
                 "spacing": map.theme.spacing.as_deref().unwrap_or("normal"),
                 "nodes": map.node_count(),
-                "tree": tree_json(&map.root)
+                "tree": tree_json(&map.root),
+                "notes": map.notes.iter().map(|n| json!({
+                    "id": n.id,
+                    "text": n.text,
+                    "x": n.pos.x,
+                    "y": n.pos.y,
+                    "width": n.width,
+                    "height": n.height
+                })).collect::<Vec<_>>()
             })
         }
         "get_node" => {
@@ -282,6 +328,58 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
             let note = str_arg(&args, "note")?;
             mutate(session, Action::SetNote { id, note })?;
             json!({ "ok": true, "id": id })
+        }
+        "add_free_note" => {
+            let text = str_arg(&args, "text")?;
+            let map = session.require()?;
+            // Sem posição: à direita de tudo, na altura da raiz.
+            let right = map
+                .nodes()
+                .map(|n| n.pos.x + n.width)
+                .chain(map.notes.iter().map(|n| n.pos.x + n.width))
+                .fold(f64::MIN, f64::max);
+            let x = num_arg(&args, "x").unwrap_or(right + 80.0);
+            let y = num_arg(&args, "y").unwrap_or(map.root.pos.y);
+            let id = mutate(session, Action::AddFreeNote { x, y, text })?;
+            json!({ "ok": true, "id": id })
+        }
+        "set_free_note" => {
+            let id = int_arg(&args, "id")?;
+            let note = session
+                .require()?
+                .free_note(id)
+                .cloned()
+                .ok_or_else(|| format!("note {id} not found"))?;
+            if let Some(text) = args.get("text").and_then(|v| v.as_str()) {
+                mutate(
+                    session,
+                    Action::SetFreeNote {
+                        id,
+                        text: text.to_string(),
+                    },
+                )?;
+            }
+            let place = ["x", "y", "width", "height"]
+                .iter()
+                .any(|k| args.get(*k).is_some());
+            if place {
+                mutate(
+                    session,
+                    Action::PlaceFreeNote {
+                        id,
+                        x: num_arg(&args, "x").unwrap_or(note.pos.x),
+                        y: num_arg(&args, "y").unwrap_or(note.pos.y),
+                        width: num_arg(&args, "width").unwrap_or(note.width),
+                        height: num_arg(&args, "height").unwrap_or(note.height),
+                    },
+                )?;
+            }
+            json!({ "ok": true, "id": id })
+        }
+        "remove_free_note" => {
+            let id = int_arg(&args, "id")?;
+            mutate(session, Action::RemoveFreeNote { id })?;
+            json!({ "ok": true, "removed": id })
         }
         "set_color" => {
             let id = int_arg(&args, "id")?;
@@ -483,6 +581,10 @@ fn str_arg(args: &Value, key: &str) -> Result<String, String> {
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
         .ok_or_else(|| format!("missing required string argument: {key}"))
+}
+
+fn num_arg(args: &Value, key: &str) -> Option<f64> {
+    args.get(key).and_then(|v| v.as_f64())
 }
 
 fn int_arg(args: &Value, key: &str) -> Result<u64, String> {

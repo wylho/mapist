@@ -3,7 +3,9 @@
   import { onMount } from 'svelte'
   import { doc } from '../lib/document.svelte'
   import { theme } from '../lib/theme.svelte'
-  import { draw, hitTest, readThemeColors, type Viewport } from '../lib/render'
+  import { draw, hitNoteDot, hitTest, readThemeColors, type Viewport } from '../lib/render'
+  import { notes } from '../lib/notes.svelte'
+  import NoteCard from './NoteCard.svelte'
   import { prefs } from '../lib/prefs.svelte'
   import { levelStyle, mapTheme } from '../lib/maptheme'
 
@@ -198,6 +200,13 @@
 
   function onPointerDown(e: PointerEvent) {
     const r = stageEl.getBoundingClientRect()
+    // A bolinha de nota abre (ou fecha) a nota formatada ao lado do nó.
+    const dot = hitNoteDot(doc.snapshot, view, e.clientX, e.clientY, r)
+    if (dot !== null) {
+      doc.selected = dot
+      notes.toggle(dot)
+      return
+    }
     const hit = hitTest(doc.snapshot, view, e.clientX, e.clientY, r)
     if (hit !== null) {
       doc.selected = hit
@@ -240,6 +249,36 @@
     const r = stageEl.getBoundingClientRect()
     const hit = hitTest(doc.snapshot, view, e.clientX, e.clientY, r)
     if (hit !== doc.hovered) doc.hovered = hit
+    stageEl.classList.toggle('on-dot', hitNoteDot(doc.snapshot, view, e.clientX, e.clientY, r) !== null)
+  }
+
+  /** Cards das notas de nó abertas: à direita do nó (ou à esquerda, nos ramos da esquerda), em px de tela. */
+  const nodeCards = $derived(
+    notes.open.flatMap((o) => {
+      const n = doc.node(o.id)
+      if (!n) return []
+      // Do lado de fora do ramo; se não couber, do outro lado; e nunca abaixo da barra de zoom.
+      const right = (n.x + n.width) * view.scale + view.x + 12
+      const before = n.x * view.scale + view.x - 12 - o.width
+      const fitsRight = right + o.width <= stage.w - 8
+      const fitsLeft = before >= 8
+      const leftSide = n.side === 'left' && n.parent !== null ? fitsLeft || !fitsRight : !fitsRight && fitsLeft
+      // Num palco estreito (celular) o card encolhe e fica dentro dele, mesmo que cubra o nó.
+      const w = Math.min(o.width, Math.max(200, stage.w - 16))
+      const left = !fitsLeft && !fitsRight ? Math.max(8, Math.min(right, stage.w - w - 8)) : leftSide ? before : right
+      const top = Math.max(8, Math.min(n.y * view.scale + view.y, stage.h - o.height - 72))
+      const color = n.color ? (n.color.startsWith('--') ? `var(${n.color})` : n.color) : null
+      return [{ o, n, left, top, w, color }]
+    }),
+  )
+
+  /** Põe uma nota solta onde a pessoa clicou (coordenadas da janela) e já abre ela para escrever. */
+  export async function addNoteAt(clientX: number, clientY: number) {
+    const r = stageEl.getBoundingClientRect()
+    const x = (clientX - r.left - view.x) / view.scale
+    const y = (clientY - r.top - view.y) / view.scale
+    const id = await doc.addFreeNote(Math.round(x), Math.round(y))
+    if (id !== null) notes.editing = { kind: 'free', id }
   }
 
   function onPointerUp() {
@@ -314,12 +353,17 @@
   })
 
   let ro: ResizeObserver | undefined
+  /** Tamanho do palco, para os cards de nota não saírem dele. */
+  let stage = $state({ w: 0, h: 0 })
 
   onMount(() => {
     // Retoma a escala da sessão anterior; `fit` a substitui se for a estreia.
     view.scale = prefs.zoom
     render()
-    ro = new ResizeObserver(() => scheduleRender())
+    ro = new ResizeObserver(() => {
+      stage = { w: stageEl.clientWidth, h: stageEl.clientHeight }
+      scheduleRender()
+    })
     ro.observe(stageEl)
     return () => ro?.disconnect()
   })
@@ -375,10 +419,42 @@
     />
   {/if}
 
+  {#each doc.snapshot.notes as f (f.id)}
+    <NoteCard
+      note={{ kind: 'free', id: f.id }}
+      text={f.text}
+      left={f.x * view.scale + view.x}
+      top={f.y * view.scale + view.y}
+      width={f.width}
+      height={f.height}
+      scale={view.scale}
+      onsave={(t) => void doc.setFreeNote(f.id, t)}
+      onremove={() => void doc.removeFreeNote(f.id)}
+      onmove={(dx, dy) => void doc.placeFreeNote(f.id, Math.round(f.x + dx), Math.round(f.y + dy), f.width, f.height)}
+      onresize={(w, h) => void doc.placeFreeNote(f.id, f.x, f.y, w, h)}
+    />
+  {/each}
+  {#each nodeCards as c (c.o.id)}
+    <NoteCard
+      note={{ kind: 'node', id: c.o.id }}
+      text={c.n.note}
+      left={c.left}
+      top={c.top}
+      width={c.w}
+      height={c.o.height}
+      label={c.n.text}
+      color={c.color}
+      onsave={(t) => void doc.setNote(c.o.id, t)}
+      onclose={() => notes.close(c.o.id)}
+      onresize={(w, h) => notes.resize(c.o.id, w, h)}
+    />
+  {/each}
+
   {@render children?.()}
 </div>
 
 <style>
+  .stage:global(.on-dot) canvas { cursor: pointer; }
   .stage {
     flex: 1;
     min-width: 0;

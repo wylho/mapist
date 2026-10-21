@@ -194,6 +194,7 @@ describe('hitTest', () => {
       },
     ],
     connections: [],
+    notes: [],
     dirty: false,
     path: null,
     title: 'Root',
@@ -534,5 +535,23 @@ describe('exportação', () => {
     expect(pickOrientation(snap(1200, 400), 'auto')).toBe('landscape')
     expect(pickOrientation(snap(300, 1500), 'auto')).toBe('portrait')
     expect(pickOrientation(snap(1200, 400), 'portrait')).toBe('portrait')
+  })
+})
+
+describe('notas soltas no mapa', () => {
+  it('a prévia cria, edita, move e apaga como o núcleo, e o desfazer volta', async () => {
+    const { seedDemo, previewBackend } = await import('../src/lib/preview')
+    seedDemo()
+    const before = previewBackend.get_snapshot().bounds
+    let snap = previewBackend.add_free_note({ x: before.max_x + 100, y: 0, text: '' })
+    const id = snap.notes[0].id
+    expect(snap.bounds.max_x).toBe(before.max_x + 100 + 260)
+    snap = previewBackend.set_free_note({ id, text: '**Prazo** sexta' })
+    snap = previewBackend.place_free_note({ id, x: 10, y: 20, width: 50, height: 300 })
+    expect(snap.notes[0]).toMatchObject({ x: 10, y: 20, width: 120, height: 300, text: '**Prazo** sexta' })
+    snap = previewBackend.remove_free_note({ id })
+    expect(snap.notes).toHaveLength(0)
+    snap = previewBackend.undo()
+    expect(snap.notes[0].text).toBe('**Prazo** sexta')
   })
 })

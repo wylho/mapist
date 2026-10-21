@@ -20,11 +20,18 @@ pub fn from_xml(xml: &str) -> Result<MindMap, Error> {
     let mut node_stack: Vec<Node> = Vec::new();
     let mut cur_text = String::new();
     let mut in_text = false;
+    let mut free_note: Option<FreeNote> = None;
 
     loop {
         match reader.read_event_into(&mut buf) {
             Err(e) => return Err(Error::Xml(e.to_string())),
             Ok(Event::Eof) => break,
+            // Nota solta sem texto: `<nodo-note .../>` não tem fim, entra já.
+            Ok(Event::Empty(ref e)) if local_name(e.name().as_ref()) == "nodo-note" => {
+                if let Some(m) = map.as_mut() {
+                    m.notes.push(parse_free_note(e));
+                }
+            }
             Ok(Event::Start(ref e)) | Ok(Event::Empty(ref e)) => {
                 let name = local_name(e.name().as_ref());
                 match name.as_str() {
@@ -37,6 +44,7 @@ pub fn from_xml(xml: &str) -> Result<MindMap, Error> {
                             draw_area: DrawArea::default(),
                             root: Node::new(0, ""),
                             connections: Vec::new(),
+                            notes: Vec::new(),
                         });
                     }
                     "theme" => {
@@ -99,6 +107,11 @@ pub fn from_xml(xml: &str) -> Result<MindMap, Error> {
                             }
                         }
                     }
+                    "nodo-note" => {
+                        free_note = Some(parse_free_note(e));
+                        cur_text.clear();
+                        in_text = true;
+                    }
                     "nodenote" => {
                         // Note content arrives as character data inside the
                         // element, not as an attribute.
@@ -129,6 +142,13 @@ pub fn from_xml(xml: &str) -> Result<MindMap, Error> {
                         }
                     }
                     "nodename" => in_text = false,
+                    "nodo-note" => {
+                        in_text = false;
+                        if let (Some(m), Some(mut n)) = (map.as_mut(), free_note.take()) {
+                            n.text = std::mem::take(&mut cur_text);
+                            m.notes.push(n);
+                        }
+                    }
                     "nodenote" => {
                         in_text = false;
                         if let Some(n) = node_stack.last_mut() {
@@ -193,6 +213,22 @@ pub fn to_xml(map: &MindMap) -> Result<String, Error> {
     out.push_str("  <nodes>\n");
     write_node(&mut out, &map.root, 2);
     out.push_str("  </nodes>\n");
+    // Notas soltas no mapa: elemento só do Nodo, ausente quando não há nenhuma (o arquivo fica como o do Minder).
+    if !map.notes.is_empty() {
+        out.push_str("  <nodo-notes>\n");
+        for n in &map.notes {
+            out.push_str(&format!(
+                "    <nodo-note id=\"{}\" x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\">{}</nodo-note>\n",
+                n.id,
+                n.pos.x,
+                n.pos.y,
+                n.width,
+                n.height,
+                esc(&n.text)
+            ));
+        }
+        out.push_str("  </nodo-notes>\n");
+    }
     out.push_str("</minder>\n");
     Ok(out)
 }
@@ -238,6 +274,19 @@ fn write_node(out: &mut String, n: &Node, indent: usize) {
         out.push_str(&format!("{}  </nodes>\n", pad));
     }
     out.push_str(&format!("{}</node>\n", pad));
+}
+
+fn parse_free_note(e: &quick_xml::events::BytesStart) -> FreeNote {
+    FreeNote {
+        id: attr(e, "id").and_then(|v| v.parse().ok()).unwrap_or(0),
+        pos: Point {
+            x: attr_f64(e, "x", 0.0),
+            y: attr_f64(e, "y", 0.0),
+        },
+        width: attr_f64(e, "width", crate::model::FREE_NOTE_WIDTH),
+        height: attr_f64(e, "height", crate::model::FREE_NOTE_HEIGHT),
+        text: String::new(),
+    }
 }
 
 fn style_attrs(s: &Style) -> String {

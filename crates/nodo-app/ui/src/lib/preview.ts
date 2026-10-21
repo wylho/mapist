@@ -8,7 +8,7 @@
 // Ativado por `?preview` na URL, ou automaticamente quando não há host Tauri e
 // o Vite está em modo de desenvolvimento.
 
-import type { NodeSize, Snapshot } from './api'
+import type { NodeSize, NoteCard, Snapshot } from './api'
 
 // ── modelo em memória ────────────────────────────────────────────────────
 
@@ -47,6 +47,8 @@ let structure: string | null = null
 let spacing: string | null = null
 const STRUCTURES = ['mapa', 'logico', 'organograma', 'arvore']
 const SPACINGS = ['compacto', 'normal', 'largo']
+// Notas soltas, como no núcleo (`MindMap.notes`).
+let freeNotes: NoteCard[] = []
 const past: string[] = []
 const future: string[] = []
 
@@ -79,6 +81,7 @@ function snapshotState() {
     style,
     structure,
     spacing,
+    freeNotes,
   })
 }
 
@@ -92,6 +95,7 @@ function restore(state: string) {
     style: string | null
     structure: string | null
     spacing: string | null
+    freeNotes?: NoteCard[]
   }
   nodes = new Map(o.nodes)
   nextId = o.nextId
@@ -101,6 +105,7 @@ function restore(state: string) {
   style = o.style
   structure = o.structure ?? null
   spacing = o.spacing ?? null
+  freeNotes = o.freeNotes ?? []
 }
 
 function snapshotOf(): Snapshot {
@@ -117,6 +122,7 @@ function snapshotOf(): Snapshot {
     return {
       nodes: [],
       connections: [],
+      notes: [],
       dirty,
       path,
       title: 'Sem título',
@@ -158,12 +164,20 @@ function snapshotOf(): Snapshot {
     }
   })
 
+  for (const f of freeNotes) {
+    minX = Math.min(minX, f.x)
+    minY = Math.min(minY, f.y)
+    maxX = Math.max(maxX, f.x + f.width)
+    maxY = Math.max(maxY, f.y + f.height)
+  }
+
   // Pré-ordem: o inspetor e o desenho esperam a raiz primeiro.
   flat.sort((a, b) => a.depth - b.depth || a.id - b.id)
 
   return {
     nodes: flat,
     connections: [],
+    notes: freeNotes.map((f) => ({ ...f })),
     dirty,
     path,
     title: nodes.get(rootId)?.text ?? 'Sem título',
@@ -294,6 +308,7 @@ export function seedDemo() {
   dirty = false
   path = 'exemplo.minder'
   style = null
+  freeNotes = []
 
   // Um mapa inventado (o repositório é público): o lançamento de um app fictício, com ramos dos dois lados.
   const root = makeNode('Lançamento do app', 'right', 'Plano do trimestre. **Responsável:** time de produto.')
@@ -339,6 +354,7 @@ export const previewBackend = {
     nextId = 1
     past.length = 0
     future.length = 0
+    freeNotes = []
     const root = makeNode(title || 'Tópico central')
     rootId = root.id
     nodes.set(root.id, root)
@@ -409,6 +425,40 @@ export const previewBackend = {
       if (!n) throw new Error(`node ${id} not found`)
       n.note = note
     })
+    return snapshotOf()
+  },
+
+  add_free_note: ({ x, y, text }: { x: number; y: number; text: string }) => {
+    commit(() => {
+      const id = freeNotes.reduce((m, f) => Math.max(m, f.id), 0) + 1
+      freeNotes.push({ id, x, y, width: 260, height: 180, text })
+    }, false)
+    return snapshotOf()
+  },
+
+  set_free_note: ({ id, text }: { id: number; text: string }) => {
+    commit(() => {
+      const f = freeNotes.find((n) => n.id === id)
+      if (!f) throw new Error(`note ${id} not found`)
+      f.text = text
+    }, false)
+    return snapshotOf()
+  },
+
+  place_free_note: ({ id, x, y, width, height }: { id: number; x: number; y: number; width: number; height: number }) => {
+    commit(() => {
+      const f = freeNotes.find((n) => n.id === id)
+      if (!f) throw new Error(`note ${id} not found`)
+      Object.assign(f, { x, y, width: Math.min(1600, Math.max(120, width)), height: Math.min(1600, Math.max(80, height)) })
+    }, false)
+    return snapshotOf()
+  },
+
+  remove_free_note: ({ id }: { id: number }) => {
+    commit(() => {
+      if (!freeNotes.some((n) => n.id === id)) throw new Error(`note ${id} not found`)
+      freeNotes = freeNotes.filter((n) => n.id !== id)
+    }, false)
     return snapshotOf()
   },
 

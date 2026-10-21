@@ -397,6 +397,21 @@ impl Default for ThemeRef {
     }
 }
 
+/// Size of a new loose note, in world units.
+pub const FREE_NOTE_WIDTH: f64 = 260.0;
+pub const FREE_NOTE_HEIGHT: f64 = 180.0;
+
+/// A note placed on the map itself, not on a node: a loose card on the canvas. Kept in a `<nodo-notes>` element that
+/// Minder skips, so the original app opens the map without it.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FreeNote {
+    pub id: u64,
+    pub pos: Point,
+    pub width: f64,
+    pub height: f64,
+    pub text: String,
+}
+
 /// A complete mind map.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MindMap {
@@ -406,6 +421,9 @@ pub struct MindMap {
     pub draw_area: DrawArea,
     pub root: Node,
     pub connections: Vec<Connection>,
+    /// Loose notes on the canvas, in the order they were added.
+    #[serde(default)]
+    pub notes: Vec<FreeNote>,
 }
 
 impl MindMap {
@@ -418,6 +436,7 @@ impl MindMap {
             draw_area: DrawArea::default(),
             root: Node::new(0, title),
             connections: Vec::new(),
+            notes: Vec::new(),
         }
     }
 
@@ -465,6 +484,11 @@ impl MindMap {
             None
         }
         rec(&self.root, id, 0)
+    }
+
+    /// Find a loose note by id.
+    pub fn free_note(&self, id: u64) -> Option<&FreeNote> {
+        self.notes.iter().find(|n| n.id == id)
     }
 
     /// Add a child under `parent_id`. Returns the new node id, or `None` if

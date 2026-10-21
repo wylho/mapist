@@ -10,7 +10,7 @@
 //! correctness obvious. A command-inverse scheme can replace this later without
 //! changing the public surface.
 
-use crate::model::{MindMap, Node, NodeSide};
+use crate::model::{FreeNote, MindMap, Node, NodeSide, Point, FREE_NOTE_HEIGHT, FREE_NOTE_WIDTH};
 
 /// A user-visible edit.
 #[derive(Debug, Clone, PartialEq)]
@@ -43,6 +43,20 @@ pub enum Action {
     SetStructure { structure: Option<String> },
     /// Room between nodes (one of [`crate::SPACINGS`]), or normal with `None`.
     SetSpacing { spacing: Option<String> },
+    /// Put a loose note on the canvas with its top-left corner at `(x, y)`. Returns the new note's id.
+    AddFreeNote { x: f64, y: f64, text: String },
+    /// Replace a loose note's text.
+    SetFreeNote { id: u64, text: String },
+    /// Move or resize a loose note.
+    PlaceFreeNote {
+        id: u64,
+        x: f64,
+        y: f64,
+        width: f64,
+        height: f64,
+    },
+    /// Take a loose note off the canvas.
+    RemoveFreeNote { id: u64 },
 }
 
 impl Action {
@@ -134,6 +148,43 @@ impl Action {
                 map.theme.spacing = spacing.clone();
                 Ok(None)
             }
+            Action::AddFreeNote { x, y, text } => {
+                let id = map.notes.iter().map(|n| n.id).max().map_or(1, |m| m + 1);
+                map.notes.push(FreeNote {
+                    id,
+                    pos: Point { x: *x, y: *y },
+                    width: FREE_NOTE_WIDTH,
+                    height: FREE_NOTE_HEIGHT,
+                    text: text.clone(),
+                });
+                Ok(Some(id))
+            }
+            Action::SetFreeNote { id, text } => {
+                free_note_mut(map, *id)?.text = text.clone();
+                Ok(Some(*id))
+            }
+            Action::PlaceFreeNote {
+                id,
+                x,
+                y,
+                width,
+                height,
+            } => {
+                let n = free_note_mut(map, *id)?;
+                n.pos = Point { x: *x, y: *y };
+                // Um card menor que isto some de vista; maior que isto não é mais uma nota.
+                n.width = width.clamp(120.0, 1600.0);
+                n.height = height.clamp(80.0, 1600.0);
+                Ok(Some(*id))
+            }
+            Action::RemoveFreeNote { id } => {
+                let before = map.notes.len();
+                map.notes.retain(|n| n.id != *id);
+                if map.notes.len() == before {
+                    return Err(crate::Error::NoteNotFound(*id));
+                }
+                Ok(Some(*id))
+            }
             Action::Reorder { id, delta } => {
                 let root = map.root.id;
                 let parent = parent_of_mut(&mut map.root, *id).ok_or(if *id == root {
@@ -163,6 +214,13 @@ impl Action {
             }
         }
     }
+}
+
+fn free_note_mut(map: &mut MindMap, id: u64) -> crate::Result<&mut FreeNote> {
+    map.notes
+        .iter_mut()
+        .find(|n| n.id == id)
+        .ok_or(crate::Error::NoteNotFound(id))
 }
 
 /// The node whose direct children include `id`.

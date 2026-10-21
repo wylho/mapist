@@ -66,6 +66,9 @@ pub enum Error {
     #[error("node {0} not found")]
     NodeNotFound(u64),
 
+    #[error("note {0} not found")]
+    NoteNotFound(u64),
+
     #[error("cannot remove the root node")]
     CannotRemoveRoot,
 
@@ -171,6 +174,29 @@ mod tests {
         assert_eq!(back.root.color.as_deref(), Some("#c6262e"));
         assert_eq!(back.root.side, NodeSide::Left);
         assert_eq!(back.root.layout, LayoutKind::Vertical);
+    }
+
+    #[test]
+    fn round_trips_free_notes_and_minder_skips_them() {
+        let mut map = sample();
+        map.notes.push(model::FreeNote {
+            id: 1,
+            pos: model::Point { x: -40.5, y: 120.0 },
+            width: 300.0,
+            height: 200.0,
+            text: "# Ideias\n\n- a & b < c\n- **forte**".into(),
+        });
+        map.notes.push(model::FreeNote {
+            id: 2,
+            pos: model::Point { x: 10.0, y: 20.0 },
+            width: 260.0,
+            height: 180.0,
+            text: String::new(),
+        });
+        let xml = document::to_xml(&map).unwrap();
+        assert_eq!(document::from_xml(&xml).unwrap().notes, map.notes);
+        // Sem notas soltas, o arquivo não ganha elemento novo.
+        assert!(!document::to_xml(&sample()).unwrap().contains("nodo-notes"));
     }
 
     #[test]

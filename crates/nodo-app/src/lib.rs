@@ -55,6 +55,8 @@ pub struct FlatNode {
 pub struct Snapshot {
     nodes: Vec<FlatNode>,
     connections: Vec<Edge>,
+    /// Loose notes on the canvas.
+    notes: Vec<NoteCard>,
     dirty: bool,
     path: Option<String>,
     title: String,
@@ -69,6 +71,17 @@ pub struct Snapshot {
     /// Room between nodes (`nodo_core::SPACINGS`), or `None` for normal.
     spacing: Option<String>,
     bounds: Bounds,
+}
+
+/// A loose note on the canvas, in world units.
+#[derive(Serialize)]
+pub struct NoteCard {
+    id: u64,
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+    text: String,
 }
 
 /// A drawn connection between two nodes.
@@ -106,6 +119,7 @@ fn snapshot(doc: &Doc) -> Snapshot {
         return Snapshot {
             nodes: Vec::new(),
             connections: Vec::new(),
+            notes: Vec::new(),
             dirty: false,
             path: None,
             title: "Sem título".to_string(),
@@ -158,11 +172,28 @@ fn snapshot(doc: &Doc) -> Snapshot {
     let mut min_y = f64::MAX;
     let mut max_x = f64::MIN;
     let mut max_y = f64::MIN;
-    for n in &nodes {
-        min_x = min_x.min(n.x);
-        min_y = min_y.min(n.y);
-        max_x = max_x.max(n.x + n.width);
-        max_y = max_y.max(n.y + n.height);
+    let notes: Vec<NoteCard> = map
+        .notes
+        .iter()
+        .map(|n| NoteCard {
+            id: n.id,
+            x: n.pos.x,
+            y: n.pos.y,
+            width: n.width,
+            height: n.height,
+            text: n.text.clone(),
+        })
+        .collect();
+    // As notas soltas entram na extensão: "ver o mapa inteiro" e a exportação mostram elas também.
+    let boxes = nodes
+        .iter()
+        .map(|n| (n.x, n.y, n.width, n.height))
+        .chain(notes.iter().map(|n| (n.x, n.y, n.width, n.height)));
+    for (x, y, w, h) in boxes {
+        min_x = min_x.min(x);
+        min_y = min_y.min(y);
+        max_x = max_x.max(x + w);
+        max_y = max_y.max(y + h);
     }
 
     let connections = map
@@ -179,6 +210,7 @@ fn snapshot(doc: &Doc) -> Snapshot {
     Snapshot {
         nodes,
         connections,
+        notes,
         dirty: ed.is_dirty(),
         path: ed.path().map(|p| p.display().to_string()),
         title: map.root.text.clone(),
@@ -304,6 +336,51 @@ fn set_text(state: State<'_, AppState>, id: u64, text: String) -> Result<Snapsho
 #[tauri::command]
 fn set_note(state: State<'_, AppState>, id: u64, note: String) -> Result<Snapshot, String> {
     mutate(state, Action::SetNote { id, note })
+}
+
+/// Put a loose note on the canvas, its top-left corner at `(x, y)`.
+#[tauri::command]
+fn add_free_note(
+    state: State<'_, AppState>,
+    x: f64,
+    y: f64,
+    text: String,
+) -> Result<Snapshot, String> {
+    mutate(state, Action::AddFreeNote { x, y, text })
+}
+
+/// Replace a loose note's text.
+#[tauri::command]
+fn set_free_note(state: State<'_, AppState>, id: u64, text: String) -> Result<Snapshot, String> {
+    mutate(state, Action::SetFreeNote { id, text })
+}
+
+/// Move or resize a loose note.
+#[tauri::command]
+fn place_free_note(
+    state: State<'_, AppState>,
+    id: u64,
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+) -> Result<Snapshot, String> {
+    mutate(
+        state,
+        Action::PlaceFreeNote {
+            id,
+            x,
+            y,
+            width,
+            height,
+        },
+    )
+}
+
+/// Take a loose note off the canvas.
+#[tauri::command]
+fn remove_free_note(state: State<'_, AppState>, id: u64) -> Result<Snapshot, String> {
+    mutate(state, Action::RemoveFreeNote { id })
 }
 
 /// Set or clear a node's branch colour.
@@ -581,6 +658,10 @@ pub fn run() {
             remove_node,
             set_text,
             set_note,
+            add_free_note,
+            set_free_note,
+            place_free_note,
+            remove_free_note,
             set_color,
             set_side,
             set_map_style,

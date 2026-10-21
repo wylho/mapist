@@ -313,8 +313,9 @@ function drawNode(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
 
   // Marcador de nota
   if (n.note) {
+    const d = noteDot(n)
     ctx.beginPath()
-    ctx.arc(x + w - 8, y + 8, 2.8, 0, Math.PI * 2)
+    ctx.arc(d.x, d.y, 3.2, 0, Math.PI * 2)
     ctx.fillStyle = ink
     ctx.globalAlpha = 0.6
     ctx.fill()
@@ -359,6 +360,25 @@ export function hitTest(
   for (let i = snapshot.nodes.length - 1; i >= 0; i--) {
     const n = snapshot.nodes[i]
     if (wx >= n.x && wx <= n.x + n.width && wy >= n.y && wy <= n.y + n.height) return n.id
+  }
+  return null
+}
+
+/** Centro da bolinha de nota de um nó, em unidades de mundo (o mesmo ponto que o desenho usa). */
+export function noteDot(n: FlatNode): { x: number; y: number } {
+  return { x: n.x + n.width - 8, y: n.y + 8 }
+}
+
+/** O nó cuja bolinha de nota está sob o ponteiro. A área de toque tem ao menos 9 px na tela, em qualquer zoom. */
+export function hitNoteDot(snapshot: Snapshot, view: Viewport, clientX: number, clientY: number, rect: DOMRect): number | null {
+  const wx = (clientX - rect.left - view.x) / view.scale
+  const wy = (clientY - rect.top - view.y) / view.scale
+  const r = Math.max(7, 9 / view.scale)
+  for (let i = snapshot.nodes.length - 1; i >= 0; i--) {
+    const n = snapshot.nodes[i]
+    if (!n.note) continue
+    const d = noteDot(n)
+    if (Math.hypot(wx - d.x, wy - d.y) <= r) return n.id
   }
   return null
 }

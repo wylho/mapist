@@ -17,6 +17,7 @@ import {
   Search,
   Share,
   Spline,
+  StickyNote,
   Trash2,
   Undo2,
   WandSparkles,
@@ -30,6 +31,7 @@ import { doc } from './document.svelte'
 import { ui } from './ui.svelte'
 import { prefs } from './prefs.svelte'
 import { theme } from './theme.svelte'
+import { notes } from './notes.svelte'
 import { resolveNodeColor } from './palettes'
 
 const mac = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform)
@@ -41,6 +43,8 @@ export interface ViewActions {
   fit: () => void
   fitSelection: () => void
   actualSize: () => void
+  /** Nota solta no ponto da janela onde o menu abriu. */
+  addNoteAt: (x: number, y: number) => void
 }
 
 const COLORS: [string, string][] = [
@@ -71,6 +75,13 @@ export function nodeMenu(id: number, view: ViewActions): MenuEntry[] {
     { label: 'Editar texto', icon: Pencil, hint: 'Espaço', onSelect: () => doc.startEdit() },
     { label: 'Adicionar filho', icon: Plus, hint: 'Tab', onSelect: () => void doc.addChild() },
   ]
+  items.splice(
+    1,
+    0,
+    n.note
+      ? { label: notes.isOpen(id) ? 'Esconder a nota' : 'Mostrar a nota', icon: StickyNote, onSelect: () => notes.toggle(id) }
+      : { label: 'Adicionar nota', icon: StickyNote, onSelect: () => notes.show(id, true) },
+  )
   if (!isRoot) items.push({ label: 'Adicionar irmão', icon: CornerDownRight, hint: 'Enter', onSelect: () => void doc.addSibling() })
   items.push(SEP)
   items.push({
@@ -117,8 +128,10 @@ export function nodeMenu(id: number, view: ViewActions): MenuEntry[] {
 }
 
 /** Menu do fundo do mapa: ver, zoom, aparência e histórico. */
-export function backgroundMenu(view: ViewActions): MenuEntry[] {
+export function backgroundMenu(view: ViewActions, at: { x: number; y: number }): MenuEntry[] {
   return [
+    { label: 'Nova nota aqui', icon: StickyNote, onSelect: () => view.addNoteAt(at.x, at.y) },
+    SEP,
     { label: 'Ver o mapa inteiro', icon: Maximize, hint: '⇧1', onSelect: view.fit },
     { label: 'Tamanho real', icon: ZoomIn, hint: `${mod}0`, onSelect: view.actualSize },
     SEP,

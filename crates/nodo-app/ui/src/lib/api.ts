@@ -31,6 +31,16 @@ export interface Edge {
   color: string | null
 }
 
+/** Uma nota solta no mapa (não presa a um nó), em unidades de mundo. */
+export interface NoteCard {
+  id: number
+  x: number
+  y: number
+  width: number
+  height: number
+  text: string
+}
+
 export interface Bounds {
   min_x: number
   min_y: number
@@ -41,6 +51,8 @@ export interface Bounds {
 export interface Snapshot {
   nodes: FlatNode[]
   connections: Edge[]
+  /** Notas soltas no mapa. */
+  notes: NoteCard[]
   dirty: boolean
   path: string | null
   title: string
@@ -113,6 +125,15 @@ export const api = {
   setText: (id: number, text: string) => call<Snapshot>('set_text', { id, text }),
 
   setNote: (id: number, note: string) => call<Snapshot>('set_note', { id, note }),
+
+  addFreeNote: (x: number, y: number, text: string) => call<Snapshot>('add_free_note', { x, y, text }),
+
+  setFreeNote: (id: number, text: string) => call<Snapshot>('set_free_note', { id, text }),
+
+  placeFreeNote: (id: number, x: number, y: number, width: number, height: number) =>
+    call<Snapshot>('place_free_note', { id, x, y, width, height }),
+
+  removeFreeNote: (id: number) => call<Snapshot>('remove_free_note', { id }),
 
   setColor: (id: number, color: string | null) => call<Snapshot>('set_color', { id, color }),
 

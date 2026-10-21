@@ -289,3 +289,61 @@ kbd {
 .export-ico { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); flex: none; }
 .export-ext { font: 600 12px var(--mono, ui-monospace, monospace); color: var(--muted); }
 .export-go { display: flex; justify-content: flex-end; margin-top: 14px; }
+
+/* Card de nota no mapa: o card de nota do Ideario (.card: raio 16, borda --card-edge, corpo 13.5/1.45), translúcido e
+   com desfoque por trás, para flutuar sobre o mapa. A barra só mostra os botões com o mouse por cima. */
+.ncard {
+  position: absolute; z-index: 5; display: flex; flex-direction: column; transform-origin: 0 0;
+  min-width: 200px; min-height: 120px; border-radius: 16px; overflow: hidden;
+  background: color-mix(in oklab, var(--n-none) 78%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6);
+  border: 1px solid var(--card-edge); box-shadow: var(--float-shadow);
+}
+.ncard.editing { border-color: color-mix(in oklab, var(--accent) 45%, transparent); }
+.ncard-bar { display: flex; align-items: center; gap: 6px; min-height: 34px; padding: 6px 6px 0 12px; flex: none; }
+.ncard-bar.grab { cursor: grab; }
+.ncard-bar.grab:active { cursor: grabbing; }
+.ncard-grip { color: var(--muted); display: grid; opacity: .7; }
+.ncard-node { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.ncard-node .dot { width: 7px; height: 7px; border-radius: 999px; flex: none; }
+.ncard-acts { margin-left: auto; display: flex; gap: 0; opacity: 0; transition: opacity .12s ease; }
+.ncard:hover .ncard-acts, .ncard.editing .ncard-acts, .ncard-acts:focus-within { opacity: 1; }
+@media (hover: none) { .ncard-acts { opacity: 1; } }
+.ncard-body, .ncard-text {
+  flex: 1; min-height: 0; overflow: auto; padding: 6px 13px 13px; font: 13.5px/1.45 var(--font-body); color: var(--fg);
+}
+.ncard-body { cursor: text; outline: none; }
+.ncard-body:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); border-radius: 0 0 15px 15px; }
+.ncard-text { width: 100%; border: 0; background: transparent; resize: none; outline: none; }
+.ncard-text::placeholder, .ncard-empty { color: var(--muted); }
+.ncard-resize {
+  position: absolute; right: 2px; bottom: 2px; width: 14px; height: 14px; cursor: nwse-resize; opacity: .5;
+  background: linear-gradient(135deg, transparent 50%, var(--muted) 50% 58%, transparent 58% 70%, var(--muted) 70% 78%, transparent 78%);
+}
+.md h1, .md h2, .md h3 { font-family: var(--font-display); font-weight: 600; letter-spacing: -.01em; }
+.md h1 { font-size: 16px; line-height: 1.25; }
+.md p { opacity: .9; }
+.md > :first-child { margin-top: 0; }
+.md > :last-child { margin-bottom: 0; }
+.md h1, .md h2, .md h3 { margin: .8em 0 .3em; }
+.md h2, .md h3 { font-size: 14.5px; }
+.md p, .md ul, .md ol, .md blockquote, .md pre, .md table { margin: .45em 0; }
+.md ul, .md ol { padding-left: 1.3em; }
+.md ul { list-style: disc; } .md ol { list-style: decimal; }
+.md li::marker { color: var(--muted); }
+.md li:has(> input[type='checkbox']) { list-style: none; margin-left: -1.2em; }
+.md a { color: var(--accent); }
+.md code { font: .9em var(--mono, ui-monospace, monospace); background: var(--raised); border-radius: 5px; padding: 1px 4px; }
+.md pre { background: var(--raised); border-radius: 8px; padding: 8px 10px; overflow-x: auto; }
+.md pre code { background: none; padding: 0; }
+.md blockquote { border-left: 3px solid var(--line); padding-left: 10px; color: var(--muted); }
+.md table { border-collapse: collapse; }
+.md th, .md td { border: 1px solid var(--line); padding: 3px 8px; }
+.md img { max-width: 100%; }
+.md input[type='checkbox'] { margin: 0 6px 0 0; vertical-align: -1px; }
+
+/* Prévia da nota no inspetor: três linhas do texto cru; a nota em si abre no card ao lado do nó. */
+.note-peek {
+  margin: 0 0 8px; font-size: 13px; line-height: 1.45; color: var(--muted); white-space: pre-line; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
