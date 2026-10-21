@@ -72,7 +72,7 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   `macos.svg` e os quatro PNG do Linux de `linux.svg` (ver o commit que os gerou).
 - **D13:** **site em nodo-1c7.pages.dev** (`site/`, Cloudflare Pages sem build), mesma estrutura e `style.css` do site
   do Ideario; README com o mesmo conteúdo (skill `sync-site`). Diagramação inspirada no affinity.studio (abertura em
-  palco com recortes soltos, print grande, seções com selo e título grande, cartões em dupla, faixas alternadas,
+  palco com pedaços da interface em HTML, retos, em volta do título (não prints), print grande, seções com selo e título grande, cartões em dupla, faixas alternadas,
   rodapé em colunas), com os tokens do Ideario e ícones do Lucide inline. O `style.css` é o mesmo nos dois sites:
   mudou num, copiar para o outro.
 
