@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Tag do Release a apagar (ex.: v0.1.0)
+        description: 'Tag do Release a apagar, por exemplo v0.1.0'
         required: true
 
 permissions:
