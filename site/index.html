@@ -134,7 +134,17 @@
     <div class="grid dl">
       <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg></span><h3>Windows</h3><p>O <code>-setup.exe</code> (ou o <code>.msi</code>).</p><a class="btn soft sm" href="https://github.com/wylho/nodo/releases/latest"><svg class="lucide" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Baixar</a></div>
       <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.528V3a1 1 0 0 1 1-1h0"/><path d="M18.237 21A15 15 0 0 0 22 11a6 6 0 0 0-10-4.472A6 6 0 0 0 2 11a15.1 15.1 0 0 0 3.763 10 3 3 0 0 0 3.648.648 5.5 5.5 0 0 1 5.178 0A3 3 0 0 0 18.237 21"/></svg></span><h3>macOS</h3><p>O <code>.dmg</code>, para Apple Silicon e Intel. Na primeira vez, clique com o botão direito no app e escolha <b>Abrir</b>: ele ainda não é assinado pela Apple.</p><a class="btn soft sm" href="https://github.com/wylho/nodo/releases/latest"><svg class="lucide" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Baixar</a></div>
-      <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19h8"/><path d="m4 17 6-6-6-6"/></svg></span><h3>Linux</h3><p>O <code>.AppImage</code>, que roda em qualquer distribuição e se atualiza sozinho, o <code>.deb</code> ou o <code>.rpm</code>.</p><a class="btn soft sm" href="https://github.com/wylho/nodo/releases/latest"><svg class="lucide" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Baixar</a></div>
+      <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19h8"/><path d="m4 17 6-6-6-6"/></svg></span><h3>Linux</h3><p>Pelo repositório apt ou dnf, que atualiza junto com o sistema (comandos abaixo). Ou o <code>.AppImage</code>, que roda em qualquer distribuição e se atualiza sozinho.</p><a class="btn soft sm" href="https://github.com/wylho/nodo/releases/latest"><svg class="lucide" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Baixar</a></div>
+    </div>
+    <div class="box full" id="linux"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19h8"/><path d="m4 17 6-6-6-6"/></svg></span>
+      <h3>Linux, pelo repositório</h3>
+      <p>Assim o Nodo atualiza junto com o resto do sistema. Ubuntu, Debian e derivados:</p>
+      <pre><code>curl -fsSL https://nodo-1c7.pages.dev/linux/nodo.gpg | sudo tee /usr/share/keyrings/nodo.gpg &gt; /dev/null
+echo "deb [signed-by=/usr/share/keyrings/nodo.gpg] https://nodo-1c7.pages.dev/apt stable main" | sudo tee /etc/apt/sources.list.d/nodo.list
+sudo apt update &amp;&amp; sudo apt install nodo</code></pre>
+      <p>Fedora:</p>
+      <pre><code>sudo curl -fsSL -o /etc/yum.repos.d/nodo.repo https://nodo-1c7.pages.dev/linux/nodo.repo
+sudo dnf install nodo</code></pre>
     </div>
     <p class="note">Sem anúncios, sem rastreamento, sem coleta de dados. Leia a <a href="/privacidade/">Política de Privacidade</a>.</p>
   </div>
@@ -173,7 +183,7 @@
       <li>Branches on both sides of the root, notes in Markdown on every node, branch colours</li>
       <li>Curved or angled links, light and dark themes, and a System theme that follows Windows, macOS, GNOME or KDE</li>
       <li>200 steps of undo; Claude can undo its own edits too</li>
-      <li>Updates itself (Windows, macOS, AppImage): the app tells you when a new version is out</li>
+      <li>Updates itself (Windows, macOS, AppImage), or through the apt/dnf repository on Linux</li>
     </ul>
     <p><a href="https://github.com/wylho/nodo/releases/latest">Download the latest version</a> · <a href="https://github.com/wylho/nodo">Source code on GitHub</a> ·
     <a href="https://github.com/sponsors/wylho">Sponsor ♥</a> · <a href="/privacidade/#english">Privacy Policy</a></p>

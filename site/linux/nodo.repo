@@ -1,0 +1,9 @@
+# Repositório do Nodo para o dnf (Fedora). Instruções em https://nodo-1c7.pages.dev/#linux
+[nodo]
+name=Nodo
+baseurl=https://nodo-1c7.pages.dev/rpm
+enabled=1
+# Os índices são assinados (repo_gpgcheck) e trazem o hash de cada pacote.
+repo_gpgcheck=1
+gpgcheck=0
+gpgkey=https://nodo-1c7.pages.dev/linux/nodo.asc

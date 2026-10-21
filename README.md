@@ -86,7 +86,24 @@ nova e se atualiza sozinho.
 |---|---|
 | **Windows** | O `-setup.exe` (ou o `.msi`). |
 | **macOS** | O `.dmg`, para Apple Silicon e Intel. Na primeira vez, clique com o botão direito no app e escolha **Abrir**: ele ainda não é assinado pela Apple. |
-| **Linux** | O `.AppImage`, que roda em qualquer distribuição e se atualiza sozinho, o `.deb` ou o `.rpm`. |
+| **Linux** | Pelo repositório apt ou dnf, que atualiza junto com o sistema (abaixo). Ou o `.AppImage`, que roda em qualquer distribuição e se atualiza sozinho. |
+
+### Linux, pelo repositório
+
+Ubuntu, Debian e derivados:
+
+```sh
+curl -fsSL https://nodo-1c7.pages.dev/linux/nodo.gpg | sudo tee /usr/share/keyrings/nodo.gpg > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/nodo.gpg] https://nodo-1c7.pages.dev/apt stable main" | sudo tee /etc/apt/sources.list.d/nodo.list
+sudo apt update && sudo apt install nodo
+```
+
+Fedora:
+
+```sh
+sudo curl -fsSL -o /etc/yum.repos.d/nodo.repo https://nodo-1c7.pages.dev/linux/nodo.repo
+sudo dnf install nodo
+```
 
 **Privacidade:** sem anúncios, sem rastreamento, sem coleta de dados. Seus mapas ficam no seu computador. Leia a
 [Política de Privacidade](https://nodo-1c7.pages.dev/privacidade/).
@@ -105,7 +122,7 @@ working on, through the same core as the window.
 - Branches on both sides of the root, notes in Markdown on every node, branch colours
 - Curved or angled links, light and dark themes, and a System theme that follows Windows, macOS, GNOME or KDE
 - 200 steps of undo; Claude can undo its own edits too
-- Updates itself (Windows, macOS, AppImage): the app tells you when a new version is out
+- Updates itself (Windows, macOS, AppImage), or through the apt/dnf repository on Linux
 
 [Download the latest version](https://github.com/wylho/nodo/releases/latest).
 
@@ -119,7 +136,7 @@ Especificação: [`docs/SPEC.md`](docs/SPEC.md). Regras do projeto: [`CLAUDE.md`
 ```
 crates/
 ├── nodo-core/   modelo, layout, .minder, Editor (histórico + arquivo), sem interface
-├── nodo-mcp/    servidor MCP sobre stdio (18 ferramentas)
+├── nodo-mcp/    servidor MCP sobre stdio (19 ferramentas)
 └── nodo-app/    janela Tauri; a interface Svelte 5 fica em ui/
 site/              nodo-1c7.pages.dev (Cloudflare Pages, sem build)
 ```
