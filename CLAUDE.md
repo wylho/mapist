@@ -20,7 +20,10 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
 - UI em **português do Brasil**. Código e identificadores em inglês.
 - **Dados de exemplo sempre fictícios** (mock, testes, docs, prints do site/README): nunca nada da vida real do
   usuário. O repositório é público. Antes de publicar um print, olhar o print inteiro.
-- **Git:** commit e push ao terminar cada tarefa (o ambiente é temporário). Lançar versão só quando o usuário pedir.
+- **Git (combinado com o usuário, como no Ideario):** commit e push ao terminar cada tarefa, no branch de trabalho **e
+  no `main`** (o ambiente é temporário). O `main` é o branch de produção do Cloudflare Pages: push com mudança em
+  `site/` publica o site em usenodo.pages.dev. O push não chega a quem usa o app: só o workflow Release lança versão,
+  e só quando o usuário pedir.
 - **Nada de controles que ainda não funcionam**; só mostrar o que tem motivo para aparecer.
 - Trabalhar por fases (SPEC §10). Antes de começar uma fase, conferir as decisões pendentes (SPEC §11) e perguntar o que
   estiver em aberto. Ao fim de cada fase: compilar, rodar e verificar o critério "Pronto quando".
