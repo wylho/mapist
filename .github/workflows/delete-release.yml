@@ -1,0 +1,31 @@
+# Apaga um Release e a tag dele. Só à mão: Actions → Apagar release → Run workflow, com a tag (ex.: v0.1.0).
+# Os instaladores de quem já baixou continuam funcionando; só a página e os arquivos do GitHub somem.
+name: Apagar release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag do Release a apagar (ex.: v0.1.0)
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  delete:
+    name: Apagar ${{ inputs.tag }}
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ inputs.tag }}
+    steps:
+      - name: Apagar
+        run: |
+          latest=$(gh release view --json tagName -q .tagName 2>/dev/null || true)
+          if [[ "$TAG" == "$latest" ]]; then
+            echo "::error::$TAG é o último Release: apagar quebraria o link de download e a atualização automática."
+            exit 1
+          fi
+          gh release delete "$TAG" --cleanup-tag --yes
