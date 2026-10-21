@@ -27,6 +27,7 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
 - **Mudança visual: validar no preview antes de compilar.** O preview (`pnpm dev` em `crates/mapist-app/ui`, com
   `?preview`) roda a interface real no navegador sobre um backend simulado, com HMR. Compilar o Tauri leva minutos e não
   deixa inspecionar nada; o preview mostra em segundos. Conferir nos temas claro e escuro, e na largura de celular.
+  Antes de aplicar, mostrar prévias (prints, opções A/B/C); conferir o print da interface de verdade, não só o código.
 - **Verificação antes de dizer "pronto":** `cargo fmt --all --check`, `cargo clippy --all-targets -- -D warnings`,
   `cargo test --workspace`, `pnpm --dir crates/mapist-app/ui run check`, `pnpm --dir crates/mapist-app/ui run test`,
   e para mudança que afeta o app: `cargo tauri build` (o `beforeBuildCommand` gera o frontend; `cargo build` sozinho
