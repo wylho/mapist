@@ -142,6 +142,28 @@ export const api = {
   mcpInfo: () => call<McpInfo>('mcp_info'),
   mcpInstall: () => call<McpInfo>('mcp_install'),
   mcpUninstall: () => call<McpInfo>('mcp_uninstall'),
+
+  /** Versão nova no último Release do GitHub, ou `null` (também quando este jeito de instalar não se atualiza). */
+  checkUpdate: () => call<UpdateInfo | null>('update_check'),
+
+  /** Baixa, instala e reinicia; `onProgress` recebe bytes baixados e total (0 quando não se sabe). */
+  async installUpdate(onProgress: (done: number, total: number) => void): Promise<void> {
+    if (isPreview) return call<void>('update_install')
+    const { listen } = await import('@tauri-apps/api/event')
+    const stop = await listen<[number, number]>('update-progress', (e) => onProgress(e.payload[0], e.payload[1]))
+    try {
+      await call<void>('update_install')
+    } finally {
+      stop()
+    }
+  },
+}
+
+/** Uma versão nova encontrada pelo atualizador. */
+export interface UpdateInfo {
+  version: string
+  /** Texto do Release (o que mudou), se houver. */
+  notes: string | null
 }
 
 /** O que a página de MCP mostra. */

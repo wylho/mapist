@@ -259,3 +259,6 @@ kbd {
 .map-theme-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .map-theme-tile { padding: 8px; }
 .map-theme-preview { display: block; width: 100%; height: 118px; border-radius: 10px; background: var(--stage); }
+
+/* Aviso de versão nova: acima da dica de teclado, que fica no mesmo canto. */
+@media (min-width: 640px) { .update-alerts { bottom: 68px; } }

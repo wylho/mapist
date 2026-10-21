@@ -81,19 +81,22 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
 - **D15:** **temas de mapa no arquivo**, como no XMind (esqueleto + cores por ramo), separados da paleta de interface
   (que é do aparelho). Atributo `nodo-style` no `<theme>`, que o Minder ignora.
 - **D16:** **barra de título do macOS como a do Ideario**: janela criada no `setup` com `TitleBarStyle::Overlay`,
-  botões em (18, 33) dentro da barra de 64 px, espaço medido por `mac_lights_width`. Sem atualização automática por
-  enquanto (decisão do usuário).
+  botões em (18, 33) dentro da barra de 64 px, espaço medido por `mac_lights_width`.
 
 - **D17:** **nome Nodo** (antes Mapist, que ficava a uma letra de uma palavra ofensiva em inglês; escolha do usuário).
   Repositório `wylho/nodo`, binário `nodo`, crates `nodo-*`, identificador `io.github.wylho.nodo`, site
   `nodo-1c7.pages.dev` (os nomes `nodo`, `nodoapp` e `usenodo` do Pages já tinham dono). O que a 0.1.0 gravou como
   Mapist continua sendo lido: atributo `mapist-style`, preferências `mapist.*`, entrada "mapist" no Claude Desktop.
+- **D19:** **atualização automática a partir da 0.2.0**, igual à do Ideario (`src/updates.rs`, `lib/updates.svelte.ts`,
+  `components/UpdateNotice.svelte`; `latest.json` do último Release, assinatura com a chave dos segredos
+  `TAURI_SIGNING_PRIVATE_KEY(_PASSWORD)`). macOS, Windows e AppImage; `.deb`/`.rpm` não. A chave privada fica guardada
+  pelo usuário no Ideario dele; perder a chave é perder a atualização de quem já instalou.
 - **D18:** **o canvas redesenha no máximo uma vez por quadro**, e o que o desenho lê não pode ser `$state` escrito no
   mesmo efeito. Motivo: um laço assim (`colors`) fazia centenas de redesenhos por tecla e deixava a edição travando.
 
 ## Estado atual
 - **Fases 1 e 2 concluídas. Versão 0.1.0 lançada** (Release `v0.1.0`: `.dmg` universal, `-setup.exe`/`.msi`,
-  `.AppImage`/`.deb`/`.rpm`), sem atualização automática (decisão do usuário).
+  `.AppImage`/`.deb`/`.rpm`), sem atualizador: quem tem a 0.1.0 baixa a 0.2.0 à mão; dali em diante é automático (D19).
 - `nodo-core`: modelo (`model.rs`), `.minder` (`document.rs`), layout (`layout.rs`: faixa por sub-árvore, lado de cada
   ramo, descendentes de nó recolhido sem posição), histórico (`undo.rs`: `Action` inclui `SetSide`, `ToggleFold`,
   `Relayout`), **`Editor`** (`editor.rs`: histórico + arquivo + revisões; sujo segue o desfazer até o salvo; salvar é
@@ -125,5 +128,6 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
   `src/lib.rs`, `main.ts`, `map.css`).
 - **Renomeado para Nodo e versão 0.2.0 no `main`** (ainda não lançada). Edição rápida de novo (`Canvas.svelte`:
   `scheduleRender`, 12–26 ms por Tab/Enter na prévia, um desenho só). Botões do macOS pela configuração da janela.
-- **Próximo:** lançar a 0.2.0 quando o usuário pedir; depois a Fase 3 (importação e exportação). Atualização
-  automática fica para depois (decisão do usuário).
+- **Atualização automática** (D19) e `.github/workflows/check-secrets.yml` (confere chave e token sem mostrar nada).
+  O Release exige o segredo da chave.
+- **Próximo:** lançar a 0.2.0 quando o usuário pedir; depois a Fase 3 (importação e exportação).

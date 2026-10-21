@@ -8,6 +8,7 @@
   import Inspector from './components/Inspector.svelte'
   import SettingsSheet from './components/SettingsSheet.svelte'
   import ConfirmDialog from './components/ConfirmDialog.svelte'
+  import UpdateNotice from './components/UpdateNotice.svelte'
   import { doc } from './lib/document.svelte'
   import { hasHost, isPreview } from './lib/api'
   import { prefs } from './lib/prefs.svelte'
@@ -152,6 +153,7 @@
     <span>{ui.toast}</span>
   </div>
 
+  <UpdateNotice />
   <SettingsSheet />
   <ConfirmDialog />
 </div>

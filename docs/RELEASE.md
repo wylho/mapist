@@ -25,12 +25,19 @@ Os mesmos instaladores saem a cada push nos "Artifacts" do workflow **Build**, p
 - Configurações → Claude → Ligar, reiniciar o Claude Desktop e pedir para ele ler o mapa aberto.
 - Um `.minder` feito no Minder abre e volta sem perda (`cargo run -p nodo-core --example parse_real arquivo.minder`).
 
-## Ainda não ligado
+## Atualização automática
 
-- **Atualização automática** (como no Ideario: `tauri-plugin-updater` + `latest.json` do último Release). Precisa
-  de uma chave de assinatura gerada uma vez (`tauri signer generate`) e guardada como segredo
-  (`TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`) **e** fora do GitHub, num gerenciador de
-  senhas: sem ela, quem já instalou nunca mais recebe versão nova. Quem instalar uma versão sem o atualizador vai
-  precisar baixar a seguinte à mão.
+Desde a 0.2.0, como no Ideario (`tauri-plugin-updater`, `src/updates.rs`): ao abrir, o app lê o `latest.json` do
+último Release e, se houver versão nova, mostra um aviso no canto com **Atualizar**. Vale no macOS, no Windows e no
+AppImage; o `.deb` e o `.rpm` não se atualizam sozinhos (repositório apt/dnf ainda não existe).
+
+- O Release assina cada instalador com a chave dos segredos `TAURI_SIGNING_PRIVATE_KEY` e
+  `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`; o app só instala o que a chave pública do `tauri.conf.json` confirma.
+  Sem o segredo o workflow Release para logo no começo.
+- **A chave privada não pode se perder**: sem ela, quem já instalou nunca mais recebe versão nova. A cópia fica no
+  Ideario do usuário (categoria de chaves, com PIN), na nota "Nodo — chave das atualizações".
+- Depois de criar ou trocar um segredo: Actions → **Conferir segredos** → Run workflow.
+
+## Ainda não ligado
 - **Assinatura de código** no macOS e no Windows (SPEC P4).
 - **Repositórios apt/dnf** (o Ideario tem; aqui só se houver pedido).

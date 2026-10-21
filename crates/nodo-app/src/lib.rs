@@ -10,6 +10,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use tauri::{Emitter, Manager, State, WebviewWindowBuilder};
 
+mod updates;
+
 /// Application state shared across command invocations.
 #[derive(Default)]
 pub struct AppState {
@@ -506,6 +508,7 @@ pub fn run() {
             let window = WebviewWindowBuilder::from_config(app.handle(), &config)?
                 .initialization_script(TITLEBAR_SCRIPT);
             window.build()?;
+            updates::init(app.handle())?;
             Ok(())
         })
         // Unsaved work: the window asks, with the app's own confirmation dialog
@@ -541,7 +544,9 @@ pub fn run() {
             mac_lights_width,
             mcp_info,
             mcp_install,
-            mcp_uninstall
+            mcp_uninstall,
+            updates::update_check,
+            updates::update_install
         ])
         .build(tauri::generate_context!())
         .expect("error while building Nodo")

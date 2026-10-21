@@ -11,6 +11,7 @@
   import { DESKTOPS, PALETTES, paletteColors, type DesktopId, type PaletteId } from '../lib/palettes'
   import type { LinkStyle } from '../lib/render'
   import Picker from './Picker.svelte'
+  import { updates } from '../lib/updates.svelte'
 
   // Sistema primeiro: é o padrão e faz o app parecer nativo.
   const THEMES: { id: PaletteId; label: string; hint: string }[] = [
@@ -22,6 +23,10 @@
   let version = $state<string | null>(null)
   if (hasHost) {
     void import('@tauri-apps/api/app').then(({ getVersion }) => getVersion().then((v) => (version = v)))
+  }
+
+  async function checkNow() {
+    if (!(await updates.check())) ui.say('Você já tem a versão mais recente.')
   }
 
   // ---------- Claude (MCP) ----------
@@ -148,6 +153,15 @@
 
         <p class="footnote">
           {isPreview ? 'Prévia no navegador · dados de exemplo' : `Nodo${version ? ` v${version}` : ''}`}
+          {#if updates.info}
+            · <button class="link" onclick={() => updates.install()} disabled={updates.phase === 'downloading'}>
+              {updates.phase === 'downloading' ? 'Atualizando…' : `Atualizar para a v${updates.info.version}`}
+            </button>
+          {:else if hasHost}
+            · <button class="link" onclick={checkNow} disabled={updates.phase === 'checking'}>
+              {updates.phase === 'checking' ? 'Procurando…' : 'Procurar atualizações'}
+            </button>
+          {/if}
         </p>
       </div>
     </Dialog.Content>

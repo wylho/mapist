@@ -3,6 +3,9 @@
 #
 # O Release nasce como rascunho; quando os três sistemas terminam, o job "Publicar" o publica. Assim o
 # "último Release" nunca aponta para uma versão pela metade. Guia: docs/RELEASE.md.
+#
+# Segredos: TAURI_SIGNING_PRIVATE_KEY e TAURI_SIGNING_PRIVATE_KEY_PASSWORD assinam as atualizações (o app só instala
+# o que a chave pública do tauri.conf.json confirma). Conferir: Actions → Conferir segredos → Run workflow.
 name: Release
 
 on:
@@ -35,6 +38,14 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: pnpm --dir crates/nodo-app/ui install --frozen-lockfile
       - run: scripts/check-version.sh
+      - name: Chave das atualizações
+        env:
+          KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if [[ -z "$KEY" ]]; then
+            echo "::error::Falta o segredo TAURI_SIGNING_PRIVATE_KEY: sem ele a versão sai sem atualização automática."
+            exit 1
+          fi
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo test --workspace
       - run: pnpm --dir crates/nodo-app/ui run check
@@ -49,15 +60,15 @@ jobs:
         include:
           - name: macOS
             os: macos-latest
-            args: --target universal-apple-darwin
+            args: --target universal-apple-darwin --config crates/nodo-app/tauri.release.conf.json
             rust-targets: aarch64-apple-darwin,x86_64-apple-darwin
           - name: Windows
             os: windows-latest
-            args: ''
+            args: --config crates/nodo-app/tauri.release.conf.json
             rust-targets: ''
           - name: Linux
             os: ubuntu-22.04
-            args: ''
+            args: --config crates/nodo-app/tauri.release.conf.json
             rust-targets: ''
     runs-on: ${{ matrix.os }}
     steps:
@@ -83,6 +94,8 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           # Da raiz, como no workflow Build: a CLI acha crates/nodo-app/tauri.conf.json sozinha, e o
           # beforeBuildCommand (cd nodo-app/ui) roda a partir de crates/. Com projectPath ele rodaria uma pasta
@@ -91,11 +104,13 @@ jobs:
           tagName: v__VERSION__
           releaseName: Nodo v__VERSION__
           releaseBody: |
-            Instaladores do Nodo v__VERSION__.
+            Instaladores do Nodo v__VERSION__. Quem já usa a 0.2 ou mais nova recebe esta versão sozinho: o app avisa ao abrir.
 
             - **macOS** (Apple Silicon e Intel): baixe o `.dmg`. Na primeira vez, clique com o botão direito no app → **Abrir** (o app ainda não é assinado pela Apple).
             - **Windows**: baixe o `-setup.exe` (ou o `.msi`).
-            - **Linux**: baixe o `.AppImage`, o `.deb` (Ubuntu, Debian) ou o `.rpm` (Fedora).
+            - **Linux**: baixe o `.AppImage` (atualiza sozinho), o `.deb` (Ubuntu, Debian) ou o `.rpm` (Fedora).
+
+            Os arquivos `.sig` e `latest.json` são do atualizador; não precisa baixar.
 
             Para ligar o Claude aos seus mapas: Configurações → Claude, no próprio app.
           releaseDraft: true
