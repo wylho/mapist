@@ -9,7 +9,16 @@
 
   import type { Snippet } from 'svelte'
 
-  let { children, onzoom }: { children?: Snippet; onzoom?: (z: number) => void } = $props()
+  let {
+    children,
+    onzoom,
+    oncontext,
+  }: {
+    children?: Snippet
+    onzoom?: (z: number) => void
+    /** Clique direito: num nó (já selecionado) ou no fundo (`id` nulo), em coordenadas da janela. */
+    oncontext?: (x: number, y: number, id: number | null) => void
+  } = $props()
 
   let canvas: HTMLCanvasElement
   let stageEl: HTMLDivElement
@@ -45,6 +54,22 @@
     view.x = px - wx * view.scale
     view.y = py - wy * view.scale
     scheduleRender()
+  }
+
+  function onContextMenu(e: MouseEvent) {
+    e.preventDefault()
+    const r = stageEl.getBoundingClientRect()
+    const hit = hitTest(doc.snapshot, view, e.clientX, e.clientY, r)
+    if (hit !== null) doc.selected = hit
+    oncontext?.(e.clientX, e.clientY, hit)
+  }
+
+  /** Onde abrir o menu do nó selecionado pelo teclado (tecla de menu, ⇧F10): logo abaixo dele, na janela. */
+  export function selectionAnchor(): { x: number; y: number } | null {
+    const n = doc.selectedNode
+    if (!n) return null
+    const r = stageEl.getBoundingClientRect()
+    return { x: r.left + (n.x + 12) * view.scale + view.x, y: r.top + (n.y + n.height) * view.scale + view.y + 4 }
   }
 
   /** Leva a vista até `to`, com uma animação curta (ou na hora). */
@@ -327,6 +352,7 @@
   onpointerleave={onPointerUp}
   onwheel={onWheel}
   ondblclick={onDblClick}
+  oncontextmenu={onContextMenu}
   role="application"
   aria-label="Mapa mental"
 >

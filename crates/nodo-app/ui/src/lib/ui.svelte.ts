@@ -11,6 +11,8 @@ export interface ConfirmRequest {
 
 class Ui {
   settingsOpen = $state(false)
+  /** Folha Tema do mapa aberta (pela barra ou pelo menu de contexto). */
+  themeOpen = $state(false)
   /** Busca aberta na barra (no desktop ela é um ícone até ser usada). */
   searchOpen = $state(false)
   toast = $state<string | null>(null)

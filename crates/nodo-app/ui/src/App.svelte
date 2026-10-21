@@ -9,12 +9,25 @@
   import SettingsSheet from './components/SettingsSheet.svelte'
   import ConfirmDialog from './components/ConfirmDialog.svelte'
   import UpdateNotice from './components/UpdateNotice.svelte'
+  import MenuAt from './components/MenuAt.svelte'
+  import { backgroundMenu, nodeMenu, type ViewActions } from './lib/mapmenus'
   import { doc } from './lib/document.svelte'
   import { hasHost, isPreview } from './lib/api'
   import { prefs } from './lib/prefs.svelte'
   import { ui } from './lib/ui.svelte'
 
   let canvasRef = $state<Canvas | undefined>(undefined)
+  let menuRef = $state<MenuAt | undefined>(undefined)
+  const viewActions: ViewActions = {
+    fit: () => canvasRef?.fit(true),
+    fitSelection: () => canvasRef?.fitSelection(),
+    actualSize: () => canvasRef?.actualSize(),
+  }
+
+  /** Menu de contexto do mapa: do nó, se houver um, senão do fundo. */
+  function openMenu(x: number, y: number, id: number | null) {
+    menuRef?.openAt(x, y, id === null ? backgroundMenu(viewActions) : nodeMenu(id, viewActions))
+  }
   // O nível de zoom vive no canvas; espelhamos aqui para o rótulo reagir.
   let zoom = $state(prefs.zoom)
   const zoomPct = $derived(Math.round(zoom * 100))
@@ -56,6 +69,15 @@
       return
     }
     if (typing(e)) return
+    // Tecla de menu ou ⇧F10: o menu do nó selecionado, como o clique direito.
+    if ((e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) && !doc.editing) {
+      const at = canvasRef?.selectionAnchor()
+      if (at && doc.selected !== null) {
+        e.preventDefault()
+        openMenu(at.x, at.y, doc.selected)
+      }
+      return
+    }
     // Enquadrar, como no Figma e no Miro: ⇧1 o mapa inteiro, ⇧2 a seleção. Pelo código da tecla, porque ⇧1 é "!"
     // num teclado e outra coisa em outro.
     if (e.shiftKey && !e.altKey && !doc.editing && (e.code === 'Digit1' || e.code === 'Digit2')) {
@@ -146,7 +168,7 @@
   <TopBar />
 
   <div class="map-body">
-    <Canvas bind:this={canvasRef} onzoom={(z) => { zoom = z; prefs.setZoom(z) }}>
+    <Canvas bind:this={canvasRef} oncontext={openMenu} onzoom={(z) => { zoom = z; prefs.setZoom(z) }}>
       <div class="zoombar">
         <button aria-label="Diminuir zoom" title="Diminuir ({modKey}-)" onclick={() => canvasRef?.zoomBy(1 / 1.2)}><Minus size={17} /></button>
         <button class="zoomlevel" title="Tamanho real ({modKey}0)" aria-label="Zoom em {zoomPct}%; voltar a 100%" onclick={() => canvasRef?.actualSize()}>{zoomPct}%</button>
@@ -184,6 +206,7 @@
   </div>
 
   <UpdateNotice />
+  <MenuAt bind:this={menuRef} />
   <SettingsSheet />
   <ConfirmDialog />
 </div>
