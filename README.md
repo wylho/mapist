@@ -10,6 +10,8 @@
 Um app de mapas mentais que abre num instante, funciona sem internet e guarda cada mapa num arquivo seu. Abre os mapas
 do Minder sem perder nada. E o Claude pode trabalhar no mesmo mapa que você, pelas mesmas regras.</p>
 
+<p align="center"><a href="https://github.com/wylho/mapist/releases/latest"><b>Versão 0.1: a primeira →</b></a></p>
+
 <p align="center">
   <b>Windows · macOS · Linux</b><br>
   <a href="#baixar"><b>Baixar</b></a> ·
@@ -76,8 +78,8 @@ janela estreita.
 
 ## Baixar
 
-Grátis e de código aberto. A primeira versão ainda não saiu; quando sair, os instaladores ficam na página de
-[versões do GitHub](https://github.com/wylho/mapist/releases).
+Grátis e de código aberto. Os instaladores ficam na página de
+[versões do GitHub](https://github.com/wylho/mapist/releases/latest).
 
 | | |
 |---|---|
@@ -103,7 +105,7 @@ working on, through the same core as the window.
 - Curved or angled links, light and dark themes, and a System theme that follows Windows, macOS, GNOME or KDE
 - 200 steps of undo; Claude can undo its own edits too
 
-The first release is not out yet.
+[Download the latest version](https://github.com/wylho/mapist/releases/latest).
 
 ---
 
