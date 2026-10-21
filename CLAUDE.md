@@ -93,8 +93,7 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
 
 ## Estado atual
 - **Fases 1 e 2 concluídas. Versão 0.1.0 lançada** (Release `v0.1.0`: `.dmg` universal, `-setup.exe`/`.msi`,
-  `.AppImage`/`.deb`/`.rpm`), sem atualização automática (decisão do usuário). O site depende de reconectar o Git no
-  projeto do Cloudflare Pages (o projeto perdeu o acesso ao repositório e só tem a publicação de antes de `site/`).
+  `.AppImage`/`.deb`/`.rpm`), sem atualização automática (decisão do usuário).
 - `nodo-core`: modelo (`model.rs`), `.minder` (`document.rs`), layout (`layout.rs`: faixa por sub-árvore, lado de cada
   ramo, descendentes de nó recolhido sem posição), histórico (`undo.rs`: `Action` inclui `SetSide`, `ToggleFold`,
   `Relayout`), **`Editor`** (`editor.rs`: histórico + arquivo + revisões; sujo segue o desfazer até o salvo; salvar é
@@ -116,8 +115,11 @@ para que um agente leia e edite os mapas pelo mesmo núcleo do aplicativo.
 - **CI/Release:** `.github/workflows/build.yml` (verificação + instaladores dos três sistemas nos Artifacts) e
   `release.yml` (rascunho → publicar); `scripts/check-version.sh` e `scripts/bump-version.sh`; guia em
   `docs/RELEASE.md`.
-- **Site:** `site/` (index, privacidade, prints de `ui/scripts/site-shots.mjs`), na diagramação nova (D13). Precisa ligar o projeto no Cloudflare
-  Pages (pasta `site`, sem build) para ir ao ar.
+- **Site:** `site/` (index, privacidade, prints de `ui/scripts/site-shots.mjs`), na diagramação nova (D13). Publicado
+  pelo workflow `.github/workflows/site.yml` (`wrangler pages deploy site --project-name=nodo`) a cada push no `main`
+  que mexa em `site/`, sem depender da conexão do painel do Cloudflare com o GitHub (que se perdeu na troca de nome).
+  Precisa dos segredos `CLOUDFLARE_API_TOKEN` (Cloudflare Pages: Edit) e `CLOUDFLARE_ACCOUNT_ID`; sem eles o job só
+  avisa. Também roda à mão em Actions → Site → Run workflow.
 - **Edição XMind e temas de mapa** (`lib/maptheme.ts`, `components/MapThemeSheet.svelte`, `Action::SetMapStyle`,
   `set_map_theme` no MCP, `set_map_style` no app); barra do macOS integrada (`setup` + `mac_lights_width` em
   `src/lib.rs`, `main.ts`, `map.css`).
