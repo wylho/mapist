@@ -10,7 +10,7 @@
 Um app de mapas mentais que abre num instante, funciona sem internet e guarda cada mapa num arquivo seu. Abre os mapas
 do Minder sem perder nada. E o Claude pode trabalhar no mesmo mapa que você, pelas mesmas regras.</p>
 
-<p align="center"><a href="https://github.com/wylho/nodo/releases/latest"><b>Versão 0.1: a primeira →</b></a></p>
+<p align="center"><a href="https://github.com/wylho/nodo/releases/latest"><b>Versão 0.2: atualização automática e edição mais rápida →</b></a></p>
 
 <p align="center">
   <b>Windows · macOS · Linux</b><br>
@@ -79,13 +79,14 @@ janela estreita.
 ## Baixar
 
 Grátis e de código aberto. Os instaladores ficam na página de
-[versões do GitHub](https://github.com/wylho/nodo/releases/latest).
+[versões do GitHub](https://github.com/wylho/nodo/releases/latest). Depois de instalado, o Nodo avisa quando sai versão
+nova e se atualiza sozinho.
 
 | | |
 |---|---|
 | **Windows** | O `-setup.exe` (ou o `.msi`). |
 | **macOS** | O `.dmg`, para Apple Silicon e Intel. Na primeira vez, clique com o botão direito no app e escolha **Abrir**: ele ainda não é assinado pela Apple. |
-| **Linux** | O `.AppImage`, que roda em qualquer distribuição, o `.deb` ou o `.rpm`. |
+| **Linux** | O `.AppImage`, que roda em qualquer distribuição e se atualiza sozinho, o `.deb` ou o `.rpm`. |
 
 **Privacidade:** sem anúncios, sem rastreamento, sem coleta de dados. Seus mapas ficam no seu computador. Leia a
 [Política de Privacidade](https://nodo-1c7.pages.dev/privacidade/).
@@ -104,6 +105,7 @@ working on, through the same core as the window.
 - Branches on both sides of the root, notes in Markdown on every node, branch colours
 - Curved or angled links, light and dark themes, and a System theme that follows Windows, macOS, GNOME or KDE
 - 200 steps of undo; Claude can undo its own edits too
+- Updates itself (Windows, macOS, AppImage): the app tells you when a new version is out
 
 [Download the latest version](https://github.com/wylho/nodo/releases/latest).
 
