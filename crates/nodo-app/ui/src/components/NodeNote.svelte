@@ -6,15 +6,12 @@
   // desligadas.
   import { onDestroy, untrack } from 'svelte'
   import { DropdownMenu } from 'bits-ui'
-  import { ArrowLeft, BookOpen, Check, ChevronRight, CircleDashed, Minimize2, MoreVertical, SmilePlus, Trash2 } from '@lucide/svelte'
+  import { Trash2 } from '@lucide/svelte'
   import {
     CardDialog,
+    CardTopBar,
     emptyMeta,
     features,
-    hasStatus,
-    ReminderPopover,
-    STATUS,
-    statusOf,
     type CardHost,
     type CardMeta,
     type TagCount,
@@ -222,52 +219,23 @@
       placeholder="Escreva… use #tag para marcar"
     >
       {#snippet top()}
-        <div class="ed-top">
-          <button class="icon-btn" aria-label="Voltar ao mapa" onclick={close}><ArrowLeft size={20} /></button>
-          <span class="ed-saved">{free ? 'Nota' : isRoot ? 'Tópico central' : 'Tópico'}</span>
-          {#if wide}<button
-            class="icon-btn"
-            aria-pressed={notes.docMode}
-            aria-label={notes.docMode ? 'Voltar ao card' : 'Abrir como documento'}
-            title={notes.docMode ? 'Voltar ao card' : 'Abrir como documento (página inteira)'}
-            onclick={() => (notes.docMode = !notes.docMode)}
-          >
-            {#if notes.docMode}<Minimize2 size={19} />{:else}<BookOpen size={19} />{/if}
-          </button>{/if}
-          <ReminderPopover
-            value={meta.reminderAt}
-            repeat={meta.reminderRepeat}
-            onchange={(v) => card?.reminder(v)}
-            onrepeat={(r) => (meta.reminderRepeat = r)}
-          />
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger class="icon-btn" aria-label="Mais opções"><MoreVertical size={19} /></DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content class="menu" align="end" sideOffset={6}>
-                <DropdownMenu.Sub>
-                  <DropdownMenu.SubTrigger class="menu-item"><CircleDashed size={16} /><span class="grow">Status</span><ChevronRight size={16} /></DropdownMenu.SubTrigger>
-                  <DropdownMenu.SubContent class="menu" sideOffset={4}>
-                    {#each ['todo', 'doing', 'done'] as const as st (st)}
-                      <DropdownMenu.Item class="menu-item" onSelect={() => card?.status(st)}>
-                        <i class="menu-swatch" style:background={STATUS[st].color}></i><span class="grow">{STATUS[st].label}</span>
-                        {#if hasStatus(meta) && statusOf(meta) === st}<span class="menu-check"><Check size={15} /></span>{/if}
-                      </DropdownMenu.Item>
-                    {/each}
-                    {#if meta.statusOn && meta.reminderAt == null}
-                      <DropdownMenu.Separator class="menu-sep" />
-                      <DropdownMenu.Item class="menu-item" onSelect={() => card?.status('none')}><span class="grow">Sem status</span></DropdownMenu.Item>
-                    {/if}
-                  </DropdownMenu.SubContent>
-                </DropdownMenu.Sub>
-                <DropdownMenu.Item class="menu-item" onSelect={() => card?.chooseEmoji()}><SmilePlus size={16} />{meta.emoji ? 'Mudar emoji de capa' : 'Emoji de capa'}</DropdownMenu.Item>
-                {#if !isRoot}
-                  <DropdownMenu.Separator class="menu-sep" />
-                  <DropdownMenu.Item class="menu-item danger" onSelect={() => void removeTopic()}><Trash2 size={16} />{free ? 'Apagar nota' : 'Apagar tópico'}</DropdownMenu.Item>
-                {/if}
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
-        </div>
+        <CardTopBar
+          {meta}
+          {card}
+          onback={close}
+          backLabel="Voltar ao mapa"
+          {wide}
+          docMode={notes.docMode}
+          ondoc={() => (notes.docMode = !notes.docMode)}
+        >
+          {#snippet label()}{free ? 'Nota' : isRoot ? 'Tópico central' : 'Tópico'}{/snippet}
+          {#snippet menuEnd()}
+            {#if !isRoot}
+              <DropdownMenu.Separator class="menu-sep" />
+              <DropdownMenu.Item class="menu-item danger" onSelect={() => void removeTopic()}><Trash2 size={16} />{free ? 'Apagar nota' : 'Apagar tópico'}</DropdownMenu.Item>
+            {/if}
+          {/snippet}
+        </CardTopBar>
       {/snippet}
     </NoteEditor>
   {/if}
