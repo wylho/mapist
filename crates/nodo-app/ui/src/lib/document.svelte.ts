@@ -8,6 +8,7 @@ import { api, hasHost, isPreview, type CardFields, type Snapshot } from './api'
 import { measureAll } from './measure'
 import { mapTheme } from './maptheme'
 import { ui } from './ui.svelte'
+import { notes } from './notes.svelte'
 import { emptyMeta, setStatus, type ClipCard, type NoteColor, type ReminderStatus, type RepeatKind } from '@wylho/atrio'
 import { NODE_COLOR_TOKENS, resolveNodeColor } from './palettes'
 import { theme } from './theme.svelte'
@@ -37,6 +38,8 @@ const EMPTY: Snapshot = {
   structure: null,
   spacing: null,
   bounds: { min_x: 0, min_y: 0, max_x: 0, max_y: 0 },
+  tabs: [],
+  active: null,
 }
 
 class Document {
@@ -171,32 +174,93 @@ class Document {
     if (!this.error) ui.say('Mapa salvo')
   }
 
-  /**
-   * Pergunta antes de descartar alterações não salvas, no diálogo de
-   * confirmação do Ideario.
-   */
-  async confirmDiscard(): Promise<boolean> {
+  /** Zoom e posição de cada aba, para voltar a ela como estava (o Canvas guarda e lê). */
+  views = new Map<number, { x: number; y: number; scale: number }>()
+  /** O nó selecionado em cada aba. */
+  private selections = new Map<number, number | null>()
+
+  /** Os mapas abertos, na ordem das abas. */
+  get tabs() {
+    return this.snapshot.tabs
+  }
+
+  /** Nome que a aba mostra: o do arquivo, ou o do mapa enquanto não foi salvo. */
+  tabName(t: { title: string; path: string | null }) {
+    return t.path ? (t.path.split(/[\\/]/).pop() ?? t.path).replace(/\.nodo$/i, '') : t.title || 'Sem título'
+  }
+
+  /** Antes de outra aba vir para a frente: guarda a seleção desta e fecha o que é só dela. */
+  private async leaveTab() {
+    if (this.editing) await this.commitEdit()
+    const from = this.snapshot.active
+    if (from !== null) this.selections.set(from, this.selected)
+    notes.close()
+  }
+
+  /** Traz uma aba para a frente, com a seleção que ela tinha. */
+  async switchTab(id: number) {
+    if (id === this.snapshot.active) return
+    await this.leaveTab()
+    this.selected = this.selections.get(id) ?? null
+    await this.run(() => api.switchTab(id))
+  }
+
+  /** A aba seguinte (ou a anterior, com `step` -1), dando a volta. */
+  cycleTab(step: 1 | -1) {
+    const list = this.snapshot.tabs
+    const i = list.findIndex((t) => t.id === this.snapshot.active)
+    if (list.length < 2 || i < 0) return Promise.resolve()
+    return this.switchTab(list[(i + step + list.length) % list.length].id)
+  }
+
+  /** Salvar, fechar sem salvar ou cancelar, para o mapa da frente. `true` se pode seguir. */
+  private async settleUnsaved(discard: string): Promise<boolean> {
     if (!this.snapshot.dirty) return true
-    return ui.ask({
-      title: 'Descartar alterações?',
-      text: 'Este mapa tem alterações que não foram salvas.',
-      confirm: 'Descartar',
+    const name = this.tabName(this.snapshot)
+    const choice = await ui.choose({
+      title: 'Salvar as alterações?',
+      text: `“${name}” tem alterações que não foram salvas.`,
+      save: 'Salvar',
+      discard,
     })
+    if (choice === 'cancel') return false
+    if (choice === 'discard') return true
+    await this.saveDialog()
+    return !this.snapshot.dirty
   }
 
-  /** Novo mapa (⌘N), depois de confirmar o descarte. */
+  /** Fecha uma aba (⌘W ou o × dela). Com algo por salvar, pergunta antes; a última aba dá lugar a um mapa novo. */
+  async closeTab(id = this.snapshot.active) {
+    const tab = this.snapshot.tabs.find((t) => t.id === id)
+    if (!tab || id === null) return
+    if (tab.dirty) {
+      await this.switchTab(id)
+      if (!(await this.settleUnsaved('Fechar sem salvar'))) return
+    }
+    if (id === this.snapshot.active) await this.leaveTab()
+    this.selections.delete(id)
+    this.views.delete(id)
+    await this.run(() => api.closeTab(id))
+    if (this.snapshot.tabs.length === 0) return this.create('Tópico central')
+    // A aba que veio para a frente volta com a seleção que tinha.
+    const back = this.snapshot.active !== null ? this.selections.get(this.snapshot.active) : null
+    if (back != null && this.snapshot.nodes.some((n) => n.id === back)) this.selected = back
+  }
+
+  /** Novo mapa (⌘N), numa aba nova. */
   async newMap() {
-    if (await this.confirmDiscard()) await this.create('Tópico central')
+    await this.leaveTab()
+    await this.create('Tópico central')
   }
 
-  /** Abre um arquivo vindo de fora (Finder), depois de confirmar o descarte. */
+  /** Abre um arquivo vindo de fora (Finder), numa aba nova (ou na dele, se já estiver aberto). */
   async openPath(path: string) {
-    if (await this.confirmDiscard()) await this.open(path)
+    await this.leaveTab()
+    await this.open(path)
   }
 
-  /** Abrir (⌘O): diálogo nativo do sistema; no preview, um prompt. */
+  /** Abrir (⌘O): diálogo nativo do sistema; no preview, um prompt. O arquivo vem numa aba nova. */
   async openDialog() {
-    if (!(await this.confirmDiscard())) return
     let path: string | null = null
     if (hasHost) {
       const { open } = await import('@tauri-apps/plugin-dialog')
@@ -213,7 +277,7 @@ class Document {
     } else {
       path = window.prompt('Caminho do arquivo (.nodo, .minder, .md ou .opml)')
     }
-    if (path) await this.open(path)
+    if (path) await this.openPath(path)
   }
 
   /** Salvar (⌘S): grava no arquivo atual; mapa novo ou `as` pede o caminho. */
@@ -478,14 +542,28 @@ class Document {
     if (!this.error) ui.say('Mapa atualizado a partir do arquivo')
   }
 
-  /** A janela pediu para fechar com alterações não salvas. */
+  /** A janela pediu para fechar com alterações não salvas: salvar (todas as abas que têm), sair ou cancelar. */
   async confirmQuit() {
-    const ok = await ui.ask({
-      title: 'Sair sem salvar?',
-      text: 'Este mapa tem alterações que não foram salvas. Para guardá-las, cancele e salve antes.',
-      confirm: 'Sair sem salvar',
+    const dirty = this.snapshot.tabs.filter((t) => t.dirty)
+    const many = dirty.length > 1
+    const choice = await ui.choose({
+      title: 'Salvar as alterações?',
+      text: many
+        ? `${dirty.length} mapas têm alterações que não foram salvas.`
+        : `“${this.tabName(dirty[0] ?? this.snapshot)}” tem alterações que não foram salvas.`,
+      save: many ? 'Salvar todos' : 'Salvar',
+      discard: 'Sair sem salvar',
     })
-    if (ok) await api.quit()
+    if (choice === 'cancel') return
+    if (choice === 'save') {
+      for (const t of dirty) {
+        await this.switchTab(t.id)
+        await this.saveDialog()
+        // Desistiu de escolher onde salvar: fica no app, com a aba à vista.
+        if (this.snapshot.dirty) return
+      }
+    }
+    await api.quit()
   }
 
   toggleFold() {

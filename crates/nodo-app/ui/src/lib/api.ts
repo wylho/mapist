@@ -82,6 +82,18 @@ export interface Snapshot {
   /** Espaçamento (`nodo_core::SPACINGS`): compacto, normal ou largo; null é o normal. */
   spacing: string | null
   bounds: Bounds
+  /** Os mapas abertos, na ordem das abas. */
+  tabs: TabInfo[]
+  /** A aba da frente. */
+  active: number | null
+}
+
+/** O que a aba mostra: o nome do mapa e se tem algo por salvar. */
+export interface TabInfo {
+  id: number
+  title: string
+  path: string | null
+  dirty: boolean
 }
 
 /** Dimensões medidas no frontend para um nó. */
@@ -130,6 +142,12 @@ export const api = {
   newMap: (title: string) => call<Snapshot>('new_map', { title }),
 
   open: (path: string) => call<Snapshot>('open_map', { path }),
+
+  /** Traz uma aba para a frente. */
+  switchTab: (id: number) => call<Snapshot>('switch_tab', { id }),
+
+  /** Fecha uma aba (a interface pergunta antes, se houver algo por salvar). */
+  closeTab: (id: number) => call<Snapshot>('close_tab', { id }),
 
   save: (path?: string) => call<Snapshot>('save_map', { path: path ?? null }),
 

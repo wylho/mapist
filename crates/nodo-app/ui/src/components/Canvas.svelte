@@ -1,6 +1,6 @@
 <script lang="ts">
   // Canvas do mapa: desenha, faz pan/zoom, seleciona e arrasta nós.
-  import { onMount } from 'svelte'
+  import { onMount, untrack } from 'svelte'
   import { doc } from '../lib/document.svelte'
   import { theme } from '../lib/theme.svelte'
   import { cardFill, draw, hitNoteDot, hitTest, readThemeColors, resolveColor, type Viewport } from '../lib/render'
@@ -384,18 +384,38 @@
     onzoom?.(view.scale)
   })
 
-  let framed = false
+  /** A aba à vista: ao trocar, guarda o zoom e a posição dela e volta aos da outra (ou enquadra a que nunca foi vista). */
+  let shownTab: number | null | undefined = undefined
+  /** O enquadramento de uma aba recém-aberta ainda por acontecer (dois quadros depois). */
+  let pendingFit: number | null = null
 
   $effect(() => {
-    // Enquadra uma vez, quando o primeiro documento com nós chega. Não pode
-    // depender do zoom ser exatamente 1: as preferências restauram o zoom da
-    // sessão anterior, e aí o mapa nunca seria enquadrado.
-    if (framed || !doc.hasDocument) return
-    framed = true
-    // Dois quadros: o primeiro deixa o ResizeObserver medir o palco, o segundo
-    // enquadra sobre um tamanho já correto. Com um só, o fit usava o rect
-    // anterior e o mapa ficava fora de escala.
-    requestAnimationFrame(() => requestAnimationFrame(() => fit(false)))
+    const id = doc.snapshot.active
+    const has = doc.hasDocument
+    untrack(() => {
+      if (id === shownTab || !has) return
+      // Saiu antes de a aba ser enquadrada: não guarda uma posição que não é dela (enquadra quando ela voltar).
+      if (pendingFit !== null) {
+        cancelAnimationFrame(pendingFit)
+        pendingFit = null
+      } else if (shownTab != null) doc.views.set(shownTab, { x: view.x, y: view.y, scale: view.scale })
+      shownTab = id
+      const saved = id !== null ? doc.views.get(id) : undefined
+      if (saved) {
+        Object.assign(view, saved)
+        scheduleRender()
+        return
+      }
+      // Dois quadros: o primeiro deixa o ResizeObserver medir o palco, o segundo
+      // enquadra sobre um tamanho já correto. Com um só, o fit usava o rect
+      // anterior e o mapa ficava fora de escala.
+      pendingFit = requestAnimationFrame(() => {
+        pendingFit = requestAnimationFrame(() => {
+          pendingFit = null
+          fit(false)
+        })
+      })
+    })
   })
 </script>
 

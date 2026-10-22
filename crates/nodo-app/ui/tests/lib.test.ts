@@ -2,7 +2,7 @@
 //
 // Só o que não precisa de janela. O canvas em si é exercitado pelo app.
 
-import { describe, expect, it, beforeAll } from 'vitest'
+import { describe, expect, it, beforeAll, vi } from 'vitest'
 import {
   contrast,
   cssVars,
@@ -625,5 +625,61 @@ describe('status pelo card do mapa', () => {
     expect(doc.node(id)?.card).toEqual({ reminder_done: true, status_on: true })
     await doc.setStatus(id, 'none')
     expect(doc.node(id)?.card).toEqual({})
+  })
+})
+
+describe('abas', () => {
+  it('novo mapa abre noutra aba, trocar volta ao que estava e fechar com algo por salvar pergunta', async () => {
+    const { seedDemo } = await import('../src/lib/preview')
+    const { doc } = await import('../src/lib/document.svelte')
+    const { ui } = await import('../src/lib/ui.svelte')
+    seedDemo()
+    await doc.load()
+    const first = doc.snapshot.active!
+    const demo = doc.snapshot.title
+    await doc.newMap()
+    expect(doc.tabs).toHaveLength(2)
+    expect(doc.snapshot.title).toBe('Tópico central')
+    const second = doc.snapshot.active!
+    await doc.switchTab(first)
+    expect(doc.snapshot.title).toBe(demo)
+    await doc.setText(doc.snapshot.nodes[0].id, 'Lançamento revisto')
+    expect(doc.tabs.find((t) => t.id === first)?.dirty).toBe(true)
+
+    // Cancelar: a aba fica.
+    let closing = doc.closeTab(first)
+    await vi.waitFor(() => expect(ui.confirmRequest?.save).toBe('Salvar'))
+    const asked = ui.confirmRequest!
+    ui.confirmRequest = null
+    asked.oncancel!()
+    await closing
+    expect(doc.tabs).toHaveLength(2)
+
+    // Fechar sem salvar: sai, e a outra vem para a frente.
+    closing = doc.closeTab(first)
+    await vi.waitFor(() => expect(ui.confirmRequest).not.toBeNull())
+    const req = ui.confirmRequest!
+    ui.confirmRequest = null
+    req.onconfirm()
+    await closing
+    expect(doc.tabs.map((t) => t.id)).toEqual([second])
+    expect(doc.snapshot.active).toBe(second)
+
+    // Fechar a última: um mapa novo no lugar, nunca a janela vazia.
+    await doc.closeTab(second)
+    expect(doc.tabs).toHaveLength(1)
+    expect(doc.hasDocument).toBe(true)
+  })
+
+  it('abrir um arquivo já aberto traz a aba dele, sem abrir de novo', async () => {
+    const { seedDemo } = await import('../src/lib/preview')
+    const { doc } = await import('../src/lib/document.svelte')
+    seedDemo()
+    await doc.load()
+    await doc.openPath('/mapas/viagem.nodo')
+    await doc.newMap()
+    await doc.openPath('/mapas/viagem.nodo')
+    expect(doc.tabs.filter((t) => t.path === '/mapas/viagem.nodo')).toHaveLength(1)
+    expect(doc.tabs.find((t) => t.id === doc.snapshot.active)?.path).toBe('/mapas/viagem.nodo')
   })
 })

@@ -54,7 +54,7 @@
     const maxX = Math.max(...nodes.map((n) => n.x + n.width))
     return {
       nodes, connections: [], notes: [], dirty: false, path: null, title: '', can_undo: false, can_redo: false, stale: false,
-      style: id, structure: null, spacing: null, bounds: { min_x: 0, min_y: -20, max_x: maxX, max_y: 140 },
+      style: id, structure: null, spacing: null, bounds: { min_x: 0, min_y: -20, max_x: maxX, max_y: 140 }, tabs: [], active: null,
     }
   }
 

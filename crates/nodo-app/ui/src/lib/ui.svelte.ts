@@ -7,7 +7,13 @@ export interface ConfirmRequest {
   confirm: string
   onconfirm: () => void
   oncancel?: () => void
+  /** Terceira saída, a principal ("Salvar"): fechar um mapa com algo por salvar oferece salvar ali mesmo. */
+  save?: string
+  onsave?: () => void
 }
+
+/** O que a pessoa escolheu na caixa de três saídas. */
+export type Choice = 'save' | 'discard' | 'cancel'
 
 class Ui {
   settingsOpen = $state(false)
@@ -37,6 +43,21 @@ class Ui {
   ask(req: Omit<ConfirmRequest, 'onconfirm' | 'oncancel'>): Promise<boolean> {
     return new Promise((resolve) =>
       this.confirm({ ...req, onconfirm: () => resolve(true), oncancel: () => resolve(false) }),
+    )
+  }
+
+  /** Salvar, descartar ou cancelar (fechar um mapa ou o app com algo por salvar). */
+  choose(req: { title: string; text: string; save: string; discard: string }): Promise<Choice> {
+    return new Promise((resolve) =>
+      this.confirm({
+        title: req.title,
+        text: req.text,
+        confirm: req.discard,
+        save: req.save,
+        onconfirm: () => resolve('discard'),
+        onsave: () => resolve('save'),
+        oncancel: () => resolve('cancel'),
+      }),
     )
   }
 }

@@ -12,6 +12,12 @@
     if (confirmed) r?.onconfirm()
     else r?.oncancel?.()
   }
+
+  function save() {
+    const r = ui.confirmRequest
+    ui.confirmRequest = null
+    r?.onsave?.()
+  }
 </script>
 
 <AlertDialog.Root open={!!req} onOpenChange={(o) => { if (!o && ui.confirmRequest) close(false) }}>
@@ -20,10 +26,25 @@
     <AlertDialog.Content class="confirm">
       <AlertDialog.Title class="confirm-title">{req?.title}</AlertDialog.Title>
       <AlertDialog.Description class="confirm-text">{req?.text}</AlertDialog.Description>
-      <div class="confirm-actions">
-        <AlertDialog.Cancel class="btn ghost">Cancelar</AlertDialog.Cancel>
-        <AlertDialog.Action class="btn danger" onclick={() => close(true)}>{req?.confirm}</AlertDialog.Action>
-      </div>
+      {#if req?.save}
+        <!-- Três saídas, como no sistema: descartar à esquerda, longe do Salvar, que é a principal. -->
+        <div class="confirm-actions three">
+          <button class="btn ghost discard" onclick={() => close(true)}>{req.confirm}</button>
+          <AlertDialog.Cancel class="btn ghost">Cancelar</AlertDialog.Cancel>
+          <AlertDialog.Action class="btn primary" onclick={save}>{req.save}</AlertDialog.Action>
+        </div>
+      {:else}
+        <div class="confirm-actions">
+          <AlertDialog.Cancel class="btn ghost">Cancelar</AlertDialog.Cancel>
+          <AlertDialog.Action class="btn danger" onclick={() => close(true)}>{req?.confirm}</AlertDialog.Action>
+        </div>
+      {/if}
     </AlertDialog.Content>
   </AlertDialog.Portal>
 </AlertDialog.Root>
+
+<style>
+  .three { flex-wrap: wrap; }
+  .three :global(.btn.primary) { flex: none; }
+  .three .discard { margin-right: auto; color: var(--late); }
+</style>

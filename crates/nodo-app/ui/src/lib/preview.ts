@@ -8,7 +8,7 @@
 // Ativado por `?preview` na URL, ou automaticamente quando não há host Tauri e
 // o Vite está em modo de desenvolvimento.
 
-import type { CardFields, NodeSize, NoteCard, Snapshot } from './api'
+import type { CardFields, NodeSize, NoteCard, Snapshot, TabInfo } from './api'
 import { docToMarkdown, markdownToDoc } from './notedoc'
 
 // ── modelo em memória ────────────────────────────────────────────────────
@@ -110,7 +110,57 @@ function restore(state: string) {
   freeNotes = o.freeNotes ?? []
 }
 
+// ── abas: cada uma guarda o mapa e o desfazer dela, como as abas do núcleo (`tabs.rs`) ──
+
+interface PTab {
+  id: number
+  state: string
+  past: string[]
+  future: string[]
+}
+
+let tabs: PTab[] = []
+let activeTab: number | null = null
+let nextTab = 1
+
+/** Guarda o mapa da frente na aba dele. */
+function saveActive() {
+  const t = tabs.find((x) => x.id === activeTab)
+  if (t) Object.assign(t, { state: snapshotState(), past: [...past], future: [...future] })
+}
+
+function activate(t: PTab) {
+  restore(t.state)
+  past.splice(0, past.length, ...t.past)
+  future.splice(0, future.length, ...t.future)
+  activeTab = t.id
+}
+
+/** Uma aba nova com o mapa que está carregado agora, na frente. */
+function pushTab() {
+  const t: PTab = { id: nextTab++, state: '', past: [], future: [] }
+  tabs.push(t)
+  activeTab = t.id
+  saveActive()
+}
+
+/** Sem nada feito, sem arquivo: abrir um arquivo ocupa o lugar dele. */
+const untouched = () => path === null && !dirty && past.length === 0
+
+function tabList(): TabInfo[] {
+  return tabs.map((t) => {
+    if (t.id === activeTab) return { id: t.id, title: nodes.get(rootId)?.text ?? 'Sem título', path, dirty }
+    const o = JSON.parse(t.state) as { nodes: [number, PNode][]; rootId: number; dirty: boolean; path: string | null }
+    const root = o.nodes.find(([id]) => id === o.rootId)?.[1]
+    return { id: t.id, title: root?.text ?? 'Sem título', path: o.path, dirty: o.dirty }
+  })
+}
+
 function snapshotOf(): Snapshot {
+  return { ...mapSnapshot(), tabs: tabList(), active: activeTab }
+}
+
+function mapSnapshot(): Omit<Snapshot, 'tabs' | 'active'> {
   // Como no núcleo: os descendentes de um nó recolhido não aparecem.
   const list: PNode[] = []
   const visit = (id: number) => {
@@ -303,7 +353,15 @@ function commit(fn: () => void, relayoutAfter = true) {
 
 // ── dados iniciais: um mapa de exemplo, para o preview ter o que mostrar ──
 
+/** Começa o preview: uma aba só, com o mapa de exemplo. */
 export function seedDemo() {
+  tabs = []
+  activeTab = null
+  fillDemo()
+  pushTab()
+}
+
+function fillDemo() {
   nodes.clear()
   nextId = 1
   past.length = 0
@@ -363,6 +421,7 @@ export const previewBackend = {
   get_snapshot: () => snapshotOf(),
 
   new_map: ({ title }: { title: string }) => {
+    saveActive()
     nodes.clear()
     nextId = 1
     past.length = 0
@@ -375,12 +434,53 @@ export const previewBackend = {
     path = null
     style = null
     relayout()
+    pushTab()
     return snapshotOf()
   },
 
   open_map: ({ path: p }: { path: string }) => {
-    seedDemo()
+    saveActive()
+    const open = tabs.find((t) => (t.id === activeTab ? path : (JSON.parse(t.state) as { path: string | null }).path) === p)
+    if (open) {
+      activate(open)
+      return snapshotOf()
+    }
+    const reuse = activeTab !== null && untouched()
+    fillDemo()
     path = p
+    if (reuse) saveActive()
+    else pushTab()
+    return snapshotOf()
+  },
+
+  switch_tab: ({ id }: { id: number }) => {
+    const t = tabs.find((x) => x.id === id)
+    if (!t) throw new Error('essa aba não está mais aberta')
+    saveActive()
+    activate(t)
+    return snapshotOf()
+  },
+
+  close_tab: ({ id }: { id: number }) => {
+    saveActive()
+    const i = tabs.findIndex((x) => x.id === id)
+    if (i >= 0) {
+      const wasActive = id === activeTab
+      tabs.splice(i, 1)
+      if (wasActive) {
+        const next = tabs[i] ?? tabs[i - 1]
+        if (next) activate(next)
+        else {
+          activeTab = null
+          nodes.clear()
+          freeNotes = []
+          past.length = 0
+          future.length = 0
+          path = null
+          dirty = false
+        }
+      }
+    }
     return snapshotOf()
   },
 

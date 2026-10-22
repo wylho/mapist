@@ -153,7 +153,7 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   palettes, theme, render com `traceBranch` curvas/em ângulo, measure, font, preview). `atrio.css` (do Atrio) + `map.css`.
 - **Preview** (`ui/src/lib/preview.ts`): espelha o núcleo (mesmo layout, recolhidos escondidos); `?preview`, e
   `?select=Texto` abre com o nó selecionado. Mapa de exemplo "Lançamento do app", inventado.
-- **Testes:** 102 Rust + 46 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
+- **Testes:** 107 Rust + 49 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
   `.AppImage`; a janela abre um `.minder` passado como argumento) e `nodo --mcp` testado de ponta a ponta.
 - **CI/Release:** `.github/workflows/build.yml` (verificação + instaladores dos três sistemas nos Artifacts) e
   `release.yml` (rascunho → publicar); `scripts/check-version.sh` e `scripts/bump-version.sh`; guia em
@@ -234,6 +234,15 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   Seletor de status no card do mapa (Atrio 0.9.0, `CardPills` com `onstatus`; `doc.setStatus` com o `setStatus` do
   Atrio; `.map-card .status-toggle` recebe o clique). Painel lateral removido (pedido do usuário: ficou inútil).
   Falta: a exportação (PNG/SVG/PDF) ainda não desenha emoji e pílulas do card; anexos no `.nodo`.
+- **Abas** (pedido do usuário: vários mapas ao mesmo tempo, abas no canto de cima do mapa, sem mexer na barra):
+  `nodo-app/src/tabs.rs` (`Tabs`: um `Editor` por aba, id estável; abrir um arquivo ocupa o lugar de um mapa novo
+  intocado, e um arquivo já aberto traz a aba dele; fechar traz a vizinha), comandos `switch_tab`/`close_tab`,
+  `new_map` abre aba, snapshot com `tabs`/`active`, fechar o app olha todas as abas. Interface:
+  `components/TabBar.svelte` (no desenho da barra de zoom; ponto = não salvo; × ou botão do meio fecha; + novo),
+  `doc.switchTab`/`closeTab`/`cycleTab` (seleção de cada aba guardada), zoom e posição por aba (`doc.views`,
+  `Canvas.svelte`), atalhos ⌘T/⌘N, ⌘W, Ctrl+Tab/Ctrl+⇧Tab. A prévia tem abas também. **Caixa de três saídas**
+  (pedido do usuário): fechar aba ou app com algo por salvar oferece Salvar / Cancelar / Fechar sem salvar
+  (`ui.choose`, `ConfirmDialog.svelte`); sair com várias abas não salvas oferece "Salvar todos".
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
   estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura

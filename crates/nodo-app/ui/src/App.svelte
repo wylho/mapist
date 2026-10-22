@@ -5,6 +5,7 @@
   import { Maximize, Minus, Plus } from '@lucide/svelte'
   import TopBar from './components/TopBar.svelte'
   import Canvas from './components/Canvas.svelte'
+  import TabBar from './components/TabBar.svelte'
   import SettingsSheet from './components/SettingsSheet.svelte'
   import ConfirmDialog from './components/ConfirmDialog.svelte'
   import UpdateNotice from './components/UpdateNotice.svelte'
@@ -64,6 +65,13 @@
     const mod = e.metaKey || e.ctrlKey
     const key = e.key.toLowerCase()
 
+    // Ctrl+Tab e Ctrl+⇧Tab passam de aba, em todos os sistemas (como nos navegadores).
+    if (e.ctrlKey && e.key === 'Tab') {
+      e.preventDefault()
+      void doc.cycleTab(e.shiftKey ? -1 : 1)
+      return
+    }
+
     if (mod && !e.altKey) {
       const action: Record<string, () => void> = {
         z: () => (e.shiftKey ? doc.redo() : doc.undo()),
@@ -73,6 +81,8 @@
         e: () => e.shiftKey && (ui.exportOpen = true),
         o: () => doc.openDialog(),
         n: () => doc.newMap(),
+        t: () => doc.newMap(),
+        w: () => doc.closeTab(),
         f: () => {
           ui.searchOpen = true
           document.getElementById('busca')?.focus()
@@ -194,6 +204,7 @@
 
   <div class="map-body">
     <Canvas bind:this={canvasRef} oncontext={openMenu} onzoom={(z) => { zoom = z; prefs.setZoom(z) }}>
+      <TabBar />
       <div class="zoombar">
         <button aria-label="Diminuir zoom" title="Diminuir ({modKey}-)" onclick={() => canvasRef?.zoomBy(1 / 1.2)}><Minus size={17} /></button>
         <button class="zoomlevel" title="Tamanho real ({modKey}0)" aria-label="Zoom em {zoomPct}%; voltar a 100%" onclick={() => canvasRef?.actualSize()}>{zoomPct}%</button>

@@ -1,7 +1,7 @@
 //! Nodo desktop application.
 //!
-//! The Tauri shell owns a single open document and exposes it to the webview
-//! through commands. All mind-map semantics live in `nodo-core`; this layer
+//! The Tauri shell owns the open maps, one per tab (`tabs.rs`), and exposes the one
+//! in front to the webview through commands. All mind-map semantics live in `nodo-core`; this layer
 //! only handles window concerns, file dialogs, and JSON shaping.
 
 use nodo_core::{model::MindMap, model::NodeSide, undo::Action, Editor};
@@ -10,18 +10,21 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use tauri::{Emitter, Manager, State, WebviewWindowBuilder};
 
+mod tabs;
 mod updates;
+
+use tabs::Tabs;
 
 /// Application state shared across command invocations.
 #[derive(Default)]
 pub struct AppState {
-    inner: Mutex<Option<Editor>>,
+    inner: Mutex<Tabs>,
     /// Set once the person chose to quit without saving, so the exit that
     /// follows is not stopped again.
     quitting: AtomicBool,
 }
 
-type Doc = Option<Editor>;
+type Doc = Tabs;
 
 /// A node's measured box, reported by the renderer.
 #[derive(serde::Deserialize)]
@@ -73,6 +76,30 @@ pub struct Snapshot {
     /// Room between nodes (`nodo_core::SPACINGS`), or `None` for normal.
     spacing: Option<String>,
     bounds: Bounds,
+    /// The open maps, in tab order.
+    tabs: Vec<TabInfo>,
+    /// The tab in front.
+    active: Option<u64>,
+}
+
+/// What a tab shows: the map's name and whether it has unsaved changes.
+#[derive(Serialize)]
+pub struct TabInfo {
+    id: u64,
+    title: String,
+    path: Option<String>,
+    dirty: bool,
+}
+
+fn tab_infos(doc: &Doc) -> Vec<TabInfo> {
+    doc.iter()
+        .map(|t| TabInfo {
+            id: t.id,
+            title: t.editor.map().root.text.clone(),
+            path: t.editor.path().map(|p| p.display().to_string()),
+            dirty: t.editor.is_dirty(),
+        })
+        .collect()
 }
 
 /// A loose note on the canvas, in world units.
@@ -117,7 +144,7 @@ impl Default for Bounds {
 
 /// Flatten a laid-out map into renderer-friendly rows.
 fn snapshot(doc: &Doc) -> Snapshot {
-    let Some(ed) = doc.as_ref() else {
+    let Some(ed) = doc.current() else {
         return Snapshot {
             nodes: Vec::new(),
             connections: Vec::new(),
@@ -132,6 +159,8 @@ fn snapshot(doc: &Doc) -> Snapshot {
             structure: None,
             spacing: None,
             bounds: Bounds::default(),
+            tabs: tab_infos(doc),
+            active: None,
         };
     };
     let map: &MindMap = ed.map();
@@ -229,6 +258,8 @@ fn snapshot(doc: &Doc) -> Snapshot {
             max_x: if max_x == f64::MIN { 0.0 } else { max_x },
             max_y: if max_y == f64::MIN { 0.0 } else { max_y },
         },
+        tabs: tab_infos(doc),
+        active: doc.active_id(),
     }
 }
 
@@ -242,7 +273,8 @@ fn lock(state: &AppState) -> Result<std::sync::MutexGuard<'_, Doc>, String> {
 }
 
 fn editor(doc: &mut Doc) -> Result<&mut Editor, String> {
-    doc.as_mut().ok_or_else(|| "nenhum mapa aberto".to_string())
+    doc.current_mut()
+        .ok_or_else(|| "nenhum mapa aberto".to_string())
 }
 
 /// Return the current map, or an empty snapshot when nothing is open.
@@ -251,21 +283,45 @@ fn get_snapshot(state: State<'_, AppState>) -> Result<Snapshot, String> {
     Ok(snapshot(&*lock(&state)?))
 }
 
-/// Create a new map, replacing any open document.
+/// Create a new map in a tab of its own, in front.
 #[tauri::command]
 fn new_map(state: State<'_, AppState>, title: String) -> Result<Snapshot, String> {
     let mut doc = lock(&state)?;
-    *doc = Some(Editor::new(&title));
+    doc.add(Editor::new(&title));
+    Ok(snapshot(&doc))
+}
+
+/// Bring a tab to the front.
+#[tauri::command]
+fn switch_tab(state: State<'_, AppState>, id: u64) -> Result<Snapshot, String> {
+    let mut doc = lock(&state)?;
+    if !doc.switch(id) {
+        return Err("essa aba não está mais aberta".to_string());
+    }
+    Ok(snapshot(&doc))
+}
+
+/// Close a tab; the interface asks about unsaved changes before.
+#[tauri::command]
+fn close_tab(state: State<'_, AppState>, id: u64) -> Result<Snapshot, String> {
+    let mut doc = lock(&state)?;
+    doc.close(id);
     Ok(snapshot(&doc))
 }
 
 /// Open a map from disk, or import a Markdown or OPML file as a new map.
 #[tauri::command]
 fn open_map(state: State<'_, AppState>, path: String) -> Result<Snapshot, String> {
+    // Already open: its tab comes to the front instead of a second copy.
+    if let Some(id) = lock(&state)?.find_path(std::path::Path::new(&path)) {
+        let mut doc = lock(&state)?;
+        doc.switch(id);
+        return Ok(snapshot(&doc));
+    }
     let ed =
         Editor::open_or_import(&path).map_err(|e| format!("não foi possível abrir {path}: {e}"))?;
     let mut doc = lock(&state)?;
-    *doc = Some(ed);
+    doc.open(ed);
     Ok(snapshot(&doc))
 }
 
@@ -279,7 +335,7 @@ fn reload_map(state: State<'_, AppState>) -> Result<Snapshot, String> {
         .to_path_buf();
     let ed = Editor::open_or_import(&path)
         .map_err(|e| format!("não foi possível ler {}: {e}", path.display()))?;
-    *doc = Some(ed);
+    doc.replace_current(ed);
     Ok(snapshot(&doc))
 }
 
@@ -538,7 +594,7 @@ fn search_nodes(
     limit: usize,
 ) -> Result<Vec<u64>, String> {
     let doc = lock(&state)?;
-    let Some(ed) = doc.as_ref() else {
+    let Some(ed) = doc.current() else {
         return Ok(Vec::new());
     };
     let q = query.to_lowercase();
@@ -633,11 +689,7 @@ fn has_unsaved(app: &tauri::AppHandle) -> bool {
     if state.quitting.load(Ordering::SeqCst) {
         return false;
     }
-    let dirty = state
-        .inner
-        .lock()
-        .map(|d| d.as_ref().is_some_and(Editor::is_dirty))
-        .unwrap_or(false);
+    let dirty = state.inner.lock().map(|d| d.any_dirty()).unwrap_or(false);
     dirty
 }
 
@@ -659,7 +711,7 @@ pub fn run() {
     let state = AppState::default();
     if let Some(path) = file_from_args() {
         if let (Ok(ed), Ok(mut doc)) = (Editor::open_or_import(&path), state.inner.lock()) {
-            *doc = Some(ed);
+            doc.add(ed);
         }
     }
 
@@ -715,6 +767,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_snapshot,
             new_map,
+            switch_tab,
+            close_tab,
             open_map,
             reload_map,
             save_map,
@@ -789,7 +843,9 @@ mod tests {
             text: "A1".into(),
         })
         .unwrap();
-        Some(ed)
+        let mut doc = Tabs::default();
+        doc.add(ed);
+        doc
     }
 
     #[test]
@@ -821,7 +877,7 @@ mod tests {
 
     #[test]
     fn empty_snapshot_is_safe() {
-        let snap = snapshot(&None);
+        let snap = snapshot(&Tabs::default());
         assert!(snap.nodes.is_empty());
         assert_eq!(snap.title, "Sem título");
         assert_eq!(snap.bounds.min_x, 0.0);
@@ -838,7 +894,7 @@ mod tests {
     #[test]
     fn folded_children_are_not_drawn() {
         let mut doc = doc_with_map();
-        doc.as_mut()
+        doc.current_mut()
             .unwrap()
             .apply(Action::ToggleFold { id: 1 })
             .unwrap();
