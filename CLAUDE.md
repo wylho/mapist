@@ -371,6 +371,9 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   `moveGroup`, `groupCards`, `pasteCards`; mudar `selected` desfaz o grupo), `Canvas.svelte` (retângulo, arrasto do
   grupo, notas soltas do grupo), `render.ts` (`picked`), Configurações (opção e atalhos "Escolher vários").
   Na prévia, `window.__nodoDoc` dá o documento aos testes com Playwright.
+- **Atrio 0.20.0: tabela de verdade no card** (pedido do usuário: a tabela só aparecia aberta; no card fechado era
+  "a · b · c"): a prévia do Atrio ganhou o bloco `table` (as primeiras 8 linhas, títulos em `th`, "+N linhas"), no
+  card do mapa e no do Ideario. O Nodo calcula a prévia na hora (`preview.rs`), sem nada guardado para refazer.
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
   estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura
