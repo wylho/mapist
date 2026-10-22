@@ -7,7 +7,8 @@ export const STRUCTURES = [
   { id: 'organograma', label: 'Organograma', hint: 'De cima para baixo' },
   { id: 'arvore', label: 'Árvore', hint: 'Lista recuada' },
   { id: 'matriz', label: 'Matriz', hint: 'Linhas e colunas' },
-  { id: 'tabela', label: 'Tabela em árvore', hint: 'Cada tópico cobre os seus' },
+  { id: 'tabela', label: 'Tabela em árvore', hint: 'Um nível por coluna' },
+  { id: 'linha', label: 'Linha do tempo', hint: 'Em sequência, para a direita' },
 ] as const
 
 export type StructureId = (typeof STRUCTURES)[number]['id']
@@ -49,10 +50,16 @@ export function sketch(id: StructureId): { boxes: [number, number, number, numbe
         lines: [],
       }
     case 'tabela':
-      // Cada célula cobre as dos filhos, um nível por linha.
+      // Raiz na coluna da esquerda; cada célula cobre a altura das dos filhos, um nível por coluna.
       return {
-        boxes: [[4, 3, 88, 13], [4, 18, 43, 11], [49, 18, 43, 11], [4, 31, 21, 22], [26, 31, 21, 22], [49, 31, 43, 11], [49, 44, 21, 9], [71, 44, 21, 9]],
+        boxes: [[4, 4, 24, 48], [30, 4, 30, 23], [30, 29, 30, 23], [62, 4, 30, 11], [62, 16, 30, 11], [62, 29, 30, 11], [62, 41, 30, 11]],
         lines: [],
+      }
+    case 'linha':
+      // Principais numa linha; os galhos alternam acima e abaixo.
+      return {
+        boxes: [[2, 24, 16, 9], [26, 25, 16, 7], [50, 25, 16, 7], [74, 25, 16, 7], [32, 6, 18, 6], [32, 14, 18, 6], [56, 38, 18, 6], [56, 46, 18, 6], [80, 10, 14, 6]],
+        lines: ['M18 28.5 L26 28.5 M42 28.5 L50 28.5 M66 28.5 L74 28.5', 'M29 25 L29 9 L32 9 M29 17 L32 17', 'M53 32 L53 49 L56 49 M53 41 L56 41', 'M77 25 L77 13 L80 13'],
       }
     default:
       return {

@@ -51,7 +51,7 @@ const MAP_STYLES = ['classico', 'contorno', 'sublinhado', 'vibrante', 'pilulas',
 /** Estrutura e espaçamento, como `theme.structure` e `theme.spacing` no núcleo. */
 let structure: string | null = null
 let spacing: string | null = null
-const STRUCTURES = ['mapa', 'logico', 'organograma', 'arvore', 'matriz', 'tabela']
+const STRUCTURES = ['mapa', 'logico', 'organograma', 'arvore', 'matriz', 'tabela', 'linha']
 const SPACINGS = ['compacto', 'normal', 'largo']
 // Notas soltas, como no núcleo (`MindMap.notes`).
 /** As cores de nota do Atrio (`nodo_core::model::NOTE_COLORS`). */
@@ -283,6 +283,7 @@ function params() {
     : structure === 'arvore' ? 'tree'
     : structure === 'matriz' ? 'matrix'
     : structure === 'tabela' ? 'treetable'
+    : structure === 'linha' ? 'timeline'
     : 'map'
   const k = spacing === 'compacto' ? 0.6 : spacing === 'largo' ? 1.6 : 1
   return { mode, hGap: H_GAP * k, vGap: V_GAP * k }
@@ -347,36 +348,86 @@ function placeTree(n: PNode, x: number, y: number): number {
 const cellPad = () => Math.max(6, params().vGap * 0.5)
 const kids = (n: PNode) => (n.folded ? [] : n.children.map((id) => nodes.get(id)!).filter(Boolean))
 
-/** Tabela em árvore (layout.rs: `place_tree_table`). */
+/** Tabela em árvore, da esquerda para a direita (layout.rs: `place_tree_table`). */
 function placeTreeTable(root: PNode) {
   const pad = cellPad()
-  const rows: number[] = []
-  const measureRows = (n: PNode, d: number) => {
-    rows[d] = Math.max(rows[d] ?? 0, n.height + pad * 2)
-    for (const c of kids(n)) measureRows(c, d + 1)
+  const cols: number[] = []
+  const measureCols = (n: PNode, d: number) => {
+    cols[d] = Math.max(cols[d] ?? 0, n.width + pad * 2)
+    for (const c of kids(n)) measureCols(c, d + 1)
   }
   const span = (n: PNode): number => {
-    const own = n.width + pad * 2
+    const own = n.height + pad * 2
     const cs = kids(n)
     return cs.length ? Math.max(own, cs.reduce((a, c) => a + span(c), 0)) : own
   }
-  const put = (n: PNode, x: number, y: number, w: number, d: number) => {
+  const put = (n: PNode, x: number, y: number, h: number, d: number) => {
     const cs = kids(n)
-    const h = cs.length ? rows[d] : rows.slice(d).reduce((a, b) => a + b, 0)
+    const w = cs.length ? cols[d] : cols.slice(d).reduce((a, b) => a + b, 0)
     n.cell = [x, y, w, h]
-    n.x = x + pad
-    n.y = y + pad
+    n.x = d === 0 ? x + (w - n.width) / 2 : x + pad
+    n.y = y + (h - n.height) / 2
     if (!cs.length) return
     const spans = cs.map(span)
-    const extra = Math.max(0, w - spans.reduce((a, b) => a + b, 0)) / spans.length
-    let cx = x
+    const extra = Math.max(0, h - spans.reduce((a, b) => a + b, 0)) / spans.length
+    let cy = y
     cs.forEach((c, i) => {
-      put(c, cx, y + rows[d], spans[i] + extra, d + 1)
-      cx += spans[i] + extra
+      put(c, x + cols[d], cy, spans[i] + extra, d + 1)
+      cy += spans[i] + extra
     })
   }
-  measureRows(root, 0)
+  measureCols(root, 0)
   put(root, 0, 0, span(root), 0)
+}
+
+/** Linha do tempo (layout.rs: `place_timeline`): principais em sequência, galhos alternando acima e abaixo. */
+function placeTimeline(root: PNode) {
+  const { hGap, vGap } = params()
+  root.x = 0
+  root.y = -root.height / 2
+  const mains = kids(root)
+  const indent = Math.max(16, hGap * 0.4)
+  const band = Math.max(0, ...mains.map((m) => m.height)) / 2
+  const gap = vGap * 1.5
+  // O galho cresce para a direita, como no lógico.
+  const ext = (n: PNode): number => {
+    const cs = kids(n)
+    return cs.length ? Math.max(n.height, cs.reduce((a, c) => a + ext(c), 0) + vGap * (cs.length - 1)) : n.height
+  }
+  const putRight = (n: PNode, x: number, top: number) => {
+    const e = ext(n)
+    n.x = x
+    n.y = top + (e - n.height) / 2
+    const cs = kids(n)
+    const total = cs.reduce((a, c) => a + ext(c), 0) + vGap * (cs.length - 1)
+    let cursor = top + (e - total) / 2
+    for (const c of cs) {
+      putRight(c, n.x + n.width + hGap, cursor)
+      cursor += ext(c) + vGap
+    }
+  }
+  const rightEdge = (n: PNode): number => Math.max(n.x + n.width, ...kids(n).map(rightEdge))
+  let x = root.width + hGap
+  const edge = [-Infinity, -Infinity]
+  mains.forEach((m, i) => {
+    const side = i % 2
+    x = Math.max(x, edge[side] + hGap - indent)
+    m.x = x
+    m.y = -m.height / 2
+    let reach = x + m.width
+    const cs = kids(m)
+    if (cs.length) {
+      const total = cs.reduce((a, c) => a + ext(c), 0) + vGap * (cs.length - 1)
+      let cursor = side === 0 ? -band - gap - total : band + gap
+      for (const c of cs) {
+        putRight(c, x + indent, cursor)
+        cursor += ext(c) + vGap
+        reach = Math.max(reach, rightEdge(c))
+      }
+      edge[side] = Math.max(edge[side], reach)
+    }
+    x = x + m.width + hGap
+  })
 }
 
 /** Matriz (layout.rs: `place_matrix`). */
@@ -451,6 +502,7 @@ function reposition() {
   if (mode === 'tree') placeTree(root, 0, 0)
   else if (mode === 'matrix') placeMatrix(root)
   else if (mode === 'treetable') placeTreeTable(root)
+  else if (mode === 'timeline') placeTimeline(root)
   else place(root, 0, -extent(root) / 2)
 }
 

@@ -140,16 +140,41 @@ proptest! {
                 }
             }
         } else {
-            // A célula do pai cobre a largura das células dos filhos.
+            // A célula do pai cobre a altura das células dos filhos, que ficam na coluna seguinte.
             for n in visible(map) {
                 if n.folded || n.children.is_empty() { continue }
-                let (px, _) = cell_origin(map, &n.text);
-                let (_, _, pw, _) = n.cell.unwrap();
+                let (px, py) = cell_origin(map, &n.text);
+                let (_, _, pw, ph) = n.cell.unwrap();
                 for c in &n.children {
-                    let (cx, _) = cell_origin(map, &c.text);
-                    let (_, _, cw, _) = c.cell.unwrap();
-                    prop_assert!(cx >= px - 1e-6 && cx + cw <= px + pw + 1e-6, "{} fora da célula de {}", c.text, n.text);
+                    let (cx, cy) = cell_origin(map, &c.text);
+                    let (_, _, _, ch) = c.cell.unwrap();
+                    prop_assert!(cy >= py - 1e-6 && cy + ch <= py + ph + 1e-6, "{} fora da célula de {}", c.text, n.text);
+                    prop_assert!((cx - (px + pw)).abs() < 1e-6, "{} não está na coluna seguinte a {}", c.text, n.text);
                 }
+            }
+        }
+    }
+
+    #[test]
+    fn a_timeline_runs_left_to_right_with_branches_above_and_below(steps in edits()) {
+        let mut ed = build(&steps);
+        ed.apply(Action::SetStructure { structure: Some("linha".into()) }).unwrap();
+        let map = ed.map();
+        let mid = map.root.pos.y + map.root.height / 2.0;
+        let mut last = map.root.pos.x + map.root.width;
+        if map.root.folded { return Ok(()) }
+        for (i, m) in map.root.children.iter().enumerate() {
+            prop_assert!((m.pos.y + m.height / 2.0 - mid).abs() < 1e-6, "{} fora da linha", m.text);
+            prop_assert!(m.pos.x >= last - 1e-6, "{} fora de ordem", m.text);
+            last = m.pos.x + m.width;
+            if m.folded { continue }
+            for c in &m.children {
+                if i % 2 == 0 {
+                    prop_assert!(c.pos.y + c.height <= m.pos.y + 1e-6, "{} devia ficar acima", c.text);
+                } else {
+                    prop_assert!(c.pos.y >= m.pos.y + m.height - 1e-6, "{} devia ficar abaixo", c.text);
+                }
+                prop_assert!(c.pos.x > m.pos.x, "{} cresce para a direita", c.text);
             }
         }
     }

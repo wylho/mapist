@@ -55,13 +55,14 @@ pub const MAP_STYLES: [&str; 6] = [
 /// Ways to arrange a map: both sides of the root (Minder's default), all to the right, an org chart growing down,
 /// and an indented tree. Kept in `nodo-structure`; each node also gets the closest Minder layout, so Minder shows a
 /// similar shape.
-pub const STRUCTURES: [&str; 6] = [
+pub const STRUCTURES: [&str; 7] = [
     "mapa",
     "logico",
     "organograma",
     "arvore",
     "matriz",
     "tabela",
+    "linha",
 ];
 
 /// Room between nodes, as a factor of the default gaps.

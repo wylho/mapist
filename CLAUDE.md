@@ -304,6 +304,13 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   para a imagem e devolve exatamente como estava (`Editor::stash_view`/`restore_view`, comando `export_layout`,
   `exportView` em `exporter.ts`); o documento, o desfazer e o "não salvo" não mudam.
   Fase 3 da unificação concluída no Nodo.
+- **Linha do tempo e tabela em árvore na horizontal** (prints do XMind mandados pelo usuário): `linha` em
+  `STRUCTURES` (`place_timeline`: a raiz à esquerda, os principais em sequência na linha do meio, os galhos do 1º,
+  3º… acima e do 2º, 4º… abaixo, crescendo para a direita; cada lado guarda a borda direita e os galhos começam fora
+  da faixa do maior principal); `render.ts` traça cada trecho da linha do principal anterior até o seguinte, na cor
+  dele, e a haste do principal até os subtópicos. A **tabela em árvore** passou a crescer para a direita, como no
+  XMind (uma coluna por nível, a célula do pai na altura dos filhos, a raiz centralizada na coluna dela).
+  Teste de propriedade da linha do tempo (principais na linha e em ordem, galhos alternando).
 - **Matriz e tabela em árvore** (pedido do usuário; as outras do XMind ficaram de fora por escolha dele):
   `STRUCTURES` ganha `matriz` e `tabela` (`layout.rs`: `place_matrix` = título em cima, uma linha por tópico
   principal com os subtópicos em colunas alinhadas e o resto listado dentro da célula; `place_tree_table` = cada

@@ -130,7 +130,10 @@ export function draw(o: DrawOptions) {
   for (const n of table ? [] : snapshot.nodes) {
     if (n.parent === null) continue
     const p = byId.get(n.parent)
-    if (p) drawBranch(ctx, p, n, theme, branch.get(n.id) ?? colors.muted, linkStyle, snapshot.structure)
+    // Na linha do tempo, cada trecho da linha vai do principal anterior (ou da raiz) até este.
+    const i = p ? p.child_ids.indexOf(n.id) : -1
+    const prev = p && snapshot.structure === 'linha' && p.parent === null && i > 0 ? byId.get(p.child_ids[i - 1]) : undefined
+    if (p) drawBranch(ctx, prev ?? p, n, theme, branch.get(n.id) ?? colors.muted, linkStyle, snapshot.structure, prev !== undefined)
   }
 
   for (const n of snapshot.nodes) {
@@ -262,6 +265,8 @@ function drawBranch(
   color: string,
   style: LinkStyle,
   structure: string | null,
+  /** Linha do tempo: `parent` é o principal anterior, não o pai. */
+  alongLine = false,
 ) {
   ctx.save()
   ctx.strokeStyle = color
@@ -271,6 +276,15 @@ function drawBranch(
   if (structure === 'organograma') {
     // De baixo do pai até o alto do filho.
     traceBranchDown(ctx, style, parent.x + parent.width / 2, parent.y + parent.height, child.x + child.width / 2, child.y)
+  } else if (structure === 'linha' && (alongLine || parent.parent === null)) {
+    // Linha do tempo: os tópicos principais em sequência sobre a linha que sai da raiz.
+    const mid = parent.y + parent.height / 2
+    ctx.moveTo(parent.x + parent.width, mid)
+    ctx.lineTo(child.x, child.y + child.height / 2)
+  } else if (structure === 'linha' && parent.depth === 1) {
+    // Do tópico principal sobe (ou desce) uma haste e entra no subtópico pela esquerda.
+    const up = child.y < parent.y
+    traceElbow(ctx, parent.x + 12, up ? parent.y : parent.y + parent.height, child.x, anchorY(child, levelStyle(theme, child.depth)))
   } else if (structure === 'arvore') {
     // Lista recuada: desce pela margem do pai e entra no filho pela esquerda.
     traceElbow(ctx, parent.x + 14, parent.y + parent.height, child.x, anchorY(child, levelStyle(theme, child.depth)))

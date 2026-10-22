@@ -750,3 +750,28 @@ describe('estruturas de tabela', () => {
     })
   }
 })
+
+describe('linha do tempo', () => {
+  it('principais na mesma linha e em ordem; galhos alternando acima e abaixo; nada se sobrepõe', async () => {
+    const { seedDemo, previewBackend } = await import('../src/lib/preview')
+    seedDemo()
+    previewBackend.toggle_fold({ id: previewBackend.get_snapshot().nodes.find((n) => n.folded)!.id })
+    const s = previewBackend.set_structure({ structure: 'linha' })
+    const root = s.nodes.find((n) => n.parent === null)!
+    const mains = s.nodes.filter((n) => n.parent === root.id)
+    const mid = root.y + root.height / 2
+    let last = root.x + root.width
+    mains.forEach((m, i) => {
+      expect(Math.abs(m.y + m.height / 2 - mid)).toBeLessThan(1e-6)
+      expect(m.x).toBeGreaterThanOrEqual(last)
+      last = m.x + m.width
+      for (const c of s.nodes.filter((n) => n.parent === m.id)) {
+        if (i % 2 === 0) expect(c.y + c.height).toBeLessThanOrEqual(m.y)
+        else expect(c.y).toBeGreaterThanOrEqual(m.y + m.height)
+      }
+    })
+    for (const [i, a] of s.nodes.entries())
+      for (const b of s.nodes.slice(i + 1))
+        expect(a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height, `${a.text} × ${b.text}`).toBe(false)
+  })
+})
