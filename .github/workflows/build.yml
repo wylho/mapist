@@ -35,6 +35,10 @@ jobs:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
       - run: pnpm --dir crates/nodo-app/ui install --frozen-lockfile
+      - name: Ícone do macOS 26 (Icon Composer)
+        id: icon
+        if: runner.os == 'macOS'
+        run: scripts/mac-icon.sh
       - name: Versões iguais (Cargo, tauri.conf, package.json)
         run: scripts/check-version.sh
       - name: Formato
@@ -90,7 +94,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: pnpm --dir crates/nodo-app/ui install --frozen-lockfile
       # Pela CLI do Tauri: é ela que roda o beforeBuildCommand e embute a interface (cargo build sozinho abre vazio).
-      - run: crates/nodo-app/ui/node_modules/.bin/tauri build ${{ matrix.args }}
+      - run: crates/nodo-app/ui/node_modules/.bin/tauri build ${{ matrix.args }} ${{ steps.icon.outputs.args }}
         shell: bash
       - uses: actions/upload-artifact@v4
         with:

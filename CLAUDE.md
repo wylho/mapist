@@ -339,6 +339,12 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   navegador** (script depois do `hreflang` em cada página com par; a escolha no seletor fica em `site.lang`; robôs
   não são redirecionados). `crates/nodo-app/Info.plist` com o motivo do microfone e da câmera (o card grava e
   fotografa; sem isso o macOS nega o acesso).
+- **Ícone do macOS 26 (Liquid Glass)** (pedido do usuário: o do Nodo não ganhava o efeito de vidro):
+  `crates/nodo-app/icons/AppIcon.icon` no formato do Icon Composer (fundo branco, escuro do sistema no modo escuro, os
+  três quadrados como camadas de vidro em `Assets/*.svg`, o desenho de `source/nodo.svg` em dobro).
+  `scripts/mac-icon.sh` compila com o `actool` do Xcode 26 no CI (Build e Release, passo "Ícone do macOS 26") num
+  `Assets.car` que vai para `Contents/Resources` com `CFBundleIconName = AppIcon`; o `icon.icns` continua para os macOS
+  anteriores. Sem Xcode 26 no runner, avisa e sai com o ícone antigo. Mudou o desenho: mudar `source/` e o `.icon`.
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
   estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura

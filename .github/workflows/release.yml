@@ -37,6 +37,10 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@v2
       - run: pnpm --dir crates/nodo-app/ui install --frozen-lockfile
+      - name: Ícone do macOS 26 (Icon Composer)
+        id: icon
+        if: runner.os == 'macOS'
+        run: scripts/mac-icon.sh
       - run: scripts/check-version.sh
       - name: Chaves das atualizações e do repositório
         env:
@@ -120,7 +124,7 @@ jobs:
             Para ligar o Claude aos seus mapas: Configurações → Claude, no próprio app.
           releaseDraft: true
           prerelease: false
-          args: ${{ matrix.args }}
+          args: ${{ matrix.args }} ${{ steps.icon.outputs.args }}
 
   repos:
     name: Repositórios Linux
