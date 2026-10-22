@@ -265,6 +265,17 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   (`NodeNote.svelte`), capa no card do mapa (`coverFromMarkdown` do Atrio 0.10.0 em `MapCard.svelte`). ⌘/Ctrl+Enter
   abre o card do tópico. Atrio 0.11.0: anexo com o cursor numa lista entra depois dela.
 - **Atrio 0.12.0** (unificação, fase 1: o Ideario passou a usar a mesma crate; plano em `atrio/docs/UNIFICACAO.md`).
+- **Unificação, fase 2 (Atrio 0.13.0):** o núcleo usa as regras do Atrio, as mesmas do Ideario:
+  - **anexos** (`nodo-core/src/attachments.rs` sobre `atrio::attach`): hash = SHA-256 inteiro; foto vira WebP com
+    miniatura, paleta e proporção (`atrio::media`); a miniatura vai no `.nodo` em `miniaturas/<hash>.webp`
+    (`package.rs`) e o `att://…?thumb` a serve (`nodo-app/src/attachments.rs`);
+  - **status** (`CardFields::set_status(to, now)` com `atrio::card`): "feito" num lembrete que repete pula para a
+    próxima vez, também pelo MCP;
+  - **a prévia do card** (`nodo-core/src/preview.rs`: `card_view` = Markdown → documento → `atrio::projection`), no
+    snapshot como `view` (blocos, capa com tamanho, contagem de fotos e anexos, `#tags`); `MapCard.svelte` usa a
+    `view` (capa na proporção da foto e `+N`, #etiquetas do texto viram pílula, pílula de anexos); só a prévia do
+    navegador (`lib/preview.ts`) usa a versão em TypeScript do Atrio;
+  - **busca sem acento** (`atrio::text::fold`) na janela e no MCP.
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
   estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura

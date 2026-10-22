@@ -385,7 +385,10 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
             }
             if let Some(status) = args.get("status") {
                 let status = status.as_str().unwrap_or_default();
-                if !card.set_status(status) {
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map_or(0, |d| d.as_millis() as i64);
+                if !card.set_status(status, now) {
                     return Err(format!(
                         "unknown status {status:?}: use todo, doing, done or none"
                     ));
@@ -550,22 +553,21 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
             json!({ "ok": true })
         }
         "search_nodes" => {
-            let query = str_arg(&args, "query")?.to_lowercase();
+            // Sem acento e sem maiúsculas, como o Ideario.
+            let fold = nodo_core::atrio::text::fold;
+            let query = fold(&str_arg(&args, "query")?);
             let limit = args.get("limit").and_then(|l| l.as_u64()).unwrap_or(50) as usize;
             let map = session.require()?;
             let hits: Vec<Value> = map
                 .nodes()
-                .filter(|n| {
-                    n.text.to_lowercase().contains(&query)
-                        || n.note.to_lowercase().contains(&query)
-                })
+                .filter(|n| fold(&n.text).contains(&query) || fold(&n.note).contains(&query))
                 .take(limit)
                 .map(|n| {
                     json!({
                         "id": n.id,
                         "text": n.text,
                         "depth": map.depth_of(n.id).unwrap_or(0),
-                        "match": if n.text.to_lowercase().contains(&query) { "text" } else { "note" }
+                        "match": if fold(&n.text).contains(&query) { "text" } else { "note" }
                     })
                 })
                 .collect();

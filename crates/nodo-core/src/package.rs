@@ -10,7 +10,7 @@ use std::path::Path;
 use zip::write::SimpleFileOptions;
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
-use crate::attachments::{entry_name, referenced, zip_error, Attachments, Data};
+use crate::attachments::{entry_name, referenced, thumb_entry, zip_error, Attachments, Data};
 use crate::model::MindMap;
 use crate::nodofile;
 
@@ -45,7 +45,8 @@ pub fn read(path: &Path) -> crate::Result<(MindMap, Attachments)> {
         let entry = entry_name(&a);
         // Listed but missing (a hand-edited package): left out, the note just shows a missing file.
         if zip.index_for_name(&entry).is_some() {
-            atts.packed(a, path, entry);
+            let thumb = Some(thumb_entry(&a.hash)).filter(|t| zip.index_for_name(t).is_some());
+            atts.packed(a, path, entry, thumb);
         }
     }
     Ok((map, atts))
@@ -80,6 +81,12 @@ pub fn write(path: &Path, map: &MindMap, atts: &mut Attachments) -> crate::Resul
         })
         .map(|(h, _)| h.clone())
         .collect();
+    for h in &gone {
+        if let Some(Ok(t)) = atts.thumbs.get(h).map(Data::read) {
+            atts.thumbs
+                .insert(h.clone(), Data::Memory(std::sync::Arc::new(t)));
+        }
+    }
     for h in gone {
         if let Ok(bytes) = atts.bytes(&h) {
             atts.data
@@ -99,6 +106,15 @@ pub fn write(path: &Path, map: &MindMap, atts: &mut Attachments) -> crate::Resul
                 entry: entry_name(a),
             },
         );
+        if atts.thumbs.contains_key(&a.hash) {
+            atts.thumbs.insert(
+                a.hash.clone(),
+                Data::Packed {
+                    file: path.to_path_buf(),
+                    entry: thumb_entry(&a.hash),
+                },
+            );
+        }
     }
     Ok(())
 }
@@ -131,6 +147,20 @@ fn write_to(
             }
             Some(Data::Memory(bytes)) => {
                 zip.start_file(entry, stored).map_err(zip_error)?;
+                zip.write_all(bytes)?;
+            }
+            None => {}
+        }
+        // The thumbnail of a photo, beside it (`miniaturas/<hash>.webp`).
+        let thumb = thumb_entry(&a.hash);
+        match atts.thumbs.get(&a.hash) {
+            Some(Data::Packed { file, entry: from }) => {
+                let mut src = ZipArchive::new(File::open(file)?).map_err(zip_error)?;
+                let f = src.by_name(from).map_err(zip_error)?;
+                zip.raw_copy_file_rename(f, &thumb).map_err(zip_error)?;
+            }
+            Some(Data::Memory(bytes)) => {
+                zip.start_file(thumb, stored).map_err(zip_error)?;
                 zip.write_all(bytes)?;
             }
             None => {}
@@ -169,6 +199,43 @@ mod tests {
             .unwrap()
             .unwrap();
         (id, a.hash)
+    }
+
+    #[test]
+    fn a_real_photo_goes_in_as_webp_with_its_thumbnail_and_comes_back() {
+        let d = dir("miniatura");
+        let path = d.join("foto.nodo");
+        let mut ed = Editor::new("Fotos");
+        let jpg = atrio::media::tests::camera_jpeg(1600, 1200, 1);
+        let (_, hash) = with_photo(&mut ed, jpg);
+        ed.save(Some(&path)).unwrap();
+        let zip = ZipArchive::new(std::fs::File::open(&path).unwrap()).unwrap();
+        assert!(zip
+            .index_for_name(&format!("miniaturas/{hash}.webp"))
+            .is_some());
+        assert!(
+            zip.index_for_name(&format!("anexos/{}-praia.webp", &hash[..8]))
+                .is_some(),
+            "a foto vira WebP"
+        );
+        let back = Editor::open(&path).unwrap();
+        let a = back.attachments().get(&hash).unwrap().clone();
+        assert_eq!(
+            (a.width, a.height),
+            (Some(1600), Some(1200)),
+            "a proporção vai junto (a capa usa)"
+        );
+        assert_eq!(a.palette.as_ref().map(Vec::len), Some(5));
+        let thumb = back.attachments().thumb(&hash).unwrap().read().unwrap();
+        assert!(thumb.starts_with(b"RIFF"), "a miniatura volta");
+        // Salvar de novo copia a miniatura também.
+        let mut back = back;
+        let again = d.join("copia.nodo");
+        back.save(Some(&again)).unwrap();
+        let zip = ZipArchive::new(std::fs::File::open(&again).unwrap()).unwrap();
+        assert!(zip
+            .index_for_name(&format!("miniaturas/{hash}.webp"))
+            .is_some());
     }
 
     #[test]

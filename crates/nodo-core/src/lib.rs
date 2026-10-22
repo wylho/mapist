@@ -24,6 +24,7 @@ pub mod layout;
 pub mod model;
 pub mod nodofile;
 pub mod package;
+pub mod preview;
 pub mod undo;
 
 /// The library shared with the Ideario: card rules (`atrio::text`) and note body ↔ Markdown (`atrio::markdown`).

@@ -103,6 +103,19 @@ fn search_can_match_notes() {
 }
 
 #[test]
+fn search_ignores_accents_and_case_as_in_the_ideario() {
+    let mut s = fresh();
+    call(
+        &mut s,
+        "add_node",
+        json!({ "parent": 0, "text": "Plano de Ação" }),
+    );
+    let found = call(&mut s, "search_nodes", json!({ "query": "acao" }));
+    assert_eq!(found["count"], 1);
+    assert_eq!(found["results"][0]["match"], "text");
+}
+
+#[test]
 fn set_color_accepts_and_clears() {
     let mut s = fresh();
     let a = call(&mut s, "add_node", json!({ "parent": 0, "text": "A" }));

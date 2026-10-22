@@ -51,6 +51,9 @@ pub struct FlatNode {
     folded: bool,
     /// Tags, emoji, reminder and status (fields left out when unset).
     card: nodo_core::model::CardFields,
+    /// The card preview (Atrio's projection, the same as the Ideario's): blocks, cover, counts, `#tags`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    view: Option<nodo_core::preview::CardView>,
     child_ids: Vec<u64>,
     parent: Option<u64>,
     has_children: bool,
@@ -173,6 +176,7 @@ fn snapshot(doc: &Doc) -> Snapshot {
         node: &nodo_core::model::Node,
         parent: Option<u64>,
         depth: u32,
+        atts: &nodo_core::attachments::Attachments,
         out: &mut Vec<FlatNode>,
     ) {
         out.push(FlatNode {
@@ -188,6 +192,7 @@ fn snapshot(doc: &Doc) -> Snapshot {
             color: node.color.clone(),
             folded: node.folded,
             card: node.card.clone(),
+            view: nodo_core::preview::card_view(&node.note, atts),
             child_ids: node.children.iter().map(|c| c.id).collect(),
             parent,
             has_children: !node.children.is_empty(),
@@ -196,10 +201,10 @@ fn snapshot(doc: &Doc) -> Snapshot {
             return;
         }
         for child in &node.children {
-            walk(child, Some(node.id), depth + 1, out);
+            walk(child, Some(node.id), depth + 1, atts, out);
         }
     }
-    walk(&map.root, None, 0, &mut nodes);
+    walk(&map.root, None, 0, ed.attachments(), &mut nodes);
 
     let mut min_x = f64::MAX;
     let mut min_y = f64::MAX;
@@ -605,11 +610,13 @@ fn search_nodes(
     let Some(ed) = doc.current() else {
         return Ok(Vec::new());
     };
-    let q = query.to_lowercase();
+    // Sem acento e sem maiúsculas, como o Ideario ("acao" acha "Ação").
+    let fold = nodo_core::atrio::text::fold;
+    let q = fold(&query);
     Ok(ed
         .map()
         .nodes()
-        .filter(|n| n.text.to_lowercase().contains(&q) || n.note.to_lowercase().contains(&q))
+        .filter(|n| fold(&n.text).contains(&q) || fold(&n.note).contains(&q))
         .take(if limit == 0 { 50 } else { limit })
         .map(|n| n.id)
         .collect())

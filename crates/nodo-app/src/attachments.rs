@@ -7,6 +7,7 @@
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
+use nodo_core::atrio::attach::{hash_from_path, parse_range, percent_decode, wants_thumb};
 use nodo_core::attachments::{Attachment, Data};
 use tauri::http::{header, Request, Response, StatusCode};
 use tauri::{Manager, State};
@@ -120,17 +121,41 @@ pub fn open_attachment(
 
 /// Answer `att://localhost/<hash>` with the file, whole or the piece asked for (Range).
 pub fn serve(app: &tauri::AppHandle, req: &Request<Vec<u8>>) -> Response<Vec<u8>> {
-    let hash: String = req
-        .uri()
-        .path()
-        .trim_start_matches('/')
-        .chars()
-        .filter(char::is_ascii_hexdigit)
-        .collect();
+    let hash = hash_from_path(req.uri().path());
     if hash.is_empty() {
         return status_only(StatusCode::NOT_FOUND);
     }
     let state = app.state::<AppState>();
+    // `?thumb`: the thumbnail of a photo (WebP), as in the Ideario; a photo without one gets the photo itself.
+    if wants_thumb(req.uri().query()) {
+        let thumb = lock(&state).ok().and_then(|doc| {
+            let found = doc.iter().find_map(|t| t.editor.attachments().thumb(&hash));
+            found
+        });
+        match thumb.map(|d| d.read()) {
+            Some(Ok(bytes)) => {
+                return Response::builder()
+                    .header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
+                    .header(header::CONTENT_TYPE, "image/webp")
+                    .header(header::CACHE_CONTROL, "max-age=31536000, immutable")
+                    .body(bytes)
+                    .unwrap_or_else(|_| status_only(StatusCode::INTERNAL_SERVER_ERROR));
+            }
+            _ => {
+                let is_image = lock(&state).ok().is_some_and(|doc| {
+                    doc.iter().any(|t| {
+                        t.editor
+                            .attachments()
+                            .get(&hash)
+                            .is_some_and(|a| a.kind == "image")
+                    })
+                });
+                if !is_image {
+                    return status_only(StatusCode::NOT_FOUND);
+                }
+            }
+        }
+    }
     let served = app.state::<Served>();
     let cached = served.0.lock().ok().and_then(|c| {
         c.as_ref()
@@ -187,78 +212,8 @@ pub fn serve(app: &tauri::AppHandle, req: &Request<Vec<u8>>) -> Response<Vec<u8>
     res.unwrap_or_else(|_| status_only(StatusCode::INTERNAL_SERVER_ERROR))
 }
 
-/// Largest piece for an open request ("bytes=N-"): the player asks for the rest in steps.
-const CHUNK: u64 = 4 * 1024 * 1024;
-
-/// "bytes=a-b", "bytes=a-" (up to `CHUNK`) or "bytes=-n" (the last n) → (start, end), inclusive.
-fn parse_range(v: &str, len: u64) -> Option<(u64, u64)> {
-    let (a, b) = v
-        .strip_prefix("bytes=")?
-        .split(',')
-        .next()?
-        .split_once('-')?;
-    let last = len.checked_sub(1)?;
-    let (start, end) = match (a.trim(), b.trim()) {
-        ("", n) => (len.saturating_sub(n.parse().ok()?), last),
-        (a, "") => {
-            let a: u64 = a.parse().ok()?;
-            (a, a.saturating_add(CHUNK - 1).min(last))
-        }
-        (a, b) => (a.parse().ok()?, b.parse::<u64>().ok()?.min(last)),
-    };
-    (start <= end && start < len).then_some((start, end))
-}
-
 fn status_only(code: StatusCode) -> Response<Vec<u8>> {
     let mut res = Response::new(Vec::new());
     *res.status_mut() = code;
     res
-}
-
-/// `encodeURIComponent` back to text (the name of a file can have accents and spaces).
-fn percent_decode(s: &str) -> String {
-    let bytes = s.as_bytes();
-    let mut out = Vec::with_capacity(bytes.len());
-    let mut i = 0;
-    while i < bytes.len() {
-        if bytes[i] == b'%' && i + 2 < bytes.len() {
-            if let Ok(b) = u8::from_str_radix(&s[i + 1..i + 3], 16) {
-                out.push(b);
-                i += 3;
-                continue;
-            }
-        }
-        out.push(bytes[i]);
-        i += 1;
-    }
-    String::from_utf8_lossy(&out).into_owned()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn ranges() {
-        assert_eq!(parse_range("bytes=0-99", 1000), Some((0, 99)));
-        assert_eq!(parse_range("bytes=900-", 1000), Some((900, 999)));
-        assert_eq!(
-            parse_range("bytes=0-", 100 * 1024 * 1024),
-            Some((0, CHUNK - 1))
-        );
-        assert_eq!(parse_range("bytes=-10", 1000), Some((990, 999)));
-        assert_eq!(parse_range("bytes=0-5000", 1000), Some((0, 999)));
-        assert_eq!(parse_range("bytes=1000-", 1000), None);
-        assert_eq!(parse_range("lixo", 1000), None);
-    }
-
-    #[test]
-    fn names_with_accents_come_back() {
-        assert_eq!(
-            percent_decode("F%C3%A9rias%20na%20praia.jpg"),
-            "Férias na praia.jpg"
-        );
-        assert_eq!(percent_decode("sem-codigo.png"), "sem-codigo.png");
-        assert_eq!(percent_decode("cortado%2"), "cortado%2");
-    }
 }

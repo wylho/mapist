@@ -8,10 +8,10 @@
 // Ativado por `?preview` na URL, ou automaticamente quando não há host Tauri e
 // o Vite está em modo de desenvolvimento.
 
-import type { CardFields, NodeSize, NoteCard, Snapshot, TabInfo } from './api'
+import type { CardFields, CardView, NodeSize, NoteCard, Snapshot, TabInfo } from './api'
 import { docToMarkdown, markdownToDoc } from './notedoc'
 import { rememberPreviewUrl } from './api'
-import type { Attachment } from '@wylho/atrio'
+import { coverFromMarkdown, hashTags, previewFromMarkdown, type Attachment } from '@wylho/atrio'
 
 // ── modelo em memória ────────────────────────────────────────────────────
 
@@ -213,6 +213,7 @@ function mapSnapshot(): Omit<Snapshot, 'tabs' | 'active'> {
       color: n.colorToken,
       folded: n.folded,
       card: n.card ?? {},
+      view: viewOf(n.note),
       child_ids: [...n.children],
       parent: n.parent,
       has_children: n.children.length > 0,
@@ -409,7 +410,7 @@ function fillDemo() {
   const launch = root.children.map((c) => nodes.get(c)!).find((n) => n.text === 'Lançamento')
   if (launch) {
     const beta = nodes.get(launch.children[0])!
-    beta.note = 'Convidar 30 pessoas da lista de espera.'
+    beta.note = 'Convidar 30 pessoas da lista de espera. #convites'
     beta.card = { reminder_at: Date.now() + 2 * 86_400_000, tags: ['beta'] }
   }
   nodes.get(root.children[root.children.length - 1])!.folded = true
@@ -858,4 +859,20 @@ export async function previewImport(file: Blob, name: string): Promise<Attachmen
 
 export function previewAttachments(hashes: string[]): Attachment[] {
   return hashes.flatMap((h) => previewFiles.get(h) ?? [])
+}
+
+/**
+ * A prévia do card na prévia do navegador, sem o núcleo: a versão em TypeScript do Atrio. No app, ela vem pronta do
+ * núcleo (`nodo_core::preview`, a regra em Rust, a mesma do Ideario).
+ */
+function viewOf(note: string): CardView | undefined {
+  if (!note.trim()) return undefined
+  const images = [...note.matchAll(/!\[[^\]]*\]\(ideario:\/\/att\/([0-9a-f]+)\)/g)].length
+  return {
+    preview: previewFromMarkdown(note),
+    cover: coverFromMarkdown(note).slice(0, 4).map((hash) => ({ hash, width: previewFiles.get(hash)?.width ?? null, height: previewFiles.get(hash)?.height ?? null })),
+    image_count: images,
+    file_count: [...note.matchAll(/\[📎[^\]]*\]\(ideario:\/\/att\//g)].length,
+    hash_tags: [...new Set(hashTags(note))],
+  }
 }

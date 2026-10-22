@@ -7,12 +7,11 @@
 // Uma única canvas 2D fora de tela é reutilizada: criar uma por medição seria
 // caro e não traria benefício.
 
-import type { CardFields, FlatNode } from './api'
+import type { CardFields, CardView, FlatNode } from './api'
 
 import { fontStack, levelFont } from './font'
 import { levelStyle, mapTheme, type MapTheme } from './maptheme'
 import { flushSync, mount, unmount } from 'svelte'
-import { coverFromMarkdown, previewFromMarkdown } from '@wylho/atrio'
 import MapCard from '../components/MapCard.svelte'
 import { CARD, isCard } from './cardtext'
 
@@ -39,7 +38,7 @@ function context(): CanvasRenderingContext2D {
  * `ctx.scale()`, então medir e desenhar usam sempre a mesma referência.
  */
 export function measureNode(node: FlatNode, theme: MapTheme = mapTheme(null)): { width: number; height: number } {
-  if (isCard(node)) return measureCard(node.text, node.note, node.card)
+  if (isCard(node)) return measureCard(node.text, node.view, node.card)
   const c = context()
   const style = levelStyle(theme, node.depth)
   c.font = levelFont(style)
@@ -81,8 +80,8 @@ const cardSizes = new Map<string, { width: number; height: number }>()
  * Mede o card de um nó com nota no próprio DOM, com o mesmo componente e o mesmo CSS da tela (`CardBody` do Atrio).
  * Fora do zoom: o card na tela é escalado por `transform`, então a medida aqui já é em unidades de mundo.
  */
-export function measureCard(title: string, note: string, card: CardFields = {}): { width: number; height: number } {
-  const key = `${title}\u0000${note}\u0000${JSON.stringify(card)}`
+export function measureCard(title: string, view: CardView | undefined, card: CardFields = {}): { width: number; height: number } {
+  const key = `${title}\u0000${JSON.stringify(view ?? null)}\u0000${JSON.stringify(card)}`
   const hit = cardSizes.get(key)
   if (hit) return hit
   if (!host) {
@@ -93,7 +92,7 @@ export function measureCard(title: string, note: string, card: CardFields = {}):
   }
   host.innerHTML = '<div class="card"></div>'
   const el = host.firstElementChild as HTMLElement
-  const app = mount(MapCard, { target: el, props: { title, blocks: previewFromMarkdown(note), cover: coverFromMarkdown(note), card, onstatus: () => {} } })
+  const app = mount(MapCard, { target: el, props: { title, view, card, onstatus: () => {} } })
   flushSync()
   const size = { width: CARD.width, height: Math.ceil(el.getBoundingClientRect().height) }
   unmount(app)

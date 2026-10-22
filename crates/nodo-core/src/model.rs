@@ -283,37 +283,39 @@ fn is_false(b: &bool) -> bool {
 }
 
 impl CardFields {
-    /// The card's status, as Atrio's `statusOf`/`hasStatus`: `None` when it has neither a reminder nor a status set by
-    /// hand, otherwise `"todo"`, `"doing"` or `"done"`.
-    pub fn status(&self) -> Option<&'static str> {
-        (self.reminder_at.is_some() || self.status_on).then_some(if self.reminder_done {
-            "done"
-        } else if self.reminder_doing {
-            "doing"
-        } else {
-            "todo"
-        })
+    /// The status and reminder fields, for Atrio's card rules.
+    fn status_fields(&self) -> atrio::card::CardStatus {
+        atrio::card::CardStatus {
+            reminder_at: self.reminder_at,
+            reminder_repeat: self.reminder_repeat.clone(),
+            reminder_done: self.reminder_done,
+            reminder_doing: self.reminder_doing,
+            status_on: self.status_on,
+        }
     }
 
-    /// Set the status as Atrio's `setStatus` does (`"none"`, `"todo"`, `"doing"` or `"done"`); without a reminder a
-    /// status other than `"none"` is kept by hand. Returns `false` for an unknown status.
-    pub fn set_status(&mut self, to: &str) -> bool {
+    /// The card's status (Atrio's rule): `None` when it has neither a reminder nor a status set by hand, otherwise
+    /// `"todo"`, `"doing"` or `"done"`.
+    pub fn status(&self) -> Option<&'static str> {
+        self.status_fields().status().map(atrio::card::Status::name)
+    }
+
+    /// Set the status by Atrio's rule (`"none"`, `"todo"`, `"doing"` or `"done"`, as the card in both apps): done on
+    /// a repeating reminder moves it to the next time, back to to-do. `now` is Unix time in milliseconds. Returns
+    /// `false` for an unknown status.
+    pub fn set_status(&mut self, to: &str, now: i64) -> bool {
+        let mut c = self.status_fields();
         if to == "none" {
-            self.status_on = false;
-            if self.reminder_at.is_none() {
-                self.reminder_done = false;
-                self.reminder_doing = false;
-            }
-            return true;
-        }
-        if !["todo", "doing", "done"].contains(&to) {
+            c.clear_status();
+        } else if let Some(st) = atrio::card::Status::parse(to) {
+            c.set_status(st, now, &chrono::Local);
+        } else {
             return false;
         }
-        if self.reminder_at.is_none() {
-            self.status_on = true;
-        }
-        self.reminder_done = to == "done";
-        self.reminder_doing = to == "doing";
+        self.reminder_at = c.reminder_at;
+        self.reminder_done = c.reminder_done;
+        self.reminder_doing = c.reminder_doing;
+        self.status_on = c.status_on;
         true
     }
 
@@ -604,18 +606,37 @@ mod card_tests {
     fn status_follows_the_atrio_rules() {
         let mut c = CardFields::default();
         assert_eq!(c.status(), None);
-        assert!(c.set_status("doing"));
+        assert!(c.set_status("doing", 0));
         assert_eq!(c.status(), Some("doing"));
         assert!(c.status_on, "without a reminder the status is kept by hand");
-        assert!(c.set_status("done"));
+        assert!(c.set_status("done", 0));
         assert_eq!((c.reminder_done, c.reminder_doing), (true, false));
-        assert!(c.set_status("none"));
+        assert!(c.set_status("none", 0));
         assert_eq!(c, CardFields::default());
         c.reminder_at = Some(1);
         assert_eq!(c.status(), Some("todo"), "a reminder always has a status");
-        assert!(c.set_status("done") && !c.status_on);
-        assert!(c.set_status("none"));
+        assert!(c.set_status("done", 0) && !c.status_on);
+        assert!(c.set_status("none", 0));
         assert_eq!(c.status(), Some("done"), "with a reminder the status stays");
-        assert!(!c.set_status("talvez"));
+        assert!(!c.set_status("talvez", 0));
+    }
+
+    #[test]
+    fn done_on_a_repeating_reminder_goes_to_the_next_time_as_in_the_ideario() {
+        let day = 86_400_000;
+        let at = 1_790_000_000_000;
+        let mut c = CardFields {
+            reminder_at: Some(at),
+            reminder_repeat: Some("week".into()),
+            reminder_doing: true,
+            ..Default::default()
+        };
+        assert!(c.set_status("done", at + day));
+        assert_eq!(
+            c.reminder_at,
+            Some(at + 7 * day),
+            "a próxima semana, no mesmo horário"
+        );
+        assert_eq!(c.status(), Some("todo"), "a próxima vez começa do zero");
     }
 }

@@ -12,9 +12,12 @@ serde_json.workspace = true
 quick-xml.workspace = true
 thiserror.workspace = true
 uuid.workspace = true
-atrio = { git = "https://github.com/wylho/atrio", tag = "v0.12.0" }
+# What the Nodo and the Ideario share (note Markdown, card rules, the card preview, attachments and the photo
+# pipeline): one crate.
+atrio = { git = "https://github.com/wylho/atrio", tag = "v0.13.0", features = ["media"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 zip = { version = "4.2.0", default-features = false, features = ["deflate"] }
-sha2 = "0.10.9"
 
 [dev-dependencies]
 proptest = "1"
+atrio = { git = "https://github.com/wylho/atrio", tag = "v0.13.0", features = ["media", "testdoc"] }

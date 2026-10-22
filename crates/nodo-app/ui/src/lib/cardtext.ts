@@ -1,11 +1,11 @@
 // Nó com nota = o card de nota do Ideario, que agora mora no Atrio (`@wylho/atrio`): na tela, o próprio `CardBody`
-// dentro de um `.card`, por cima do canvas (`Canvas.svelte`); a prévia sai de `previewFromMarkdown`, com as mesmas
+// dentro de um `.card`, por cima do canvas (`Canvas.svelte`); a prévia vem do núcleo (`view`, a regra do Atrio), com as mesmas
 // regras da projeção do Ideario. Nó sem nota continua sendo a pílula de sempre.
 //
 // Aqui fica só o desenho do mesmo card em canvas, para a exportação (PNG, SVG, PDF saem só do desenho): `layoutCard`
 // quebra as linhas em unidades de mundo com uma função de medir, e `render.ts` pinta.
 
-import type { CardFields } from './api'
+import type { CardFields, CardView } from './api'
 import type { PreviewBlock } from '@wylho/atrio'
 
 /** Medidas do `.card` do Atrio (raio 16, corpo 12/13, título 16/1.25, prévia 13.5/1.45, máx. 300 de prévia). */
@@ -23,8 +23,13 @@ export const CARD = {
 }
 
 /** O card tem pílulas: lembrete, status ou etiquetas. */
-export function hasPills(c: CardFields | undefined): boolean {
-  return !!c && (c.reminder_at != null || !!c.status_on || !!c.tags?.length)
+/** As etiquetas do card: as escolhidas e as `#palavras` da nota, sem repetir (como no Ideario). */
+export function cardTags(c: CardFields | undefined, view?: CardView): string[] {
+  return [...new Set([...(c?.tags ?? []), ...(view?.hash_tags ?? [])])]
+}
+
+export function hasPills(c: CardFields | undefined, view?: CardView): boolean {
+  return (!!c && (c.reminder_at != null || !!c.status_on)) || cardTags(c, view).length > 0 || (view?.file_count ?? 0) > 0
 }
 
 /** Um tópico vira card quando tem nota, emoji ou pílulas (a raiz fica como está). */

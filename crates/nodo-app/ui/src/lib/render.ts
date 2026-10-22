@@ -7,7 +7,6 @@ import type { Snapshot } from './api'
 import type { FlatNode } from './api'
 import { fitText, measureRun } from './measure'
 import { CARD, isCard, layoutCard } from './cardtext'
-import { previewFromMarkdown } from '@wylho/atrio'
 import { fontStack, levelFont, uiFont } from './font'
 import { mix, NODE_COLOR_TOKENS } from './palettes'
 import { branchColors, levelStyle, lineWidth, mapTheme, softFill, textOn, type LevelStyle, type MapTheme } from './maptheme'
@@ -367,7 +366,7 @@ function drawCard(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
     ctx.lineWidth = 1
     ctx.stroke()
     const font = fontStack()
-    const lay = layoutCard(n.text, previewFromMarkdown(n.note), measureRun)
+    const lay = layoutCard(n.text, n.view?.preview ?? [], measureRun)
     ctx.textAlign = 'left'
     ctx.textBaseline = 'alphabetic'
     for (const l of lay.lines) {

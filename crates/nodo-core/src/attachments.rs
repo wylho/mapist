@@ -1,31 +1,18 @@
 //! Attachments of a map: photos, audio, video and other files placed in topic notes. A note refers to one by the hash
-//! of its content (`ideario://att/<hash>`, the same Markdown the Ideario writes, through `atrio::markdown`). The bytes
-//! live inside the `.nodo` package (`package.rs`) and are read from it only when asked for; the ones added since the
-//! last save are kept in memory until the next one.
+//! of its content (`ideario://att/<hash>`, the same Markdown the Ideario writes, through `atrio::markdown`). What an
+//! attachment is and how it comes in are Atrio's (`atrio::attach`, the same as the Ideario: photos go through the
+//! pipeline, WebP with a thumbnail, palette and tone). The bytes live inside the `.nodo` package (`package.rs`) and
+//! are read from it only when asked for; the ones added since the last save are kept in memory until the next one.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
+pub use atrio::attach::Attachment;
+use atrio::media::Quality;
 
 use crate::model::MindMap;
-
-/// What the map knows about an attachment (kept in `mapa.json`, and what the card receives).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Attachment {
-    pub hash: String,
-    pub name: String,
-    pub mime: String,
-    /// `image`, `pdf`, `doc`, `sheet`, `audio`, `video` or `other`, as the Ideario sorts them.
-    pub kind: String,
-    pub bytes: u64,
-    /// When it came in, Unix time in milliseconds.
-    pub added_at: i64,
-}
 
 /// Where the bytes of an attachment are. Cheap to clone, so the app can take it under its lock and read the bytes
 /// after releasing it (a big video does not hold the map).
@@ -42,96 +29,25 @@ pub enum Data {
 pub struct Attachments {
     meta: BTreeMap<String, Attachment>,
     pub(crate) data: BTreeMap<String, Data>,
-}
-
-/// Hash of a file's content: the attachment's name in the notes. Equal files are stored once.
-fn hash_of(bytes: &[u8]) -> String {
-    Sha256::digest(bytes)
-        .iter()
-        .take(16)
-        .map(|b| format!("{b:02x}"))
-        .collect()
-}
-
-/// MIME type by the file's extension (what the card and the system viewer need).
-pub fn mime_of(name: &str) -> &'static str {
-    let ext = name
-        .rsplit_once('.')
-        .map(|(_, e)| e.to_ascii_lowercase())
-        .unwrap_or_default();
-    match ext.as_str() {
-        "jpg" | "jpeg" => "image/jpeg",
-        "png" => "image/png",
-        "gif" => "image/gif",
-        "webp" => "image/webp",
-        "heic" => "image/heic",
-        "svg" => "image/svg+xml",
-        "pdf" => "application/pdf",
-        "mp3" => "audio/mpeg",
-        "m4a" => "audio/mp4",
-        "ogg" | "oga" => "audio/ogg",
-        "wav" => "audio/wav",
-        "webm" => "video/webm",
-        "mp4" | "m4v" => "video/mp4",
-        "mov" => "video/quicktime",
-        "doc" => "application/msword",
-        "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "odt" => "application/vnd.oasis.opendocument.text",
-        "xls" => "application/vnd.ms-excel",
-        "xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "ods" => "application/vnd.oasis.opendocument.spreadsheet",
-        "csv" => "text/csv",
-        "txt" | "md" => "text/plain",
-        _ => "application/octet-stream",
-    }
-}
-
-/// The Ideario's kinds of attachment, by MIME type and extension.
-pub fn kind_of(mime: &str, name: &str) -> &'static str {
-    let ext = name
-        .rsplit_once('.')
-        .map(|(_, e)| e.to_ascii_lowercase())
-        .unwrap_or_default();
-    if mime.starts_with("image/") {
-        "image"
-    } else if mime.starts_with("audio/") {
-        "audio"
-    } else if mime.starts_with("video/") {
-        "video"
-    } else if mime == "application/pdf" {
-        "pdf"
-    } else if matches!(
-        ext.as_str(),
-        "doc" | "docx" | "odt" | "rtf" | "txt" | "md" | "pages"
-    ) {
-        "doc"
-    } else if matches!(ext.as_str(), "xls" | "xlsx" | "ods" | "csv" | "numbers") {
-        "sheet"
-    } else {
-        "other"
-    }
+    /// Thumbnails (WebP) of the photos, by hash.
+    pub(crate) thumbs: BTreeMap<String, Data>,
 }
 
 impl Attachments {
-    /// Store a file and return its attachment (the same one when this content is already here).
+    /// Bring a file in, the Atrio way (a photo becomes WebP with a thumbnail; the rest stays as it came), and return
+    /// its attachment (the same one when this content is already here).
     pub fn add(&mut self, name: &str, bytes: Vec<u8>, now: i64) -> Attachment {
-        let hash = hash_of(&bytes);
-        if let Some(a) = self.meta.get(&hash) {
+        let p = atrio::attach::prepare(bytes, name, "", Quality::Balanced, now);
+        if let Some(a) = self.meta.get(&p.att.hash) {
             return a.clone();
         }
-        let name = clean_name(name);
-        let mime = mime_of(&name).to_string();
-        let a = Attachment {
-            kind: kind_of(&mime, &name).to_string(),
-            bytes: bytes.len() as u64,
-            hash: hash.clone(),
-            name,
-            mime,
-            added_at: now,
-        };
-        self.meta.insert(hash.clone(), a.clone());
-        self.data.insert(hash, Data::Memory(Arc::new(bytes)));
-        a
+        let hash = p.att.hash.clone();
+        if let Some(t) = p.thumb {
+            self.thumbs.insert(hash.clone(), Data::Memory(Arc::new(t)));
+        }
+        self.meta.insert(hash.clone(), p.att.clone());
+        self.data.insert(hash, Data::Memory(Arc::new(p.bytes)));
+        p.att
     }
 
     pub fn get(&self, hash: &str) -> Option<&Attachment> {
@@ -169,8 +85,28 @@ impl Attachments {
         self.data.get(hash).cloned()
     }
 
+    /// Where the thumbnail of a photo is.
+    pub fn thumb(&self, hash: &str) -> Option<Data> {
+        self.thumbs.get(hash).cloned()
+    }
+
     /// Known from the package just read: the bytes stay in `file` until asked for.
-    pub(crate) fn packed(&mut self, a: Attachment, file: &Path, entry: String) {
+    pub(crate) fn packed(
+        &mut self,
+        a: Attachment,
+        file: &Path,
+        entry: String,
+        thumb: Option<String>,
+    ) {
+        if let Some(t) = thumb {
+            self.thumbs.insert(
+                a.hash.clone(),
+                Data::Packed {
+                    file: file.to_path_buf(),
+                    entry: t,
+                },
+            );
+        }
         self.data.insert(
             a.hash.clone(),
             Data::Packed {
@@ -208,48 +144,28 @@ pub(crate) fn zip_error(e: zip::result::ZipError) -> crate::Error {
     }
 }
 
-/// A name that is safe inside the package and on any system (no folders, no characters Windows refuses).
-fn clean_name(name: &str) -> String {
-    let base = name.rsplit(['/', '\\']).next().unwrap_or(name);
-    let clean: String = base
-        .chars()
-        .map(|c| {
-            if "<>:\"|?*".contains(c) || c.is_control() {
-                '_'
-            } else {
-                c
-            }
-        })
-        .collect();
-    let clean = clean.trim().trim_matches('.').to_string();
-    if clean.is_empty() {
-        "anexo".to_string()
-    } else {
-        clean
-    }
-}
-
 /// Where an attachment goes inside the package: readable, and unique by the start of the hash.
 pub(crate) fn entry_name(a: &Attachment) -> String {
-    format!("anexos/{}-{}", &a.hash[..8.min(a.hash.len())], a.name)
+    format!(
+        "anexos/{}-{}",
+        &a.hash[..8.min(a.hash.len())],
+        atrio::attach::safe_name(&a.name)
+    )
+}
+
+/// Where the thumbnail of a photo goes inside the package.
+pub(crate) fn thumb_entry(hash: &str) -> String {
+    format!("miniaturas/{hash}.webp")
 }
 
 /// The attachments the map uses: every `ideario://att/<hash>` in topic and loose notes.
 pub fn referenced(map: &MindMap) -> BTreeSet<String> {
     let mut out = BTreeSet::new();
-    let mut scan = |text: &str| {
-        for part in text.split(atrio::markdown::ATT).skip(1) {
-            let hash: String = part.chars().take_while(char::is_ascii_hexdigit).collect();
-            if !hash.is_empty() {
-                out.insert(hash);
-            }
-        }
-    };
     for n in map.nodes() {
-        scan(&n.note);
+        out.extend(atrio::attach::referenced(&n.note));
     }
     for f in &map.notes {
-        scan(&f.text);
+        out.extend(atrio::attach::referenced(&f.text));
     }
     out
 }
@@ -259,26 +175,24 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_same_content_is_stored_once_and_kinds_follow_the_ideario() {
+    fn the_same_content_is_stored_once_and_photos_get_the_pipeline() {
         let mut a = Attachments::default();
-        let foto = a.add("Praia.JPG", vec![1, 2, 3], 10);
-        let again = a.add("outra.jpg", vec![1, 2, 3], 20);
-        assert_eq!(foto, again, "mesmo conteúdo, mesmo anexo");
-        assert_eq!(foto.kind, "image");
-        assert_eq!(foto.mime, "image/jpeg");
-        assert_eq!(foto.hash.len(), 32);
-        assert_eq!(a.bytes(&foto.hash).unwrap(), vec![1, 2, 3]);
-        assert_eq!(kind_of(mime_of("aula.m4a"), "aula.m4a"), "audio");
-        assert_eq!(kind_of(mime_of("plano.xlsx"), "plano.xlsx"), "sheet");
-        assert_eq!(kind_of(mime_of("x.zip"), "x.zip"), "other");
+        let doc = a.add("Roteiro.TXT", vec![1, 2, 3], 10);
+        let again = a.add("outro.txt", vec![1, 2, 3], 20);
+        assert_eq!(doc, again, "mesmo conteúdo, mesmo anexo");
+        assert_eq!(doc.kind, "doc");
+        assert_eq!(doc.hash.len(), 64, "o hash do Atrio: SHA-256 inteiro");
+        assert_eq!(a.bytes(&doc.hash).unwrap(), vec![1, 2, 3]);
+        assert!(a.thumb(&doc.hash).is_none());
+        let jpg = atrio::media::tests::camera_jpeg(1200, 900, 1);
+        let photo = a.add("IMG_1.JPG", jpg, 30);
+        assert_eq!(
+            (photo.kind.as_str(), photo.mime.as_str()),
+            ("image", "image/webp")
+        );
+        assert_eq!((photo.width, photo.height), (Some(1200), Some(900)));
+        assert!(a.thumb(&photo.hash).is_some(), "foto ganha miniatura");
         assert!(a.bytes("ffff").is_err());
-    }
-
-    #[test]
-    fn names_are_safe_inside_the_package() {
-        assert_eq!(clean_name("../../etc/passwd"), "passwd");
-        assert_eq!(clean_name("C:\\fotos\\a:b?.png"), "a_b_.png");
-        assert_eq!(clean_name("..."), "anexo");
     }
 
     #[test]

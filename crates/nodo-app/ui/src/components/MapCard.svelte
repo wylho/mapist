@@ -1,19 +1,24 @@
 <script lang="ts">
-  // O miolo do card de um tópico no mapa, igual ao card da lista do Ideario: emoji, título, prévia da nota e as pílulas
-  // (lembrete ou status, etiquetas). O mesmo componente desenha na tela (`Canvas.svelte`) e mede (`measure.ts`; lá
-  // com um `onstatus` vazio, para o seletor de status ocupar o mesmo lugar). A capa é a primeira foto ou fileira de
-  // fotos da nota, como no Ideario.
-  import { CardBody, CardPills, type PreviewBlock, type ReminderStatus, type RepeatKind } from '@wylho/atrio'
-  import { attachments, type CardFields } from '../lib/api'
-  import { hasPills } from '../lib/cardtext'
+  // O miolo do card de um tópico no mapa, igual ao card da lista do Ideario: capa, emoji, título, prévia da nota e as
+  // pílulas (lembrete ou status, anexos, etiquetas). A prévia e a capa vêm prontas do núcleo (`view`), pela regra do
+  // Atrio, a mesma do Ideario. O mesmo componente desenha na tela (`Canvas.svelte`) e mede (`measure.ts`; lá com um
+  // `onstatus` vazio, para o seletor de status ocupar o mesmo lugar). A capa leva a proporção de cada foto, então a
+  // altura do card é a mesma antes e depois de a foto carregar.
+  import { CardBody, CardPills, type ReminderStatus, type RepeatKind } from '@wylho/atrio'
+  import { attachments, type CardFields, type CardView } from '../lib/api'
+  import { cardTags, hasPills } from '../lib/cardtext'
 
   let {
     title,
-    blocks,
-    cover = [],
+    view,
     card = {},
     onstatus,
-  }: { title: string; blocks: PreviewBlock[]; cover?: string[]; card?: CardFields; onstatus?: (to: ReminderStatus) => void } = $props()
+  }: { title: string; view?: CardView; card?: CardFields; onstatus?: (to: ReminderStatus) => void } = $props()
+
+  const tags = $derived(cardTags(card, view))
+  const files = $derived(view?.file_count ?? 0)
+  const cover = $derived(view?.cover ?? [])
+  const ratio = (c: { width: number | null; height: number | null }) => (c.width && c.height ? c.width / c.height : 16 / 10)
 </script>
 
 {#snippet pills()}<CardPills
@@ -22,14 +27,18 @@
     reminderDone={!!card.reminder_done}
     reminderDoing={!!card.reminder_doing}
     statusOn={!!card.status_on}
-    tags={card.tags ?? []}
+    fileCount={files}
+    {tags}
     {onstatus}
   />{/snippet}
 
 {#if cover.length}
-  <!-- Proporção fixa no mapa: o card é medido antes de a foto carregar, e a altura não pode depender dela. -->
-  <div class="card-media map-cover" class:row={cover.length > 1}>
-    {#each cover.slice(0, 4) as h (h)}<img src={attachments.url(h)} alt="" decoding="async" />{/each}
+  <!-- Uma foto, ou a primeira linha de fotos lado a lado: mesma altura, larguras pela proporção de cada uma. -->
+  <div class="card-media" class:row={cover.length > 1}>
+    {#each cover as c (c.hash)}
+      <img src={attachments.thumb(c.hash)} alt="" style:aspect-ratio={ratio(c)} style:flex-grow={ratio(c)} decoding="async" />
+    {/each}
+    {#if (view?.image_count ?? 0) > cover.length}<span class="more">+{(view?.image_count ?? 0) - cover.length}</span>{/if}
   </div>
 {/if}
-<CardBody {title} emoji={card.emoji ?? null} {blocks} meta={hasPills(card) ? pills : undefined} />
+<CardBody {title} emoji={card.emoji ?? null} blocks={view?.preview ?? []} meta={hasPills(card, view) ? pills : undefined} />

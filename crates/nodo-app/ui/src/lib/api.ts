@@ -5,7 +5,7 @@
 // componentes não dependam disso.
 
 import { convertFileSrc, invoke as tauriInvoke } from '@tauri-apps/api/core'
-import type { Attachment } from '@wylho/atrio'
+import type { Attachment, PreviewBlock } from '@wylho/atrio'
 
 /** Um nó achatado, com geometria absoluta, pronto para desenhar. */
 export interface FlatNode {
@@ -22,9 +22,27 @@ export interface FlatNode {
   folded: boolean
   /** Etiquetas, emoji, lembrete e status do card (o núcleo omite o que está vazio). */
   card: CardFields
+  /** A prévia do card, feita no núcleo pela regra do Atrio (a mesma do Ideario); sem nota, não vem. */
+  view?: CardView
   child_ids: number[]
   parent: number | null
   has_children: boolean
+}
+
+/** Foto da capa: o hash e o tamanho (a capa guarda a proporção antes de a foto carregar). */
+export interface CoverPhoto {
+  hash: string
+  width: number | null
+  height: number | null
+}
+
+/** A prévia do card de um tópico (`nodo_core::preview::CardView`): blocos, capa, contagens e `#tags` do texto. */
+export interface CardView {
+  preview: PreviewBlock[]
+  cover: CoverPhoto[]
+  image_count: number
+  file_count: number
+  hash_tags: string[]
 }
 
 /** O que o card de um nó tem além do texto e da nota: o card do Ideario sem a categoria (`nodo_core::model::CardFields`). */
@@ -138,18 +156,6 @@ async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> 
 }
 
 /** O que o núcleo guarda de um anexo; o card do Atrio espera também os campos de foto do Ideario (aqui vazios). */
-interface CoreAttachment {
-  hash: string
-  name: string
-  mime: string
-  kind: string
-  bytes: number
-  addedAt: number
-}
-
-const toAttachment = (a: CoreAttachment): Attachment =>
-  ({ ...a, origBytes: null, width: null, height: null, palette: null, tone: null }) as Attachment
-
 /** Anexos das notas (fotos, áudios, arquivos), guardados dentro do `.nodo`. Na prévia, em memória. */
 export const attachments = {
   /** Endereço para mostrar ou tocar um anexo: o protocolo `att` do app, ou o blob da prévia. */
@@ -158,19 +164,25 @@ export const attachments = {
     return convertFileSrc(hash, 'att')
   },
 
+  /** A miniatura de uma foto (WebP, como no Ideario); na prévia, a própria foto. */
+  thumb(hash: string): string {
+    if (isPreview) return previewAttachmentUrl(hash)
+    return `${convertFileSrc(hash, 'att')}?thumb`
+  },
+
   async importFile(file: Blob, name: string): Promise<Attachment> {
     if (isPreview) return (await import('./preview')).previewImport(file, name)
     const bytes = new Uint8Array(await file.arrayBuffer())
-    return toAttachment(await tauriInvoke<CoreAttachment>('import_file', bytes, { headers: { 'x-name': encodeURIComponent(name) } }))
+    return await tauriInvoke<Attachment>('import_file', bytes, { headers: { 'x-name': encodeURIComponent(name) } })
   },
 
   async importPath(path: string): Promise<Attachment> {
-    return toAttachment(await call<CoreAttachment>('import_path', { path }))
+    return call<Attachment>('import_path', { path })
   },
 
   async list(hashes: string[]): Promise<Attachment[]> {
     if (isPreview) return (await import('./preview')).previewAttachments(hashes)
-    return (await call<CoreAttachment[]>('get_attachments', { hashes })).map(toAttachment)
+    return call<Attachment[]>('get_attachments', { hashes })
   },
 
   /** Salva uma cópia onde a pessoa escolher (no preview, baixa pelo navegador). */
