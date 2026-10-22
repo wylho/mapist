@@ -1,95 +1,110 @@
-<!-- Mesmo conteúdo da página inicial do site (site/index.html). Ao mudar um, mude o outro: skill /sync-site. -->
+<!-- Same content as the website home page (site/index.html), with the Portuguese copy in README.pt-BR.md and site/pt/index.html. Change one, change the others: skill /sync-site. -->
+
+<p align="center"><b>English</b> · <a href="README.pt-BR.md">Português</a></p>
 
 <p align="center">
-  <img src="site/favicon.svg" width="88" height="88" alt="Ícone do Nodo">
+  <img src="site/favicon.svg" width="88" height="88" alt="Nodo app icon">
 </p>
 
 <h1 align="center">Nodo</h1>
 
-<p align="center"><b>Pense em mapas.</b><br>
-Um app de mapas mentais que abre num instante, funciona sem internet e guarda cada mapa num arquivo seu,
-legível sem o app. E o Claude pode trabalhar no mesmo mapa que você, pelas mesmas regras.</p>
+<p align="center"><b>Think in maps.</b><br>
+A free, open-source mind mapping app that opens in an instant, works offline and keeps every map in a file you own,
+readable without the app. And Claude can work on the same map you do, by the same rules. For Windows, macOS and Linux.</p>
 
-<p align="center"><a href="https://github.com/wylho/nodo/releases/latest"><b>Versão 0.2: atualização automática e edição mais rápida →</b></a></p>
+<p align="center"><a href="https://github.com/wylho/nodo/releases/latest"><b>Version 0.3: the .nodo format, and every topic is a card →</b></a></p>
 
 <p align="center">
   <b>Windows · macOS · Linux</b><br>
-  <a href="#baixar"><b>Baixar</b></a> ·
+  <a href="#download"><b>Download</b></a> ·
   <a href="https://nodo-1c7.pages.dev">nodo-1c7.pages.dev</a> ·
-  <a href="https://nodo-1c7.pages.dev/privacidade/">Privacidade</a> ·
-  <a href="#english">English</a> ·
-  <a href="https://github.com/sponsors/wylho">♥ Apoiar</a>
+  <a href="https://nodo-1c7.pages.dev/privacy/">Privacy</a> ·
+  <a href="README.pt-BR.md">Português</a> ·
+  <a href="https://github.com/sponsors/wylho">♥ Sponsor</a>
 </p>
 
 <picture>
   <source srcset="site/img/mapa-escuro.webp" media="(prefers-color-scheme: dark)">
-  <img src="site/img/mapa.webp" alt="Um mapa mental no Nodo: a raiz no centro, ramos coloridos dos dois lados e o painel com o texto, a nota e a cor do nó selecionado">
+  <img src="site/img/mapa.webp" alt="A mind map in Nodo: the central topic in the middle, colorful branches on both sides and a panel with the selected topic’s text, note and color">
 </picture>
 
-## Feito para pensar rápido
+## Built for fast thinking
 
-Tudo pelo teclado, nada de esperar. O mapa se arruma sozinho enquanto você escreve.
-
-| | |
-|---|---|
-| **Selecione e digite** | O texto entra direto no nó. Tab cria um filho, Enter um irmão, já prontos para escrever; as setas andam pelo mapa. |
-| **Dos dois lados** | Ramos à esquerda e à direita da raiz. Escolha o lado de cada um no painel. |
-| **Notas em cada nó** | Texto curto no mapa, detalhes na nota em Markdown, que fica guardada junto. |
-| **Desfazer de verdade** | Duzentos passos para trás e para a frente, sem perder o que você recolheu ou mudou de lado. |
-| **Busca no mapa** | Encontra pelo texto ou pela nota, e marca cada nó que bate. |
-| **Sem internet** | Nenhuma conta, nenhum servidor. O mapa é um arquivo no seu computador. |
-
-## O Claude no mesmo mapa
-
-O Nodo traz um servidor MCP embutido. Ligue nas Configurações e peça ao Claude para ler, criar e reorganizar seus
-mapas. Ele usa o mesmo núcleo do app: cada edição dele segue as mesmas regras de uma feita à mão, e ele também desfaz
-o que fez.
-
-- Claude Desktop: um botão nas Configurações
-- Claude Code: um comando para colar no terminal
-- Quando o Claude salva, a janela recarrega o mapa ao voltar para ela
-
-<img src="site/img/claude.webp" alt="Configurações do Nodo com a aparência, o traçado das linhas e a seção Claude, com o botão Ligar e o comando do Claude Code">
-
-## O arquivo é seu
-
-Cada mapa é um arquivo `.nodo`: texto legível (JSON), que abre sem o app e cabe num controle de versão. Salvar nunca
-deixa um arquivo pela metade. Mapas `.minder`, Markdown e OPML abrem como mapa novo, e o original fica como está.
-
-<img src="site/img/busca.webp" alt="Mapa com a busca aberta na barra, marcando os nós que contêm a palavra Design">
-
-## Temas de mapa
-
-Seis temas, no espírito do XMind: cartões coloridos, contorno, texto sobre a linha, cores fortes, pílulas ou cinzas.
-Cada ramo principal ganha uma cor e os de baixo herdam. O tema fica salvo no próprio mapa.
-
-- Ramos em curva ou em ângulo, com cantos arredondados
-- Uma cor escolhida à mão continua valendo por cima do tema
-
-<img src="site/img/temas.webp" alt="A folha Tema do mapa, com seis mapinhas de exemplo: Clássico, Contorno, Sublinhado, Vibrante, Pílulas e Monocromático">
-
-## Com a cara do seu sistema
-
-Temas claro e escuro, e um tema Sistema que imita as cores do Windows, do macOS, do GNOME e do KDE. Funciona também numa
-janela estreita.
-
-<img src="site/img/janela-estreita.webp" width="300" alt="O Nodo numa janela estreita, no tema escuro, com o mapa inteiro na tela">
-
-## Baixar
-
-Grátis e de código aberto. Os instaladores ficam na página de
-[versões do GitHub](https://github.com/wylho/nodo/releases/latest). Depois de instalado, o Nodo avisa quando sai versão
-nova e se atualiza sozinho.
+All from the keyboard, no waiting. The mind map lays itself out while you type.
 
 | | |
 |---|---|
-| **Windows** | O `-setup.exe` (ou o `.msi`). |
-| **macOS** | O `.dmg`, para Apple Silicon e Intel. Na primeira vez, clique com o botão direito no app e escolha **Abrir**: ele ainda não é assinado pela Apple. |
-| **Linux** | Pelo repositório apt ou dnf, que atualiza junto com o sistema (abaixo). Ou o `.AppImage`, que roda em qualquer distribuição e se atualiza sozinho. |
+| **Select and type** | Text goes straight into the topic. Tab adds a child, Enter a sibling, both ready for typing; the arrow keys move around the map. |
+| **On both sides** | Branches to the left and right of the central topic. Pick each branch’s side from the right-click menu. |
+| **Notes on every topic** | Short text on the map, details in a Markdown note saved right along with it. |
+| **Real undo** | Two hundred steps back and forth, without losing what you collapsed or moved to the other side. |
+| **Search the map** | Finds by text or note, and highlights every matching topic. |
+| **Works offline** | No account, no server. Local-first: the map is a file on your computer. |
 
-### Linux, pelo repositório
+## Claude on the same map
 
-Ubuntu, Debian e derivados:
+Nodo has a built-in MCP server, so AI agents like Claude can edit your maps. Turn it on in Settings and ask Claude to
+read, create and reorganize your mind maps. It uses the same core as the app: each of its edits follows the same rules
+as one made by hand, and it can undo what it did.
+
+- Claude Desktop: one button in Settings
+- Claude Code: one command to paste into the terminal
+- When Claude saves, the window reloads the map as soon as you return to it
+
+<img src="site/img/claude.webp" alt="Nodo settings with appearance, line style and the Claude section, with the Connect button and the Claude Code command">
+
+## The file is yours
+
+Every map is a `.nodo` file: a zip with the map as readable JSON plus its attachments, which you can open without the
+app. Saving never leaves a half-written file. Minder (`.minder`), Markdown and OPML files open as new maps, and the
+original stays as it is.
+
+<img src="site/img/busca.webp" alt="A map with search open in the toolbar, highlighting the topics that contain the word Design">
+
+## Map themes
+
+Six themes in the spirit of XMind, so it feels familiar if you are looking for an XMind alternative: colored cards,
+outline, text on the line, bold colors, pills or grays. Each main branch gets a color and the ones below inherit it.
+The theme is saved in the map itself.
+
+- Curved or angled branches, with rounded corners
+- A color you pick by hand still wins over the theme
+
+<img src="site/img/temas.webp" alt="The Map theme sheet, with six sample maps: Classic, Outline, Underline, Vibrant, Pills and Monochrome (labels in Portuguese)">
+
+## Looks at home on your system
+
+Light and dark themes, and a System theme that matches the colors of Windows, macOS, GNOME and KDE. It works in a
+narrow window too.
+
+<img src="site/img/janela-estreita.webp" width="300" alt="Nodo in a narrow window, in dark mode, with the whole mind map on screen">
+
+## Structures and formats
+
+Switch the whole map’s structure in one click, and move your ideas in and out in open formats.
+
+| | |
+|---|---|
+| **Seven structures** | Mind map, logic chart, org chart, tree, matrix, tree table and timeline, with compact, normal or wide spacing. The structure is saved in the map and can be undone. |
+| **Markdown and OPML import and export** | Open Markdown, OPML and Minder files as new maps. Export to PNG, SVG, a print-ready PDF, Markdown or OPML. |
+| **Every topic is a card** | A Markdown note, tags, an emoji, a reminder, a three-color status, photos and attachments. Copy a card into Ideario, or paste one from it. |
+| **Several maps in tabs** | Keep many maps open at once and switch with Ctrl+Tab. Closing one with unsaved changes asks before it goes. |
+
+## Download
+
+Free and open source. Installers for Windows, macOS and Linux are on the
+[GitHub releases page](https://github.com/wylho/nodo/releases/latest). Once installed, Nodo tells you when a new version
+is out and updates itself.
+
+| | |
+|---|---|
+| **Windows** | The `-setup.exe` (or the `.msi`). |
+| **macOS** | The `.dmg`, for Apple Silicon and Intel. The first time, right-click the app and choose **Open**: it isn’t signed by Apple yet. |
+| **Linux** | From the apt or dnf repository, which updates along with your system (below). Or the `.AppImage`, which runs on any distribution and updates itself. |
+
+### Linux, from the repository
+
+Ubuntu, Debian and derivatives:
 
 ```sh
 curl -fsSL https://nodo-1c7.pages.dev/linux/nodo.gpg | sudo tee /usr/share/keyrings/nodo.gpg > /dev/null
@@ -104,72 +119,55 @@ sudo curl -fsSL -o /etc/yum.repos.d/nodo.repo https://nodo-1c7.pages.dev/linux/n
 sudo dnf install nodo
 ```
 
-**Privacidade:** sem anúncios, sem rastreamento, sem coleta de dados. Seus mapas ficam no seu computador. Leia a
-[Política de Privacidade](https://nodo-1c7.pages.dev/privacidade/).
+**Privacy:** no ads, no tracking, no data collection. Your maps stay on your computer. Read the
+[Privacy Policy](https://nodo-1c7.pages.dev/privacy/).
 
 ---
 
-## English
+## Development
 
-Nodo is a free, open-source mind-mapping app for Windows, macOS and Linux. It opens instantly, works offline and keeps
-each map in a readable `.nodo` file on your computer; Minder, Markdown and OPML maps open as new maps. A built-in MCP server lets Claude (Desktop and Code) read and edit the same map you are
-working on, through the same core as the window.
-
-- Select and type: Tab for a child, Enter for a sibling, both ready to write; arrows to move
-- Six map themes in the spirit of XMind, saved in the map
-- Branches on both sides of the root, notes in Markdown on every node, branch colours
-- Curved or angled links, light and dark themes, and a System theme that follows Windows, macOS, GNOME or KDE
-- 200 steps of undo; Claude can undo its own edits too
-- Updates itself (Windows, macOS, AppImage), or through the apt/dnf repository on Linux
-
-[Download the latest version](https://github.com/wylho/nodo/releases/latest).
-
----
-
-## Para desenvolver
-
-Especificação: [`docs/SPEC.md`](docs/SPEC.md). Regras do projeto: [`CLAUDE.md`](CLAUDE.md). Lançar uma versão:
-[`docs/RELEASE.md`](docs/RELEASE.md).
+Specification (in Portuguese): [`docs/SPEC.md`](docs/SPEC.md). Project rules: [`CLAUDE.md`](CLAUDE.md). Releasing a
+version: [`docs/RELEASE.md`](docs/RELEASE.md).
 
 ```
 crates/
-├── nodo-core/   modelo, layout, .nodo (e leitura de .minder), Editor (histórico + arquivo), sem interface
-├── nodo-mcp/    servidor MCP sobre stdio (24 ferramentas)
-└── nodo-app/    janela Tauri; a interface Svelte 5 fica em ui/
-site/              nodo-1c7.pages.dev (Cloudflare Pages, sem build)
+├── nodo-core/   model, layout, .nodo (and .minder reading), Editor (history + file), no UI
+├── nodo-mcp/    MCP server over stdio (24 tools)
+└── nodo-app/    Tauri window; the Svelte 5 interface lives in ui/
+site/              nodo-1c7.pages.dev (Cloudflare Pages, no build step; English at the root, Portuguese in site/pt/)
 ```
 
-O aplicativo e o MCP passam pelo mesmo `nodo_core::Editor`: um agente produz exatamente o mesmo resultado que uma
-pessoa na janela. Um binário, dois modos: `nodo` abre a janela, `nodo --mcp` fala o protocolo.
+The app and the MCP server both go through the same `nodo_core::Editor`: an agent produces exactly the same result as
+a person in the window. One binary, two modes: `nodo` opens the window, `nodo --mcp` speaks the protocol.
 
-Requer Rust 1.80+, Node 22 e pnpm. No Linux, as bibliotecas do WebKitGTK
+Requires Rust 1.80+, Node 22 and pnpm. On Linux, the WebKitGTK libraries
 (`libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf`).
 
 ```bash
 pnpm --dir crates/nodo-app/ui install
 
-# Interface no navegador, sobre um backend simulado, com recarga instantânea: o caminho para qualquer mudança visual
-pnpm --dir crates/nodo-app/ui dev          # abrir http://localhost:1420/?preview
+# Interface in the browser, on a simulated backend, with instant reload: the way to go for any visual change
+pnpm --dir crates/nodo-app/ui dev          # open http://localhost:1420/?preview
 
-# Verificação completa
+# Full check
 cargo fmt --all --check && cargo clippy --all-targets -- -D warnings && cargo test --workspace
 pnpm --dir crates/nodo-app/ui run check && pnpm --dir crates/nodo-app/ui run test
 
-# O app de verdade (cargo build sozinho não embute a interface e abre uma janela vazia)
+# The real app (cargo build alone does not embed the interface and opens an empty window)
 crates/nodo-app/ui/node_modules/.bin/tauri build
 ```
 
-### MCP fora do app
+### MCP outside the app
 
 ```json
-{ "mcpServers": { "nodo": { "command": "/caminho/para/nodo", "args": ["--mcp"] } } }
+{ "mcpServers": { "nodo": { "command": "/path/to/nodo", "args": ["--mcp"] } } }
 ```
 
-Ferramentas: `new_map`, `open_map`, `save_map`, `get_map`, `get_node`, `add_node`, `remove_node`, `set_text`,
+Tools: `new_map`, `open_map`, `save_map`, `get_map`, `get_node`, `add_node`, `remove_node`, `set_text`,
 `set_note`, `set_color`, `set_side`, `set_map_theme`, `toggle_fold`, `relayout`, `search_nodes`, `undo`, `redo`,
 `map_stats`.
 
-## Licença
+## License
 
-GPL-3.0-or-later, herdada do Minder. Veja [LICENSE](LICENSE). O Minder é de Trevor Williams e colaboradores; o Nodo
-é obra derivada e leva a mesma licença.
+GPL-3.0-or-later, inherited from Minder. See [LICENSE](LICENSE). Minder is by Trevor Williams and contributors; Nodo is
+a derivative work and carries the same license.

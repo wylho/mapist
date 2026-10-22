@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nodo — app de mapas mentais grátis e de código aberto</title>
+<meta name="description" content="Mapas mentais grátis e de código aberto para Windows, macOS e Linux. Funciona sem internet, importa e exporta Markdown e OPML, e o Claude edita seus mapas por MCP.">
+<link rel="canonical" href="https://nodo-1c7.pages.dev/pt/">
+<link rel="alternate" hreflang="en" href="https://nodo-1c7.pages.dev/">
+<link rel="alternate" hreflang="pt-BR" href="https://nodo-1c7.pages.dev/pt/">
+<link rel="alternate" hreflang="x-default" href="https://nodo-1c7.pages.dev/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Nodo">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:url" content="https://nodo-1c7.pages.dev/pt/">
+<meta property="og:title" content="Nodo — app de mapas mentais grátis e de código aberto">
+<meta property="og:description" content="Mapas mentais grátis e de código aberto para Windows, macOS e Linux. Funciona sem internet, importa e exporta Markdown e OPML, e o Claude edita seus mapas por MCP.">
+<meta property="og:image" content="https://nodo-1c7.pages.dev/img/mapa.webp">
+<meta property="og:image:type" content="image/webp">
+<meta property="og:image:width" content="2880">
+<meta property="og:image:height" content="1800">
+<meta property="og:image:alt" content="Um mapa mental no Nodo, app de mapas mentais grátis e de código aberto, com ramos coloridos dos dois lados">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Nodo — app de mapas mentais grátis e de código aberto">
+<meta name="twitter:description" content="Mapas mentais grátis e de código aberto para Windows, macOS e Linux. Funciona sem internet, importa e exporta Markdown e OPML, e o Claude edita seus mapas por MCP.">
+<meta name="twitter:image" content="https://nodo-1c7.pages.dev/img/mapa.webp">
+<meta name="twitter:image:alt" content="Um mapa mental no Nodo, app de mapas mentais grátis e de código aberto, com ramos coloridos dos dois lados">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Nodo",
+  "description": "Mapas mentais grátis e de código aberto para Windows, macOS e Linux. Funciona sem internet, importa e exporta Markdown e OPML, e o Claude edita seus mapas por MCP.",
+  "url": "https://nodo-1c7.pages.dev/pt/",
+  "inLanguage": "pt-BR",
+  "applicationCategory": "ProductivityApplication",
+  "applicationSubCategory": "Mapas mentais",
+  "operatingSystem": "Windows, macOS, Linux",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "isAccessibleForFree": true,
+  "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+  "downloadUrl": "https://github.com/wylho/nodo/releases/latest",
+  "image": "https://nodo-1c7.pages.dev/img/mapa.webp",
+  "screenshot": [
+    "https://nodo-1c7.pages.dev/img/mapa.webp",
+    "https://nodo-1c7.pages.dev/img/temas.webp",
+    "https://nodo-1c7.pages.dev/img/claude.webp"
+  ],
+  "featureList": [
+    "Estruturas de mapa mental, diagrama lógico, organograma, árvore, matriz, tabela em árvore e linha do tempo",
+    "Funciona sem internet; cada mapa é um arquivo .nodo seu",
+    "Importa e exporta Markdown e OPML",
+    "Exporta PNG, SVG e PDF",
+    "Servidor MCP embutido para o Claude ler e editar seus mapas",
+    "Seis temas de mapa, claro e escuro"
+  ],
+  "author": {
+    "@type": "Person",
+    "name": "wylho",
+    "url": "https://github.com/wylho"
+  },
+  "sameAs": [
+    "https://github.com/wylho/nodo"
+  ]
+}
+</script>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="/pt/"><img src="/favicon.svg" alt="">Nodo</a>
+    <nav class="nav-links"><a href="#recursos">Recursos</a><a href="#claude">Claude</a><a href="#baixar">Baixar</a></nav>
+    <a class="lang-link" href="/" hreflang="en" lang="en" title="Read in English" aria-label="Read in English"><svg class="lucide" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg><span>EN</span></a>
+    <a class="icon-link" href="https://github.com/wylho/nodo" aria-label="Nodo no GitHub"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg></a>
+    <a class="btn primary sm" href="#baixar"><svg class="lucide" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Baixar grátis</a>
+  </div>
+</header>
+
+<main>
+<section class="hero">
+  <div class="bits" aria-hidden="true">
+    <div class="bit b1 mini-map"><svg viewBox="0 0 236 132" width="236" height="132" font-family="system-ui, -apple-system, sans-serif" aria-hidden="true"><path d="M92 66 C 116 66, 112 22, 136 22" fill="none" stroke="#e5818d" stroke-width="2.5" stroke-linecap="round"/><path d="M92 66 C 116 66, 112 66, 136 66" fill="none" stroke="#b28ee6" stroke-width="2.5" stroke-linecap="round"/><path d="M92 66 C 116 66, 112 110, 136 110" fill="none" stroke="#e8c547" stroke-width="2.5" stroke-linecap="round"/><rect x="8" y="50" width="86" height="32" rx="11" fill="var(--accent)"/><text x="51" y="70.5" text-anchor="middle" font-size="13" font-weight="700" fill="var(--on-accent)">Ideia</text><rect x="136" y="9" width="80" height="26" rx="9" fill="#e5818d"/><text x="176" y="26" text-anchor="middle" font-size="12" font-weight="600" fill="#16201c">Pesquisa</text><rect x="136" y="53" width="65" height="26" rx="9" fill="#b28ee6"/><text x="169" y="70" text-anchor="middle" font-size="12" font-weight="600" fill="#16201c">Design</text><rect x="136" y="97" width="94" height="26" rx="9" fill="#e8c547"/><text x="183" y="114" text-anchor="middle" font-size="12" font-weight="600" fill="#16201c">Lançamento</text></svg></div>
+    <div class="bit b2"><div class="bit-label">Cor do ramo</div><div class="swatches"><span class="swatch" style="--c: #6eb0f7"></span><span class="swatch on" style="--c: #b28ee6"></span><span class="swatch" style="--c: #7fbf7f"></span><span class="swatch" style="--c: #e8c547"></span><span class="swatch" style="--c: #f0a36b"></span><span class="swatch" style="--c: #e5818d"></span><span class="swatch" style="--c: #5cc8c8"></span><span class="swatch" style="--c: #c9a27e"></span></div></div>
+    <div class="bit b3"><div class="keys"><kbd>Tab</kbd>filho<span></span><kbd>Enter</kbd>irmão<span></span><kbd>Espaço</kbd>editar</div></div>
+    <div class="bit b4"><div class="bit-row"><span class="ico-sm"><svg class="lucide" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg></span><div><b>Claude Desktop</b><div class="sub">Lê e edita o mapa aberto</div></div><span class="btn primary sm">Ligar</span></div></div>
+  </div>
+  <div class="hero-inner">
+    <span class="chip">Windows · macOS · Linux</span>
+    <h1>Pense em mapas.</h1>
+    <p class="lead">Um app de mapas mentais grátis e de código aberto que abre num instante, funciona sem internet e
+    guarda cada mapa num arquivo seu. E o Claude pode trabalhar no mesmo mapa que você.</p>
+    <div class="cta">
+      <a class="btn primary" href="#baixar"><svg class="lucide" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Baixar grátis</a>
+      <a class="btn soft" href="https://github.com/wylho/nodo"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>Ver no GitHub</a>
+    </div>
+    <p class="fine">Grátis e de código aberto · <a href="https://github.com/wylho/nodo/releases/latest">Versão 0.3: formato .nodo, e cada tópico é um card<svg class="lucide" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a></p>
+  </div>
+</section>
+
+<div class="showcase">
+  <picture>
+    <source srcset="/img/mapa-escuro.webp" media="(prefers-color-scheme: dark)">
+    <img src="/img/mapa.webp" width="2880" height="1800" alt="Um mapa mental no Nodo: a raiz no centro, ramos coloridos dos dois lados e o painel com o texto, a nota e a cor do nó selecionado">
+  </picture>
+</div>
+
+<section class="section" id="recursos">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="chip accent"><svg class="lucide" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></svg>Feito para pensar rápido</span>
+      <h2>Tudo pelo teclado, nada de esperar.</h2>
+      <p>O mapa se arruma sozinho enquanto você escreve.</p>
+    </div>
+    <div class="grid">
+      <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h.01"/><path d="M12 12h.01"/><path d="M14 8h.01"/><path d="M16 12h.01"/><path d="M18 8h.01"/><path d="M6 8h.01"/><path d="M7 16h10"/><path d="M8 12h.01"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg></span><h3>Selecione e digite</h3><p>O texto entra direto no nó. Tab cria um filho, Enter um irmão, já prontos para escrever; as setas andam pelo mapa.</p></div>
+      <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9v2c0 .6-.4 1-1 1H7c-.6 0-1-.4-1-1V9"/><path d="M12 12v3"/></svg></span><h3>Dos dois lados</h3><p>Ramos à esquerda e à direita da raiz. Escolha o lado de cada um no clique direito.</p></div>
+      <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg></span><h3>Notas em cada nó</h3><p>Texto curto no mapa, detalhes na nota em Markdown, que fica guardada junto.</p></div>
+      <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></svg></span><h3>Desfazer de verdade</h3><p>Duzentos passos para trás e para a frente, sem perder o que você recolheu ou mudou de lado.</p></div>
+      <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg></span><h3>Busca no mapa</h3><p>Encontra pelo texto ou pela nota, e marca cada nó que bate.</p></div>
+      <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-2.007-1.523"/><path d="M2 8.82a15 15 0 0 1 4.177-2.643"/><path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/></svg></span><h3>Sem internet</h3><p>Nenhuma conta, nenhum servidor. Local-first: o mapa é um arquivo no seu computador.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section band" id="claude">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="chip accent"><svg class="lucide" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>Claude</span>
+      <h2>O Claude no mesmo mapa.</h2>
+      <p>O Nodo traz um servidor MCP embutido, para agentes de IA como o Claude editarem seus mapas. Ligue nas
+      Configurações e peça ao Claude para ler, criar e reorganizar seus mapas mentais.</p>
+    </div>
+    <div class="cards">
+      <div class="card wide">
+        <div>
+          <h3>As mesmas regras de uma edição à mão</h3>
+          <p>Ele usa o mesmo núcleo do app: cada edição dele vai para o mesmo histórico, e ele também desfaz o que fez.</p>
+          <ul>
+            <li>Claude Desktop: um botão nas Configurações</li>
+            <li>Claude Code: um comando para colar no terminal</li>
+            <li>Quando o Claude salva, a janela recarrega o mapa ao voltar para ela</li>
+          </ul>
+        </div>
+        <div class="media"><img src="/img/claude.webp" width="2880" height="1800" loading="lazy" alt="Configurações do Nodo com a aparência, o traçado das linhas e a seção Claude, com o botão Ligar e o comando do Claude Code"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="chip accent"><svg class="lucide" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg>Seus mapas</span>
+      <h2>Com a sua cara, no seu arquivo.</h2>
+      <p>Temas para o mapa e para a janela, e um formato aberto que se lê sem o app.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <h3>Temas de mapa</h3>
+        <p>Seis temas, no espírito do XMind: cartões coloridos, contorno, texto sobre a linha, cores fortes, pílulas ou
+        cinzas. Cada ramo principal ganha uma cor e os de baixo herdam. O tema fica salvo no próprio mapa.</p>
+        <div class="media"><img src="/img/temas.webp" width="2880" height="1800" loading="lazy" alt="A folha Tema do mapa, com seis mapinhas de exemplo: Clássico, Contorno, Sublinhado, Vibrante, Pílulas e Monocromático"></div>
+      </div>
+      <div class="card">
+        <h3>O arquivo é seu</h3>
+        <p>Cada mapa é um arquivo <code>.nodo</code>: um zip com o mapa em JSON legível e os anexos, que abre sem o app.
+        Salvar nunca deixa um arquivo pela metade. Mapas <code>.minder</code>, Markdown e OPML abrem como mapa novo.</p>
+        <div class="media"><img src="/img/busca.webp" width="2880" height="1800" loading="lazy" alt="Mapa com a busca aberta na barra, marcando os nós que contêm a palavra Design"></div>
+      </div>
+      <div class="card wide">
+        <div>
+          <h3>Com a cara do seu sistema</h3>
+          <p>Temas claro e escuro, e um tema Sistema que imita as cores do Windows, do macOS, do GNOME e do KDE. Ramos em
+          curva ou em ângulo, com cantos arredondados. Funciona também numa janela estreita.</p>
+        </div>
+                <div class="media phone"><img src="/img/janela-estreita.webp" width="1170" height="2532" loading="lazy" alt="O Nodo numa janela estreita, no tema escuro, com o mapa inteiro na tela"></div>
+      </div>
+    </div>
+    <div class="section-head" style="margin-top: 120px">
+      <span class="chip accent"><svg class="lucide" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>Estruturas e formatos</span>
+      <h2>Do jeito que a ideia pedir.</h2>
+      <p>Troque a estrutura do mapa inteiro com um clique, e leve suas ideias para dentro e para fora em formatos abertos.</p>
+    </div>
+    <div class="grid four">
+      <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/></svg></span><h3>Sete estruturas</h3><p>Mapa mental, diagrama lógico, organograma, árvore, matriz, tabela em árvore e linha do tempo, com espaçamento compacto, normal ou largo. A estrutura fica salva no mapa e se desfaz.</p></div>
+      <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg></span><h3>Importa e exporta Markdown e OPML</h3><p>Abra arquivos Markdown, OPML e do Minder como mapa novo. Exporte em PNG, SVG, PDF para imprimir, Markdown ou OPML.</p></div>
+      <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/></svg></span><h3>Cada tópico é um card</h3><p>Nota em Markdown, etiquetas, emoji, lembrete, status em três cores, fotos e anexos. Copie um card para o Ideario, ou cole um que veio de lá.</p></div>
+      <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 4v4"/><path d="M2 8h20"/><path d="M6 4v4"/></svg></span><h3>Vários mapas em abas</h3><p>Deixe vários mapas abertos e troque com Ctrl+Tab. Fechar um com algo por salvar pergunta antes.</p></div>
+    </div>
+
+  </div>
+</section>
+
+<section class="section band" id="baixar">
+  <div class="wrap">
+    <div class="section-head center">
+      <span class="chip accent"><svg class="lucide" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Baixar</span>
+      <h2>Grátis e de código aberto.</h2>
+      <p>Os instaladores para Windows, macOS e Linux ficam na página de <a href="https://github.com/wylho/nodo/releases/latest">versões do GitHub</a>. Depois de instalado, o Nodo avisa quando sai versão nova e se atualiza sozinho.</p>
+    </div>
+    <div class="grid dl">
+      <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg></span><h3>Windows</h3><p>O <code>-setup.exe</code> (ou o <code>.msi</code>).</p><a class="btn soft sm" href="https://github.com/wylho/nodo/releases/latest"><svg class="lucide" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Baixar</a></div>
+      <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.528V3a1 1 0 0 1 1-1h0"/><path d="M18.237 21A15 15 0 0 0 22 11a6 6 0 0 0-10-4.472A6 6 0 0 0 2 11a15.1 15.1 0 0 0 3.763 10 3 3 0 0 0 3.648.648 5.5 5.5 0 0 1 5.178 0A3 3 0 0 0 18.237 21"/></svg></span><h3>macOS</h3><p>O <code>.dmg</code>, para Apple Silicon e Intel. Na primeira vez, clique com o botão direito no app e escolha <b>Abrir</b>: ele ainda não é assinado pela Apple.</p><a class="btn soft sm" href="https://github.com/wylho/nodo/releases/latest"><svg class="lucide" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Baixar</a></div>
+      <div class="box"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19h8"/><path d="m4 17 6-6-6-6"/></svg></span><h3>Linux</h3><p>Pelo repositório apt ou dnf, que atualiza junto com o sistema (comandos abaixo). Ou o <code>.AppImage</code>, que roda em qualquer distribuição e se atualiza sozinho.</p><a class="btn soft sm" href="https://github.com/wylho/nodo/releases/latest"><svg class="lucide" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Baixar</a></div>
+    </div>
+    <div class="box full" id="linux"><span class="ico"><svg class="lucide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19h8"/><path d="m4 17 6-6-6-6"/></svg></span>
+      <h3>Linux, pelo repositório</h3>
+      <p>Assim o Nodo atualiza junto com o resto do sistema. Ubuntu, Debian e derivados:</p>
+      <pre><code>curl -fsSL https://nodo-1c7.pages.dev/linux/nodo.gpg | sudo tee /usr/share/keyrings/nodo.gpg &gt; /dev/null
+echo "deb [signed-by=/usr/share/keyrings/nodo.gpg] https://nodo-1c7.pages.dev/apt stable main" | sudo tee /etc/apt/sources.list.d/nodo.list
+sudo apt update &amp;&amp; sudo apt install nodo</code></pre>
+      <p>Fedora:</p>
+      <pre><code>sudo curl -fsSL -o /etc/yum.repos.d/nodo.repo https://nodo-1c7.pages.dev/linux/nodo.repo
+sudo dnf install nodo</code></pre>
+    </div>
+    <p class="note">Sem anúncios, sem rastreamento, sem coleta de dados. Leia a <a href="/privacidade/">Política de Privacidade</a>.</p>
+  </div>
+</section>
+
+<section class="section" id="ideario">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="chip accent"><svg class="lucide" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/></svg>Do mesmo autor</span>
+      <h2>Para o resto do dia, o Ideario.</h2>
+      <p>Um app de notas local-first, com lembretes, calendário e kanban num lugar só. Mesmo jeito de ser: abre na hora, funciona sem internet, os dados são seus e o Claude trabalha junto.</p>
+    </div>
+    <div class="cards">
+      <div class="card wide sibling">
+        <div>
+          <a class="brand" href="https://ideario.pages.dev/pt/"><img src="/img/ideario-icone.svg" alt="">Ideario</a>
+          <ul><li>Notas com checklist, fotos, PDFs e áudio</li><li>Lembretes que avisam de verdade, com calendário e kanban</li><li>Sincroniza pelo seu próprio Google Drive, se quiser</li><li>Windows, macOS, Linux e Android</li></ul>
+          <a class="btn primary" href="https://ideario.pages.dev/pt/">Conhecer o Ideario<svg class="lucide" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+        </div>
+        <div class="media"><picture><source srcset="/img/ideario-escuro.webp" media="(prefers-color-scheme: dark)"><img src="/img/ideario.webp" width="2880" height="1800" loading="lazy" alt="Tela principal do Ideario: notas coloridas em cards, com checklists, fotos e lembretes"></picture></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="cols">
+      <div><a class="brand" href="/pt/"><img src="/favicon.svg" alt="">Nodo</a><p>Mapas mentais no seu computador.</p></div>
+      <div><h4>Nodo</h4><a href="/pt/#recursos">Recursos</a><a href="/pt/#claude">Claude</a><a href="/pt/#baixar">Baixar</a></div>
+      <div><h4>Projeto</h4><a href="https://github.com/wylho/nodo">GitHub</a><a href="https://github.com/wylho/nodo/releases">Versões</a><a href="https://github.com/sponsors/wylho">Apoiar</a></div>
+      <div><h4>Sobre</h4><a href="/privacidade/">Privacidade</a><a href="/" hreflang="en" lang="en">English</a><a href="https://github.com/phase1geo/Minder">Minder</a><a href="https://ideario.pages.dev/pt/">Ideario</a></div>
+    </div>
+    <p class="legal">Derivado do <a href="https://github.com/phase1geo/Minder" style="display:inline">Minder</a>, de Trevor Williams · GPL-3.0 · Ícones <a href="https://lucide.dev">Lucide</a></p>
+  </div>
+</footer>
+<script>
+  const nav = document.querySelector('.nav')
+  const onScroll = () => nav.classList.toggle('scrolled', scrollY > 8)
+  addEventListener('scroll', onScroll, { passive: true }); onScroll()
+</script>
+</body>
+</html>
