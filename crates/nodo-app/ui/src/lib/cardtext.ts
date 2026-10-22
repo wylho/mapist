@@ -5,8 +5,8 @@
 // Aqui fica só o desenho do mesmo card em canvas, para a exportação (PNG, SVG, PDF saem só do desenho): `layoutCard`
 // quebra as linhas em unidades de mundo com uma função de medir, e `render.ts` pinta.
 
-import type { CardFields, CardView } from './api'
-import type { PreviewBlock } from '@wylho/atrio'
+import type { CardFields, CardView, FlatNode } from './api'
+import type { CardSummary, NoteColor, PreviewBlock, RepeatKind } from '@wylho/atrio'
 
 /** Medidas do `.card` do Atrio (raio 16, corpo 12/13, título 16/1.25, prévia 13.5/1.45, máx. 300 de prévia). */
 export const CARD = {
@@ -134,3 +134,27 @@ export function layoutCard(title: string, blocks: PreviewBlock[], measure: Measu
   }
   return { width: CARD.width, height: Math.ceil(y - 3 + CARD.padY), lines }
 }
+
+/**
+ * O resumo que o card padrão do Atrio (`NoteCard`) mostra, a partir do tópico: o título é o texto do nó, a prévia e a
+ * capa vêm do núcleo (`view`), as etiquetas juntam as escolhidas e as `#palavras` da nota.
+ */
+export function summaryOf(n: Pick<FlatNode, 'text' | 'card' | 'view'>, color: NoteColor): CardSummary {
+  const c = n.card ?? {}
+  return {
+    title: n.text,
+    emoji: c.emoji ?? null,
+    color,
+    preview: n.view?.preview ?? [],
+    cover: n.view?.cover ?? [],
+    imageCount: n.view?.image_count ?? 0,
+    fileCount: n.view?.file_count ?? 0,
+    tags: cardTags(c, n.view),
+    reminderAt: c.reminder_at ?? null,
+    reminderRepeat: (c.reminder_repeat ?? null) as RepeatKind | null,
+    reminderDone: !!c.reminder_done,
+    reminderDoing: !!c.reminder_doing,
+    statusOn: !!c.status_on,
+  }
+}
+

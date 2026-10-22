@@ -276,6 +276,12 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
     `view` (capa na proporção da foto e `+N`, #etiquetas do texto viram pílula, pílula de anexos); só a prévia do
     navegador (`lib/preview.ts`) usa a versão em TypeScript do Atrio;
   - **busca sem acento** (`atrio::text::fold`) na janela e no MCP.
+- **Unificação, fase 3 (Atrio 0.15.1), em andamento:** o card do tópico é o `NoteCard` do Atrio, o mesmo do Ideario
+  (`Canvas.svelte`; `lib/cardtext.ts` `summaryOf`; `MapCard.svelte` saiu), na cor de nota do Atrio mais próxima da
+  cor do ramo (`nearestNoteColor`). Botão de recolher/expandir no começo do ramo (`render.ts` `drawKnob`/`hitKnob`,
+  `hidden` no snapshot = tópicos escondidos); três desenhos em prévia (`?fold=a|b|c`) esperando a escolha do usuário.
+  Falta: notas soltas como card padrão, barra e menu do card aberto do Atrio, salvar/fechar, visualizador de anexos,
+  exportar pelo próprio card.
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
   estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura

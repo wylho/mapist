@@ -27,6 +27,8 @@ export interface FlatNode {
   child_ids: number[]
   parent: number | null
   has_children: boolean
+  /** Quantos tópicos estão escondidos debaixo deste, quando ele está recolhido. */
+  hidden?: number
 }
 
 /** Foto da capa: o hash e o tamanho (a capa guarda a proporção antes de a foto carregar). */

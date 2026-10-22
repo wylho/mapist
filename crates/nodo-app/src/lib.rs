@@ -57,6 +57,8 @@ pub struct FlatNode {
     child_ids: Vec<u64>,
     parent: Option<u64>,
     has_children: bool,
+    /// How many topics are hidden under this one while it is folded (the fold button shows it).
+    hidden: usize,
 }
 
 /// Everything the renderer needs to draw the current map.
@@ -196,6 +198,7 @@ fn snapshot(doc: &Doc) -> Snapshot {
             child_ids: node.children.iter().map(|c| c.id).collect(),
             parent,
             has_children: !node.children.is_empty(),
+            hidden: if node.folded { descendants(node) } else { 0 },
         });
         if node.folded {
             return;
@@ -203,6 +206,9 @@ fn snapshot(doc: &Doc) -> Snapshot {
         for child in &node.children {
             walk(child, Some(node.id), depth + 1, atts, out);
         }
+    }
+    fn descendants(node: &nodo_core::model::Node) -> usize {
+        node.children.iter().map(|c| 1 + descendants(c)).sum()
     }
     walk(&map.root, None, 0, ed.attachments(), &mut nodes);
 

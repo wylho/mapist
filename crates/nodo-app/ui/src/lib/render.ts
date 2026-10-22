@@ -122,6 +122,122 @@ export function draw(o: DrawOptions) {
       paintCards: o.paintCards ?? false,
     })
   }
+
+  // Botão de recolher/expandir no começo do ramo (não sai na exportação).
+  if (!o.paintCards) {
+    for (const n of snapshot.nodes) {
+      if (!n.has_children || n.parent === null) continue
+      drawKnob(ctx, n, {
+        branch: branch.get(n.id) ?? colors.muted,
+        colors,
+        active: n.id === hovered || n.id === selected,
+        down: snapshot.structure === 'organograma',
+        style: levelStyle(theme, n.depth),
+      })
+    }
+  }
+}
+
+/** Como o botão de recolher aparece (prévia das opções: `?fold=a|b|c`). */
+export type KnobStyle = 'a' | 'b' | 'c'
+export let knobStyle: KnobStyle = (() => {
+  const v = typeof location === 'undefined' ? null : new URLSearchParams(location.search).get('fold')
+  return v === 'b' || v === 'c' ? v : 'a'
+})()
+
+/** Centro do botão de recolher: no começo do ramo dos filhos (do lado deles, ou embaixo no organograma). */
+export function knobAt(n: FlatNode, style: LevelStyle, down: boolean): { x: number; y: number } {
+  if (down) return { x: n.x + n.width / 2, y: n.y + n.height + 11 }
+  return { x: n.side === 'left' ? n.x - 11 : n.x + n.width + 11, y: anchorY(n, style) }
+}
+
+const KNOB_R = 8.5
+
+function drawKnob(
+  ctx: CanvasRenderingContext2D,
+  n: FlatNode,
+  o: { branch: string; colors: ThemeColors; active: boolean; down: boolean; style: LevelStyle },
+) {
+  const { x, y } = knobAt(n, o.style, o.down)
+  const count = n.hidden ?? 0
+  const label = count > 99 ? '99+' : String(count)
+  ctx.save()
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.font = `700 10px ${fontStack()}`
+  if (n.folded) {
+    // Recolhido: sempre à vista, na cor do ramo, com quantos tópicos estão escondidos.
+    if (knobStyle === 'c') {
+      const t = `+${label}`
+      const w = Math.max(22, ctx.measureText(t).width + 12)
+      const left = n.side === 'left' && !o.down ? x - w + KNOB_R : x - (o.down ? w / 2 : KNOB_R)
+      roundRect(ctx, left, y - KNOB_R, w, KNOB_R * 2, KNOB_R)
+      ctx.fillStyle = o.branch
+      ctx.fill()
+      ctx.fillStyle = textOn(o.branch, '#ffffff', '#16201c')
+      ctx.fillText(t, left + w / 2, y + 0.5)
+    } else {
+      ctx.beginPath()
+      ctx.arc(x, y, KNOB_R + (label.length > 1 ? 1.5 : 0), 0, Math.PI * 2)
+      ctx.fillStyle = o.branch
+      ctx.fill()
+      ctx.strokeStyle = o.colors.stage
+      ctx.lineWidth = 2
+      ctx.stroke()
+      ctx.fillStyle = textOn(o.branch, '#ffffff', '#16201c')
+      ctx.fillText(label, x, y + 0.5)
+    }
+  } else if (o.active || knobStyle === 'b') {
+    // Aberto: o botão de recolher aparece com o mouse em cima ou o tópico escolhido (na B, um anel discreto sempre).
+    const quiet = knobStyle === 'b' && !o.active
+    ctx.beginPath()
+    ctx.arc(x, y, quiet ? 4 : KNOB_R, 0, Math.PI * 2)
+    ctx.fillStyle = quiet ? o.branch : o.colors.surface
+    ctx.fill()
+    ctx.strokeStyle = o.branch
+    ctx.lineWidth = 1.5
+    ctx.stroke()
+    if (!quiet) {
+      ctx.strokeStyle = o.branch
+      ctx.lineWidth = 1.8
+      ctx.lineCap = 'round'
+      ctx.beginPath()
+      if (knobStyle === 'c') {
+        // Seta para o lado do tópico: "recolher para cá".
+        const dir = o.down ? 0 : n.side === 'left' ? 1 : -1
+        if (o.down) {
+          ctx.moveTo(x - 3.5, y + 1.8)
+          ctx.lineTo(x, y - 1.8)
+          ctx.lineTo(x + 3.5, y + 1.8)
+        } else {
+          ctx.moveTo(x - dir * 1.8, y - 3.5)
+          ctx.lineTo(x + dir * 1.8, y)
+          ctx.lineTo(x - dir * 1.8, y + 3.5)
+        }
+      } else {
+        ctx.moveTo(x - 3.6, y)
+        ctx.lineTo(x + 3.6, y)
+      }
+      ctx.stroke()
+    }
+  }
+  ctx.restore()
+}
+
+/** O tópico cujo botão de recolher está sob o ponteiro (área de toque de ao menos 11 px na tela, em qualquer zoom). */
+export function hitKnob(snapshot: Snapshot, view: Viewport, clientX: number, clientY: number, rect: DOMRect): number | null {
+  const wx = (clientX - rect.left - view.x) / view.scale
+  const wy = (clientY - rect.top - view.y) / view.scale
+  const r = Math.max(KNOB_R + 2, 11 / view.scale)
+  const theme = mapTheme(snapshot.style)
+  const down = snapshot.structure === 'organograma'
+  for (let i = snapshot.nodes.length - 1; i >= 0; i--) {
+    const n = snapshot.nodes[i]
+    if (!n.has_children || n.parent === null) continue
+    const k = knobAt(n, levelStyle(theme, n.depth), down)
+    if (Math.hypot(wx - k.x, wy - k.y) <= r) return n.id
+  }
+  return null
 }
 
 /** Recheio do card de um nó com nota: a cor do ramo bem clara, como as cores de nota do Ideario (opção A). */
@@ -339,17 +455,6 @@ function drawNode(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
     ctx.globalAlpha = 1
   }
 
-  // Ramo recolhido: a bolinha fica do lado onde os filhos estariam.
-  if (n.has_children && n.folded) {
-    ctx.beginPath()
-    ctx.arc(n.side === 'left' ? x - 8 : x + w + 8, anchorY(n, style), 5, 0, Math.PI * 2)
-    ctx.fillStyle = branch
-    ctx.fill()
-    ctx.strokeStyle = colors.stage
-    ctx.lineWidth = 2
-    ctx.stroke()
-  }
-
   ctx.restore()
 }
 
@@ -420,15 +525,6 @@ function drawCard(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
     ctx.globalAlpha = ring
     ctx.stroke()
     ctx.globalAlpha = 1
-  }
-  if (n.has_children && n.folded) {
-    ctx.beginPath()
-    ctx.arc(n.side === 'left' ? x - 8 : x + w + 8, y + h / 2, 5, 0, Math.PI * 2)
-    ctx.fillStyle = branch
-    ctx.fill()
-    ctx.strokeStyle = colors.stage
-    ctx.lineWidth = 2
-    ctx.stroke()
   }
   ctx.restore()
 }

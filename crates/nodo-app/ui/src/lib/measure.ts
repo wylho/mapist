@@ -12,8 +12,8 @@ import type { CardFields, CardView, FlatNode } from './api'
 import { fontStack, levelFont } from './font'
 import { levelStyle, mapTheme, type MapTheme } from './maptheme'
 import { flushSync, mount, unmount } from 'svelte'
-import MapCard from '../components/MapCard.svelte'
-import { CARD, isCard } from './cardtext'
+import { NoteCard } from '@wylho/atrio'
+import { CARD, isCard, summaryOf } from './cardtext'
 
 /** Altura de linha, proporcional ao tamanho do texto do nível. */
 const LINE_RATIO = 1.4
@@ -90,9 +90,9 @@ export function measureCard(title: string, view: CardView | undefined, card: Car
     host.style.cssText = `position:absolute;left:-10000px;top:0;visibility:hidden;pointer-events:none;width:${CARD.width}px`
     document.body.appendChild(host)
   }
-  host.innerHTML = '<div class="card"></div>'
+  host.innerHTML = ''
+  const app = mount(NoteCard, { target: host, props: { card: summaryOf({ text: title, card, view }, 'none'), thumb: () => '', onstatus: () => {} } })
   const el = host.firstElementChild as HTMLElement
-  const app = mount(MapCard, { target: el, props: { title, view, card, onstatus: () => {} } })
   flushSync()
   const size = { width: CARD.width, height: Math.ceil(el.getBoundingClientRect().height) }
   unmount(app)

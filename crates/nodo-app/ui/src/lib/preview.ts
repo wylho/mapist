@@ -217,6 +217,7 @@ function mapSnapshot(): Omit<Snapshot, 'tabs' | 'active'> {
       child_ids: [...n.children],
       parent: n.parent,
       has_children: n.children.length > 0,
+      hidden: n.folded ? descendants(n.id) : 0,
     }
   })
 
@@ -876,3 +877,10 @@ function viewOf(note: string): CardView | undefined {
     hash_tags: [...new Set(hashTags(note))],
   }
 }
+
+/** Quantos tópicos há debaixo de um (os que somem quando ele está recolhido). */
+function descendants(id: number): number {
+  const n = nodes.get(id)
+  return n ? n.children.reduce((sum, c) => sum + 1 + descendants(c), 0) : 0
+}
+

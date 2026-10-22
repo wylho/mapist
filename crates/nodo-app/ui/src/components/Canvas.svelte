@@ -3,9 +3,10 @@
   import { onMount, untrack } from 'svelte'
   import { doc } from '../lib/document.svelte'
   import { theme } from '../lib/theme.svelte'
-  import { cardFill, draw, hitNoteDot, hitTest, readThemeColors, resolveColor, type Viewport } from '../lib/render'
-  import { CARD, isCard } from '../lib/cardtext'
-  import MapCard from './MapCard.svelte'
+  import { draw, hitKnob, hitNoteDot, hitTest, readThemeColors, resolveColor, type Viewport } from '../lib/render'
+  import { CARD, isCard, summaryOf } from '../lib/cardtext'
+  import { attachments } from '../lib/api'
+  import { NoteCard as Card, nearestNoteColor } from '@wylho/atrio'
   import { notes } from '../lib/notes.svelte'
   import NoteCard from './NoteCard.svelte'
   import NodeNote from './NodeNote.svelte'
@@ -203,6 +204,13 @@
 
   function onPointerDown(e: PointerEvent) {
     const r = stageEl.getBoundingClientRect()
+    // O botão no começo do ramo recolhe ou expande os filhos.
+    const knob = hitKnob(doc.snapshot, view, e.clientX, e.clientY, r)
+    if (knob !== null) {
+      doc.selected = knob
+      void doc.toggleFold()
+      return
+    }
     // A bolinha de nota abre (ou fecha) a nota formatada ao lado do nó.
     const dot = hitNoteDot(doc.snapshot, view, e.clientX, e.clientY, r)
     if (dot !== null) {
@@ -250,9 +258,11 @@
       return
     }
     const r = stageEl.getBoundingClientRect()
-    const hit = hitTest(doc.snapshot, view, e.clientX, e.clientY, r)
+    // Em cima do botão de recolher, o tópico continua "com o mouse em cima" (senão o botão some antes do clique).
+    const knob = hitKnob(doc.snapshot, view, e.clientX, e.clientY, r)
+    const hit = hitTest(doc.snapshot, view, e.clientX, e.clientY, r) ?? knob
     if (hit !== doc.hovered) doc.hovered = hit
-    stageEl.classList.toggle('on-dot', hitNoteDot(doc.snapshot, view, e.clientX, e.clientY, r) !== null)
+    stageEl.classList.toggle('on-dot', knob !== null || hitNoteDot(doc.snapshot, view, e.clientX, e.clientY, r) !== null)
   }
 
   /** Põe uma nota solta onde a pessoa clicou (coordenadas da janela) e já abre ela para escrever. */
@@ -303,7 +313,8 @@
     if (list.length === 0) return []
     const c = readThemeColors()
     const branch = branchColors(doc.snapshot.nodes, mapTheme(doc.snapshot.style), theme.mode, c.nodeColors, (x) => resolveColor(x, c))
-    return list.map((n) => ({ n, fill: cardFill(branch.get(n.id) ?? c.muted, c.surface, theme.mode), }))
+    // O card padrão do Atrio, na cor de nota mais próxima da cor do ramo (as cores dos cards são as do Atrio).
+    return list.map((n) => ({ n, summary: summaryOf(n, nearestNoteColor(branch.get(n.id) ?? null)) }))
   })
 
 
@@ -433,14 +444,14 @@
 >
   <canvas bind:this={canvas}></canvas>
   {#each cardNodes as c (c.n.id)}
-    <div
-      class="card map-card"
-      style:left="{c.n.x * view.scale + view.x}px"
-      style:top="{c.n.y * view.scale + view.y}px"
-      style:width="{c.n.width}px"
-      style:background={c.fill}
-      style:transform="scale({view.scale})"
-    ><MapCard title={c.n.text} view={c.n.view} card={c.n.card} onstatus={(s) => void doc.setStatus(c.n.id, s)} /></div>
+    <Card
+      class="map-card"
+      card={c.summary}
+      thumb={(h) => attachments.thumb(h)}
+      style="left: {c.n.x * view.scale + view.x}px; top: {c.n.y * view.scale + view.y}px; width: {c.n.width}px; transform: scale({view.scale})"
+      tabindex={-1}
+      onstatus={(s) => void doc.setStatus(c.n.id, s)}
+    />
   {/each}
   {#if doc.editing && editorBox}
     <input
