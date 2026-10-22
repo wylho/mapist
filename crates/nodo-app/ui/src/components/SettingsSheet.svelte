@@ -10,6 +10,7 @@
   import { theme, type ThemePref } from '../lib/theme.svelte'
   import { DESKTOPS, PALETTES, paletteColors, type DesktopId, type PaletteId } from '../lib/palettes'
   import type { LinkStyle } from '../lib/render'
+  import type { DragBackground } from '../lib/prefs.svelte'
   import { i18n, LOCALES, Picker, setLocale, t, type LocalePref } from '@wylho/atrio'
   import { updates } from '../lib/updates.svelte'
 
@@ -139,6 +140,25 @@
               <ToggleGroup.Item value="orthogonal" class="seg-item">{t('Em ângulo')}</ToggleGroup.Item>
             </ToggleGroup.Root>
           </div>
+          <div class="set-row">
+            <span
+              ><b>{t('Arrastar o fundo')}</b><small
+                >{prefs.dragBackground === 'select'
+                  ? t('Escolhe os tópicos num retângulo. Para mover o mapa: Espaço + arrastar ou o botão do meio.')
+                  : t('Move o mapa. Para escolher tópicos num retângulo: ⇧ + arrastar.')}</small
+              ></span
+            >
+            <ToggleGroup.Root
+              type="single"
+              value={prefs.dragBackground}
+              onValueChange={(v) => v && prefs.setDragBackground(v as DragBackground)}
+              class="seg tight"
+              aria-label={t('Arrastar o fundo')}
+            >
+              <ToggleGroup.Item value="select" class="seg-item">{t('Escolher')}</ToggleGroup.Item>
+              <ToggleGroup.Item value="pan" class="seg-item">{t('Mover o mapa')}</ToggleGroup.Item>
+            </ToggleGroup.Root>
+          </div>
         </section>
 
         {#if mcp}
@@ -187,8 +207,16 @@
               <div class="keys-row"><span>{t('Excluir')}</span><kbd>Delete</kbd></div>
               <div class="keys-row"><span>{t('Menu do nó')}</span><kbd>⇧F10</kbd></div>
             </div>
+            <span class="keys-head">{t('Escolher vários')}</span>
+            <div class="keys">
+              <div class="keys-row"><span>{t('Escolher num retângulo')}</span><kbd>{prefs.dragBackground === 'select' ? t('arrastar o fundo') : t('⇧ + arrastar o fundo')}</kbd></div>
+              <div class="keys-row"><span>{t('Somar ou tirar um tópico')}</span><kbd>{t('⇧ ou {mod} + clique', { mod: mod.replace('+', '') })}</kbd></div>
+              <div class="keys-row"><span>{t('Escolher tudo')}</span><kbd>{mod}A</kbd></div>
+              <div class="keys-row"><span>{t('Desfazer a escolha')}</span><kbd>Esc</kbd></div>
+            </div>
             <span class="keys-head">{t('Ver')}</span>
             <div class="keys">
+              <div class="keys-row"><span>{t('Mover o mapa')}</span><kbd>{prefs.dragBackground === 'select' ? t('Espaço + arrastar') : t('arrastar o fundo')}</kbd></div>
               <div class="keys-row"><span>{t('Ver o mapa inteiro')}</span><kbd>⇧1</kbd></div>
               <div class="keys-row"><span>{t('Enquadrar a seleção')}</span><kbd>⇧2</kbd></div>
               <div class="keys-row"><span>{t('Tamanho real (100%)')}</span><kbd>{mod}0</kbd></div>

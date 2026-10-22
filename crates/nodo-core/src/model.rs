@@ -591,6 +591,23 @@ impl MindMap {
         rec(&self.root, id, 0)
     }
 
+    /// Of the given topics, those that are not inside another one of them, in tree order; ids that do not exist are
+    /// left out. Removing or moving a selection acts on these: a subtopic goes with its topic.
+    pub fn topmost(&self, ids: &[u64]) -> Vec<u64> {
+        fn rec(node: &Node, ids: &[u64], out: &mut Vec<u64>) {
+            if ids.contains(&node.id) {
+                out.push(node.id);
+                return;
+            }
+            for c in &node.children {
+                rec(c, ids, out);
+            }
+        }
+        let mut out = Vec::new();
+        rec(&self.root, ids, &mut out);
+        out
+    }
+
     /// Find a loose note by id.
     pub fn free_note(&self, id: u64) -> Option<&FreeNote> {
         self.notes.iter().find(|n| n.id == id)
@@ -617,6 +634,18 @@ impl MindMap {
 #[cfg(test)]
 mod card_tests {
     use super::CardFields;
+
+    #[test]
+    fn topmost_leaves_out_what_is_inside_another_selected_topic() {
+        let mut map = crate::MindMap::new("Raiz");
+        let a = map.add_child(0, "A").unwrap();
+        let a1 = map.add_child(a, "A1").unwrap();
+        let a11 = map.add_child(a1, "A11").unwrap();
+        let b = map.add_child(0, "B").unwrap();
+        assert_eq!(map.topmost(&[a11, b, a1, 999]), vec![a1, b]);
+        assert_eq!(map.topmost(&[a, a11]), vec![a]);
+        assert_eq!(map.topmost(&[]), Vec::<u64>::new());
+    }
 
     #[test]
     fn status_follows_the_atrio_rules() {

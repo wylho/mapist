@@ -17,6 +17,9 @@ use crate::model::{
 /// A user-visible edit.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
+    /// Several edits as one: applied in order, a single undo step, and all or nothing (if one fails, the map is as
+    /// before). Used for what is done to a selection of topics at once.
+    Batch(Vec<Action>),
     /// Add a child under `parent` with the given text.
     AddChild { parent: u64, text: String },
     /// Add a child that already has a note, a branch color and card fields (a card pasted from the Ideario, say), as
@@ -80,10 +83,35 @@ pub enum Action {
 }
 
 impl Action {
+    /// Whether the edit leaves the tree as it is laid out: moving by hand, arranging again and the loose notes. The
+    /// editor does not reposition the map after these.
+    pub fn keeps_layout(&self) -> bool {
+        match self {
+            Action::Batch(actions) => actions.iter().all(Action::keeps_layout),
+            Action::MoveNode { .. }
+            | Action::Relayout
+            | Action::AddFreeNote { .. }
+            | Action::SetFreeNote { .. }
+            | Action::PlaceFreeNote { .. }
+            | Action::SetFreeCard { .. }
+            | Action::RemoveFreeNote { .. } => true,
+            _ => false,
+        }
+    }
+
     /// Apply this action to a map. Returns the affected node id when the
     /// action created or targeted one.
     pub fn apply(&self, map: &mut MindMap) -> crate::Result<Option<u64>> {
         match self {
+            Action::Batch(actions) => {
+                let mut work = map.clone();
+                let mut last = None;
+                for a in actions {
+                    last = a.apply(&mut work)?.or(last);
+                }
+                *map = work;
+                Ok(last)
+            }
             Action::AddChild { parent, text } => {
                 if map.find(*parent).is_none() {
                     return Err(crate::Error::NodeNotFound(*parent));

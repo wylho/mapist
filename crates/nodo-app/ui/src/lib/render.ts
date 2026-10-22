@@ -48,6 +48,8 @@ export interface DrawOptions {
   colors: ThemeColors
   view: Viewport
   selected: number | null
+  /** Os tópicos do grupo escolhido (arrastar um retângulo, ⇧ + clique): todos com a moldura de escolhido. */
+  picked?: Set<number>
   hovered: number | null
   matches: Set<number>
   width: number
@@ -78,6 +80,7 @@ export function resolveColor(token: string | null, colors: ThemeColors): string 
 
 export function draw(o: DrawOptions) {
   const { snapshot, colors, view, selected, hovered, matches, width, height, dpr } = o
+  const picked = o.picked ?? new Set<number>()
   const linkStyle = o.linkStyle ?? 'curved'
   const canvas = o as DrawOptions & { ctx?: CanvasRenderingContext2D }
   const ctx = canvas.ctx
@@ -143,7 +146,7 @@ export function draw(o: DrawOptions) {
       theme,
       mode,
       branch: branch.get(n.id) ?? colors.muted,
-      isSelected: n.id === selected,
+      isSelected: n.id === selected || picked.has(n.id),
       isHovered: n.id === hovered,
       isMatch: matches.has(n.id),
       paintCards: o.paintCards ?? false,
@@ -168,7 +171,7 @@ export function draw(o: DrawOptions) {
       drawKnob(ctx, n, {
         branch: branch.get(n.id) ?? colors.muted,
         colors,
-        active: n.id === hovered || n.id === selected,
+        active: n.id === hovered || n.id === selected || picked.has(n.id),
         down: snapshot.structure === 'organograma',
         style: levelStyle(theme, n.depth),
       })

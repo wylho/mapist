@@ -10,10 +10,10 @@
   import SettingsSheet from './components/SettingsSheet.svelte'
   import ConfirmDialog from './components/ConfirmDialog.svelte'
   import UpdateNotice from './components/UpdateNotice.svelte'
-  import { MenuAt, t } from '@wylho/atrio'
+  import { MenuAt, t, tn } from '@wylho/atrio'
   import ExportSheet from './components/ExportSheet.svelte'
-  import { backgroundMenu, nodeMenu, type ViewActions } from './lib/mapmenus'
-  import { cardToClipboard, readCard } from '@wylho/atrio'
+  import { backgroundMenu, groupMenu, nodeMenu, type ViewActions } from './lib/mapmenus'
+  import { cardsToClipboard, readCards } from '@wylho/atrio'
   import { doc } from './lib/document.svelte'
   import { hasHost, isPreview } from './lib/api'
   import { prefs } from './lib/prefs.svelte'
@@ -30,7 +30,8 @@
 
   /** Menu de contexto do mapa: do nó, se houver um, senão do fundo. */
   function openMenu(x: number, y: number, id: number | null) {
-    menuRef?.openAt(x, y, id === null ? backgroundMenu(viewActions, { x, y }) : nodeMenu(id, viewActions))
+    const items = id === null ? backgroundMenu(viewActions, { x, y }) : doc.grouped && doc.isPicked(id) ? groupMenu() : nodeMenu(id, viewActions)
+    menuRef?.openAt(x, y, items)
   }
   // O nível de zoom vive no canvas; espelhamos aqui para o rótulo reagir.
   let zoom = $state(prefs.zoom)
@@ -43,21 +44,22 @@
   // Num campo de texto, copiar e colar são do campo.
   function onCopy(e: ClipboardEvent) {
     if (typing(e) || !e.clipboardData) return
-    const card = doc.selectedCard()
-    if (!card) return
+    // Um grupo escolhido vai inteiro, um card por tópico.
+    const cards = doc.grouped ? doc.groupCards() : [doc.selectedCard()].filter((c) => c !== null)
+    if (!cards.length) return
     e.preventDefault()
-    const { html, text } = cardToClipboard(card)
+    const { html, text } = cardsToClipboard(cards)
     e.clipboardData.setData('text/html', html)
     e.clipboardData.setData('text/plain', text)
-    ui.say(t('Copiado como card'))
+    ui.say(cards.length > 1 ? tn(cards.length, 'Copiado como card', 'Copiados {n} cards') : t('Copiado como card'))
   }
 
   function onPaste(e: ClipboardEvent) {
     if (typing(e)) return
-    const card = readCard(e.clipboardData)
-    if (!card) return
+    const cards = readCards(e.clipboardData)
+    if (!cards.length) return
     e.preventDefault()
-    void doc.pasteCard(card)
+    void doc.pasteCards(cards)
   }
 
   function onKeydown(e: KeyboardEvent) {
@@ -77,6 +79,8 @@
       const action: Record<string, () => void> = {
         z: () => (e.shiftKey ? doc.redo() : doc.undo()),
         y: () => doc.redo(),
+        // ⌘A escolhe todos os tópicos e notas soltas.
+        a: () => doc.pickAll(),
         s: () => doc.saveDialog(e.shiftKey),
         // ⌘⇧E exporta (⌘E sozinho fica livre, como no XMind).
         e: () => e.shiftKey && (ui.exportOpen = true),
@@ -100,7 +104,7 @@
         '/': () => doc.toggleFold(),
       }
       // Desfazer dentro de um campo de texto é do campo.
-      if (key in action && !(typing(e) && (key === 'z' || key === 'y' || key === 'enter'))) {
+      if (key in action && !(typing(e) && (key === 'z' || key === 'y' || key === 'enter' || key === 'a'))) {
         e.preventDefault()
         action[key]()
       }
@@ -145,14 +149,27 @@
         void doc.addSibling()
         return
       case ' ':
+        // O Espaço edita ao soltar: segurado, ele vira a mão que move o mapa (Espaço + arrastar).
+        e.preventDefault()
+        if (!e.repeat) {
+          ui.spaceHeld = true
+          ui.spacePanned = false
+        }
+        return
       case 'F2':
         e.preventDefault()
         doc.startEdit()
         return
+      case 'Escape':
+        if (doc.grouped) {
+          e.preventDefault()
+          doc.clearGroup()
+        }
+        return
       case 'Backspace':
       case 'Delete':
         e.preventDefault()
-        void doc.remove()
+        void (doc.grouped ? doc.removeGroup() : doc.remove())
         return
       case 'ArrowUp':
         e.preventDefault()
@@ -185,6 +202,14 @@
     }
   }
 
+  function onKeyup(e: KeyboardEvent) {
+    if (e.key !== ' ' || !ui.spaceHeld) return
+    ui.spaceHeld = false
+    // Soltou sem ter arrastado: é o Espaço de editar o tópico.
+    if (!ui.spacePanned && !typing(e) && !doc.editing && !doc.creating && !ui.settingsOpen && !ui.confirmRequest) doc.startEdit()
+    ui.spacePanned = false
+  }
+
   onMount(() => {
     doc.load()
     if (!hasHost) return
@@ -200,7 +225,7 @@
 </script>
 
 <!-- Ao voltar para a janela, confere se um agente salvou o arquivo pelo MCP. -->
-<svelte:window onkeydown={onKeydown} oncopy={onCopy} onpaste={onPaste} onfocus={() => void doc.checkDisk()} />
+<svelte:window onkeydown={onKeydown} onkeyup={onKeyup} onblur={() => (ui.spaceHeld = false)} oncopy={onCopy} onpaste={onPaste} onfocus={() => void doc.checkDisk()} />
 
 <div class="shell map-shell">
   <TopBar />

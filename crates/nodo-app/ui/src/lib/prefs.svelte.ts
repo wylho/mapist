@@ -5,6 +5,8 @@
 
 import type { LinkStyle } from './render'
 
+export type DragBackground = 'select' | 'pan'
+
 const PREFIX = 'nodo.ui.'
 
 function read<T>(key: string, fallback: T): T {
@@ -37,6 +39,17 @@ class Prefs {
   setZoom(z: number) {
     this.zoom = z
     write('zoom', z)
+  }
+
+  /**
+   * Arrastar o fundo do mapa com o botão esquerdo: escolher tópicos num retângulo (padrão) ou mover o mapa. O outro
+   * fica sempre à mão: Espaço + arrastar ou o botão do meio movem; ⇧ + arrastar escolhe.
+   */
+  dragBackground = $state<DragBackground>(read<DragBackground>('dragBackground', 'select') === 'pan' ? 'pan' : 'select')
+
+  setDragBackground(mode: DragBackground) {
+    this.dragBackground = mode
+    write('dragBackground', mode)
   }
 
   setLinkStyle(style: LinkStyle) {

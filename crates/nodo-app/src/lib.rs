@@ -5,7 +5,7 @@
 //! only handles window concerns, file dialogs, and JSON shaping.
 
 use nodo_core::{model::MindMap, model::NodeSide, undo::Action, Editor};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use tauri::{Emitter, Manager, State, WebviewWindowBuilder};
@@ -430,6 +430,112 @@ fn add_topic(
             card,
         },
     )
+}
+
+/// One edit of a group done at once (a selection of topics and loose notes).
+#[derive(Debug, Deserialize)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+enum Edit {
+    Remove {
+        id: u64,
+    },
+    Color {
+        id: u64,
+        color: Option<String>,
+    },
+    Card {
+        id: u64,
+        card: nodo_core::model::CardFields,
+    },
+    Move {
+        id: u64,
+        x: f64,
+        y: f64,
+    },
+    Topic {
+        parent: u64,
+        text: String,
+        note: String,
+        color: Option<String>,
+        card: Option<nodo_core::model::CardFields>,
+    },
+    PlaceFree {
+        id: u64,
+        x: f64,
+        y: f64,
+        width: f64,
+        height: f64,
+    },
+    RemoveFree {
+        id: u64,
+    },
+    Relayout,
+}
+
+/// Apply a group of edits as one undo step, all or nothing. A topic removed or moved together with one of its
+/// ancestors goes with it (only the topmost is edited); the root is never removed.
+#[tauri::command]
+fn apply_edits(state: State<'_, AppState>, edits: Vec<Edit>) -> Result<Snapshot, String> {
+    let mut doc = lock(&state)?;
+    let ed = editor(&mut doc)?;
+    let map = ed.map();
+    let ids =
+        |want: fn(&Edit) -> Option<u64>| -> Vec<u64> { edits.iter().filter_map(want).collect() };
+    let removed = map.topmost(&ids(|e| match e {
+        Edit::Remove { id } => Some(*id),
+        _ => None,
+    }));
+    let moved = map.topmost(&ids(|e| match e {
+        Edit::Move { id, .. } => Some(*id),
+        _ => None,
+    }));
+    let root = map.root.id;
+    let actions: Vec<Action> = edits
+        .into_iter()
+        .filter_map(|e| match e {
+            Edit::Remove { id } if id != root && removed.contains(&id) => {
+                Some(Action::RemoveNode { id })
+            }
+            Edit::Remove { .. } => None,
+            Edit::Color { id, color } => Some(Action::SetColor { id, color }),
+            Edit::Card { id, card } => Some(Action::SetCard { id, card }),
+            Edit::Move { id, x, y } if moved.contains(&id) => Some(Action::MoveNode { id, x, y }),
+            Edit::Move { .. } => None,
+            Edit::Topic {
+                parent,
+                text,
+                note,
+                color,
+                card,
+            } => Some(Action::AddTopic {
+                parent,
+                text,
+                note,
+                color,
+                card: card.unwrap_or_default(),
+            }),
+            Edit::PlaceFree {
+                id,
+                x,
+                y,
+                width,
+                height,
+            } => Some(Action::PlaceFreeNote {
+                id,
+                x,
+                y,
+                width,
+                height,
+            }),
+            Edit::RemoveFree { id } => Some(Action::RemoveFreeNote { id }),
+            Edit::Relayout => Some(Action::Relayout),
+        })
+        .collect();
+    if !actions.is_empty() {
+        ed.apply(Action::Batch(actions))
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(snapshot(&doc))
 }
 
 /// Remove a node and its subtree.
@@ -921,6 +1027,7 @@ pub fn run() {
             add_node,
             add_topic,
             remove_node,
+            apply_edits,
             set_text,
             set_note,
             set_card,

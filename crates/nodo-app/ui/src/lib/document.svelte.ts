@@ -4,7 +4,7 @@
 // store só o guarda. Não há estado de mapa duplicado no frontend, o que evita
 // divergência entre o que a tela mostra e o que o core acha que tem.
 
-import { api, hasHost, isPreview, type CardFields, type Snapshot } from './api'
+import { api, hasHost, isPreview, type CardFields, type Edit, type Snapshot } from './api'
 import { t, tn } from '@wylho/atrio'
 import { measureAll } from './measure'
 import { mapTheme } from './maptheme'
@@ -43,9 +43,44 @@ const EMPTY: Snapshot = {
   active: null,
 }
 
+/** Os campos do card com o status trocado, pela regra do Atrio (`setStatus`). */
+function withStatus(c: CardFields, to: ReminderStatus | 'none'): CardFields {
+  const m = emptyMeta({
+    reminderAt: c.reminder_at ?? null,
+    reminderRepeat: (c.reminder_repeat ?? null) as RepeatKind | null,
+    reminderDone: !!c.reminder_done,
+    reminderDoing: !!c.reminder_doing,
+    statusOn: !!c.status_on,
+  })
+  setStatus(m, to)
+  return {
+    ...c,
+    reminder_at: m.reminderAt,
+    reminder_repeat: m.reminderRepeat,
+    reminder_done: m.reminderDone,
+    reminder_doing: m.reminderDoing,
+    status_on: m.statusOn,
+  }
+}
+
 class Document {
   snapshot = $state<Snapshot>(EMPTY)
-  selected = $state<number | null>(null)
+  private _selected = $state<number | null>(null)
+  /**
+   * Seleção de vários (arrastar um retângulo, ⇧/⌘ + clique): os tópicos e as notas soltas do grupo. Vazia quando só
+   * há o tópico principal. O principal (`selected`) é sempre um deles: digitar, Tab e o card aberto valem para ele.
+   */
+  picked = $state<Set<number>>(new Set())
+  pickedNotes = $state<Set<number>>(new Set())
+
+  /** O tópico principal. Escolher um tópico assim desfaz o grupo. */
+  get selected() {
+    return this._selected
+  }
+  set selected(id: number | null) {
+    this._selected = id
+    if (this.picked.size || this.pickedNotes.size) this.clearGroup()
+  }
   hovered = $state<number | null>(null)
   matches = $state<Set<number>>(new Set())
   error = $state<string | null>(null)
@@ -83,7 +118,13 @@ class Document {
     this.snapshot = next
     this.syncTitle()
     // Sempre há um nó selecionado quando há mapa: dá para começar a digitar sem clicar antes.
-    if (this.selected === null || !next.nodes.some((n) => n.id === this.selected)) this.selected = next.nodes[0]?.id ?? null
+    if (this.picked.size || this.pickedNotes.size) {
+      const ids = new Set(next.nodes.map((n) => n.id))
+      const notes = new Set(next.notes.map((n) => n.id))
+      this.picked = new Set([...this.picked].filter((id) => ids.has(id)))
+      this.pickedNotes = new Set([...this.pickedNotes].filter((id) => notes.has(id)))
+    }
+    if (this._selected === null || !next.nodes.some((n) => n.id === this._selected)) this._selected = next.nodes[0]?.id ?? null
     await this.syncSizes()
   }
 
@@ -394,6 +435,140 @@ class Document {
     if (root) this.selected = root.id
   }
 
+  // ── seleção de vários ────────────────────────────────────────────────
+
+  /** Há um grupo (mais de um item escolhido). */
+  get grouped() {
+    return this.picked.size + this.pickedNotes.size > 1
+  }
+
+  /** Os tópicos escolhidos: o grupo, ou só o principal. */
+  get selection(): number[] {
+    if (this.picked.size || this.pickedNotes.size) return [...this.picked]
+    return this._selected !== null ? [this._selected] : []
+  }
+
+  /** O tópico está escolhido (principal ou no grupo). */
+  isPicked(id: number) {
+    return this.picked.size || this.pickedNotes.size ? this.picked.has(id) : this._selected === id
+  }
+
+  /** Muda o tópico principal sem desfazer o grupo (clicar num tópico do grupo para arrastar). */
+  focus(id: number) {
+    this._selected = id
+  }
+
+  clearGroup() {
+    this.picked = new Set()
+    this.pickedNotes = new Set()
+  }
+
+  /** ⇧/⌘ + clique: soma ou tira um tópico (ou nota solta) do grupo. */
+  toggle(id: number, note = false) {
+    const picked = new Set(this.picked.size || this.pickedNotes.size || this._selected === null ? this.picked : [this._selected])
+    const notes = new Set(this.pickedNotes)
+    const set = note ? notes : picked
+    if (set.has(id)) set.delete(id)
+    else set.add(id)
+    this.setGroup(picked, notes, note ? undefined : id)
+  }
+
+  /** O retângulo: estes tópicos e notas (somados ao grupo atual com `add`). */
+  pickArea(ids: number[], noteIds: number[], add: boolean) {
+    const base = add ? new Set(this.selection) : new Set<number>()
+    const picked = new Set([...base, ...ids])
+    const notes = new Set([...(add ? this.pickedNotes : []), ...noteIds])
+    this.setGroup(picked, notes, ids[0])
+  }
+
+  /** ⌘A: todos os tópicos e notas soltas. */
+  pickAll() {
+    this.setGroup(new Set(this.nodes.map((n) => n.id)), new Set(this.snapshot.notes.map((n) => n.id)), this._selected ?? undefined)
+  }
+
+  private setGroup(picked: Set<number>, notes: Set<number>, primary?: number) {
+    if (picked.size + notes.size <= 1 && notes.size === 0) {
+      // Um tópico só (ou nenhum): volta a ser a seleção simples.
+      this.clearGroup()
+      const only = [...picked][0]
+      if (only !== undefined) this._selected = only
+      return
+    }
+    this.picked = picked
+    this.pickedNotes = notes
+    if (primary !== undefined && picked.has(primary)) this._selected = primary
+    else if (this._selected === null || !picked.has(this._selected)) this._selected = [...picked][0] ?? this._selected
+  }
+
+  /** Apaga o grupo (a raiz fica), num passo só. */
+  removeGroup() {
+    const root = this.nodes.find((n) => n.parent === null)?.id
+    const edits: Edit[] = [
+      ...this.selection.filter((id) => id !== root).map((id) => ({ kind: 'remove' as const, id })),
+      ...[...this.pickedNotes].map((id) => ({ kind: 'removeFree' as const, id })),
+    ]
+    if (!edits.length) return Promise.resolve()
+    const parent = this.node(this._selected)?.parent ?? root ?? null
+    return this.run(() => api.applyEdits(edits)).then(() => {
+      this.clearGroup()
+      if (parent !== null && this.node(parent)) this._selected = parent
+    })
+  }
+
+  /** Cor do ramo de todos os tópicos do grupo. */
+  colorGroup(color: string | null) {
+    return this.run(() => api.applyEdits(this.selection.map((id) => ({ kind: 'color', id, color }))))
+  }
+
+  /** Status de todos os tópicos do grupo, cada um pela regra do Atrio. */
+  statusGroup(to: ReminderStatus | 'none') {
+    return this.run(() =>
+      api.applyEdits(this.selection.map((id) => ({ kind: 'card', id, card: withStatus(this.node(id)?.card ?? {}, to) }))),
+    )
+  }
+
+  /** Arrastar o grupo: cada tópico (com seus ramos) e nota solta anda o mesmo tanto. */
+  moveGroup(dx: number, dy: number) {
+    const edits: Edit[] = []
+    for (const id of this.selection) {
+      const n = this.node(id)
+      if (n) edits.push({ kind: 'move', id, x: n.x + dx, y: n.y + dy })
+    }
+    for (const id of this.pickedNotes) {
+      const f = this.freeNote(id)
+      if (f) edits.push({ kind: 'placeFree', id, x: Math.round(f.x + dx), y: Math.round(f.y + dy), width: f.width, height: f.height })
+    }
+    return this.run(() => api.applyEdits(edits))
+  }
+
+  /** Os tópicos do grupo como cards do Atrio, na ordem do mapa. */
+  groupCards(): ClipCard[] {
+    const want = new Set(this.selection)
+    return this.nodes.filter((n) => want.has(n.id)).map((n) => this.cardOf(n.id)).filter((c): c is ClipCard => c !== null)
+  }
+
+  /** Cola vários cards como filhos do tópico principal (ou da raiz), num passo só, e escolhe os novos. */
+  async pasteCards(cards: ClipCard[]) {
+    if (cards.length === 1) return this.pasteCard(cards[0])
+    const parent = this._selected ?? this.nodes.find((n) => n.parent === null)?.id
+    if (parent === undefined || !cards.length) return
+    const before = new Set(this.nodes.map((n) => n.id))
+    await this.run(() =>
+      api.applyEdits(
+        cards.map((card) => ({
+          kind: 'topic',
+          parent,
+          text: card.title.trim() || t('Nota'),
+          note: card.markdown.trim(),
+          color: nodeColorOf(card.color),
+          card: { emoji: card.emoji ?? null, tags: card.tags ?? [] },
+        })),
+      ),
+    )
+    const fresh = this.nodes.filter((n) => !before.has(n.id)).map((n) => n.id)
+    this.setGroup(new Set(fresh), new Set(), fresh[0])
+  }
+
   remove() {
     const n = this.selectedNode
     if (!n || n.parent === null) return Promise.resolve()
@@ -403,7 +578,12 @@ class Document {
 
   /** O nó selecionado como card do Atrio, para copiar (o Ideario cola como nota). */
   selectedCard(): ClipCard | null {
-    const n = this.selectedNode
+    return this.cardOf(this._selected)
+  }
+
+  /** Um tópico como card do Atrio. */
+  cardOf(id: number | null): ClipCard | null {
+    const n = this.node(id)
     if (!n) return null
     const color = noteColorOf(n.color)
     const { emoji, tags } = n.card ?? {}
@@ -442,46 +622,15 @@ class Document {
 
   /** Muda o status pelo seletor do card no mapa, com as regras do card (`setStatus` do Atrio). */
   setStatus(id: number, to: ReminderStatus | 'none') {
-    const c = this.node(id)?.card ?? {}
-    const m = emptyMeta({
-      reminderAt: c.reminder_at ?? null,
-      reminderRepeat: (c.reminder_repeat ?? null) as RepeatKind | null,
-      reminderDone: !!c.reminder_done,
-      reminderDoing: !!c.reminder_doing,
-      statusOn: !!c.status_on,
-    })
-    setStatus(m, to)
-    return this.setCard(id, {
-      ...c,
-      reminder_at: m.reminderAt,
-      reminder_repeat: m.reminderRepeat,
-      reminder_done: m.reminderDone,
-      reminder_doing: m.reminderDoing,
-      status_on: m.statusOn,
-    })
+    if (this.grouped && this.isPicked(id)) return this.statusGroup(to)
+    return this.setCard(id, withStatus(this.node(id)?.card ?? {}, to))
   }
 
   /** Status de uma nota solta, pela mesma regra do Atrio. */
   setFreeStatus(id: number, to: ReminderStatus | 'none') {
     const f = this.freeNote(id)
     if (!f) return
-    const c = f.card ?? {}
-    const m = emptyMeta({
-      reminderAt: c.reminder_at ?? null,
-      reminderRepeat: (c.reminder_repeat ?? null) as RepeatKind | null,
-      reminderDone: !!c.reminder_done,
-      reminderDoing: !!c.reminder_doing,
-      statusOn: !!c.status_on,
-    })
-    setStatus(m, to)
-    return this.setFreeCard(id, f.title, f.color, {
-      ...c,
-      reminder_at: m.reminderAt,
-      reminder_repeat: m.reminderRepeat,
-      reminder_done: m.reminderDone,
-      reminder_doing: m.reminderDoing,
-      status_on: m.statusOn,
-    })
+    return this.setFreeCard(id, f.title, f.color, withStatus(f.card ?? {}, to))
   }
 
   /** Grava o documento do editor do card como a nota do nó (o núcleo converte para Markdown). */
@@ -661,3 +810,6 @@ class Document {
 }
 
 export const doc = new Document()
+
+// Só na prévia do navegador: o documento à mão para os testes de ponta a ponta (scripts/, Playwright).
+if (isPreview && typeof window !== 'undefined') (window as unknown as { __nodoDoc: Document }).__nodoDoc = doc

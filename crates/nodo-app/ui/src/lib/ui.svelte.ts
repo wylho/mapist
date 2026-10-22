@@ -23,6 +23,9 @@ class Ui {
   exportOpen = $state(false)
   /** Busca aberta na barra (no desktop ela é um ícone até ser usada). */
   searchOpen = $state(false)
+  /** O Espaço está apertado (Espaço + arrastar move o mapa); `spacePanned` diz se moveu, e aí soltar não edita. */
+  spaceHeld = $state(false)
+  spacePanned = false
   toast = $state<string | null>(null)
   confirmRequest = $state<ConfirmRequest | null>(null)
   private toastTimer: ReturnType<typeof setTimeout> | undefined

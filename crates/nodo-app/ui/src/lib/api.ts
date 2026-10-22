@@ -50,6 +50,17 @@ export interface CardView {
 }
 
 /** O que o card de um nó tem além do texto e da nota: o card do Ideario sem a categoria (`nodo_core::model::CardFields`). */
+/** Uma edição de um grupo feito de uma vez (o `Edit` do app). */
+export type Edit =
+  | { kind: 'remove'; id: number }
+  | { kind: 'color'; id: number; color: string | null }
+  | { kind: 'card'; id: number; card: CardFields }
+  | { kind: 'move'; id: number; x: number; y: number }
+  | { kind: 'topic'; parent: number; text: string; note: string; color: string | null; card: CardFields }
+  | { kind: 'placeFree'; id: number; x: number; y: number; width: number; height: number }
+  | { kind: 'removeFree'; id: number }
+  | { kind: 'relayout' }
+
 export interface CardFields {
   tags?: string[]
   emoji?: string | null
@@ -242,6 +253,9 @@ export const api = {
     call<Snapshot>('add_topic', { parent, text, note, color, card }),
 
   removeNode: (id: number) => call<Snapshot>('remove_node', { id }),
+
+  /** Edições de um grupo (a seleção) num passo só do desfazer, tudo ou nada. */
+  applyEdits: (edits: Edit[]) => call<Snapshot>('apply_edits', { edits }),
 
   setText: (id: number, text: string) => call<Snapshot>('set_text', { id, text }),
 

@@ -356,6 +356,21 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   horizontal `---`/`***`/`___` não vira nota (`is_rule`; antes um `---` entre seções transformava o tópico de cima em
   card vazio). Os cards do mapa são ampliados por `zoom` em vez de `transform: scale` (`Canvas.svelte`, `map.css`):
   no macOS o emoji de capa (imagem) saía pixelado com zoom; `left`/`top` vão em unidades do mundo.
+- **Escolher vários (seleção por arrasto)** (pedido do usuário: "no canvas, arrastar com o botão esquerdo seleciona";
+  como no Excalidraw e no Figma): arrastar o fundo desenha um retângulo e escolhe os tópicos e notas soltas que ele
+  toca; ⇧/⌘ + clique soma ou tira; ⌘A tudo; Esc desfaz. Configurações → Mapa → **Arrastar o fundo**: Escolher
+  (padrão) ou Mover o mapa (`prefs.dragBackground`, `nodo.ui.dragBackground`); o outro fica à mão: Espaço + arrastar
+  ou o botão do meio movem, ⇧ + arrastar escolhe; no toque, arrastar sempre move. **O Espaço edita ao soltar**
+  (segurado e arrastado, move o mapa; `ui.spaceHeld`/`spacePanned`, `App.svelte` `onKeyup`); F2 continua na hora.
+  Em grupo (escolha do usuário): apagar (Delete), cor do ramo, status, copiar e colar (vários cards, Atrio 0.19.0),
+  arrastar juntos e "Arrumar posições", pelo menu do grupo (`mapmenus.ts` `groupMenu`, clique direito num escolhido)
+  e pelos atalhos; tudo num passo só do desfazer. Núcleo: `Action::Batch` (tudo ou nada, aplicado numa cópia;
+  `Action::keeps_layout`), `MindMap::topmost` (subtópico de um escolhido vai com ele). App: comando `apply_edits`
+  (`Edit` em `lib.rs`), espelhado na prévia (`preview.ts`). Interface: `document.svelte.ts` (`picked`,
+  `pickedNotes`, `selection`, `toggle`, `pickArea`, `pickAll`, `focus`, `removeGroup`, `colorGroup`, `statusGroup`,
+  `moveGroup`, `groupCards`, `pasteCards`; mudar `selected` desfaz o grupo), `Canvas.svelte` (retângulo, arrasto do
+  grupo, notas soltas do grupo), `render.ts` (`picked`), Configurações (opção e atalhos "Escolher vários").
+  Na prévia, `window.__nodoDoc` dá o documento aos testes com Playwright.
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
   estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura

@@ -8,7 +8,7 @@
 // Ativado por `?preview` na URL, ou automaticamente quando não há host Tauri e
 // o Vite está em modo de desenvolvimento.
 
-import type { CardFields, CardView, NodeSize, NoteCard, Snapshot, TabInfo } from './api'
+import type { CardFields, CardView, Edit, NodeSize, NoteCard, Snapshot, TabInfo } from './api'
 import { docToMarkdown, markdownToDoc } from './notedoc'
 import { rememberPreviewUrl } from './api'
 import { coverFromMarkdown, hashTags, i18n, previewFromMarkdown, t, type Attachment } from '@wylho/atrio'
@@ -924,6 +924,40 @@ export const previewBackend = {
 
   relayout: () => {
     commit(() => {})
+    return snapshotOf()
+  },
+
+  // Espelha o `apply_edits` do app: as edições de um grupo como um passo só, tudo ou nada; tópico dentro de outro do
+  // grupo vai com ele (só o de cima é apagado ou movido).
+  apply_edits: ({ edits }: { edits: Edit[] }) => {
+    const inside = (id: number, set: Set<number>) => {
+      for (let p = nodes.get(id)?.parent ?? null; p !== null; p = nodes.get(p)?.parent ?? null) if (set.has(p)) return true
+      return false
+    }
+    const removed = new Set(edits.flatMap((e) => (e.kind === 'remove' ? [e.id] : [])))
+    const moved = new Set(edits.flatMap((e) => (e.kind === 'move' ? [e.id] : [])))
+    const before = snapshotState()
+    const depth = past.length
+    try {
+      for (const e of edits) {
+        if (e.kind === 'remove') {
+          if (e.id !== rootId && !inside(e.id, removed)) previewBackend.remove_node({ id: e.id })
+        } else if (e.kind === 'color') previewBackend.set_color({ id: e.id, color: e.color })
+        else if (e.kind === 'card') previewBackend.set_card({ id: e.id, card: e.card })
+        else if (e.kind === 'move') {
+          if (!inside(e.id, moved)) previewBackend.move_node({ id: e.id, x: e.x, y: e.y })
+        } else if (e.kind === 'topic') previewBackend.add_topic(e)
+        else if (e.kind === 'placeFree') previewBackend.place_free_note(e)
+        else if (e.kind === 'removeFree') previewBackend.remove_free_note({ id: e.id })
+        else if (e.kind === 'relayout') previewBackend.relayout()
+      }
+    } catch (err) {
+      restore(before)
+      past.length = depth
+      throw err
+    }
+    past.length = depth
+    if (edits.length) past.push(before)
     return snapshotOf()
   },
 

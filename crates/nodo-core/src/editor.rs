@@ -191,14 +191,8 @@ impl Editor {
 
         let map = self.history.current_mut();
         match action {
-            // Notas soltas não mexem na árvore: nada a reposicionar.
-            Action::MoveNode { .. }
-            | Action::Relayout
-            | Action::AddFreeNote { .. }
-            | Action::SetFreeNote { .. }
-            | Action::PlaceFreeNote { .. }
-            | Action::SetFreeCard { .. }
-            | Action::RemoveFreeNote { .. } => {}
+            // Notas soltas e arrastos não mexem na árvore: nada a reposicionar.
+            a if a.keeps_layout() => {}
             Action::AddChild { .. } | Action::AddTopic { .. } | Action::SetText { .. } => {
                 // Only the touched node gets the core's estimate; every other box
                 // keeps the size the renderer measured.
@@ -814,6 +808,81 @@ mod tests {
         .unwrap();
         assert_eq!(ed.map().find(a).unwrap().width, 300.0);
         assert_eq!(ed.undo_depth(), 3, "medir não é uma edição");
+    }
+
+    fn three_topics(ed: &mut Editor) -> [u64; 3] {
+        ["A", "B", "C"].map(|t| {
+            ed.apply(Action::AddChild {
+                parent: 0,
+                text: t.into(),
+            })
+            .unwrap()
+            .unwrap()
+        })
+    }
+
+    #[test]
+    fn a_batch_is_one_undo_step() {
+        let mut ed = Editor::new("Raiz");
+        let [a, b, c] = three_topics(&mut ed);
+        let depth = ed.undo_depth();
+        ed.apply(Action::Batch(vec![
+            Action::SetColor {
+                id: a,
+                color: Some("#ff0000".into()),
+            },
+            Action::SetColor {
+                id: b,
+                color: Some("#ff0000".into()),
+            },
+            Action::RemoveNode { id: c },
+        ]))
+        .unwrap();
+        assert_eq!(ed.undo_depth(), depth + 1);
+        assert_eq!(ed.map().find(a).unwrap().color.as_deref(), Some("#ff0000"));
+        assert!(ed.map().find(c).is_none());
+        assert!(ed.undo());
+        assert_eq!(ed.map().find(a).unwrap().color, None);
+        assert!(ed.map().find(c).is_some());
+    }
+
+    #[test]
+    fn a_batch_that_fails_changes_nothing() {
+        let mut ed = Editor::new("Raiz");
+        let [a, _, _] = three_topics(&mut ed);
+        let before = ed.map().clone();
+        let depth = ed.undo_depth();
+        let err = ed.apply(Action::Batch(vec![
+            Action::SetColor {
+                id: a,
+                color: Some("#ff0000".into()),
+            },
+            Action::RemoveNode { id: 999 },
+        ]));
+        assert!(err.is_err());
+        assert_eq!(ed.map(), &before, "nem a primeira ação do lote fica");
+        assert_eq!(ed.undo_depth(), depth);
+    }
+
+    #[test]
+    fn topics_moved_together_stay_where_they_were_dropped() {
+        let mut ed = Editor::new("Raiz");
+        let [a, b, _] = three_topics(&mut ed);
+        ed.apply(Action::Batch(vec![
+            Action::MoveNode {
+                id: a,
+                x: 400.0,
+                y: -300.0,
+            },
+            Action::MoveNode {
+                id: b,
+                x: 400.0,
+                y: -200.0,
+            },
+        ]))
+        .unwrap();
+        assert_eq!(ed.map().find(a).unwrap().pos.y, -300.0);
+        assert_eq!(ed.map().find(b).unwrap().pos.y, -200.0);
     }
 
     #[test]

@@ -23,18 +23,19 @@ import {
   Trash2,
   Undo2,
   WandSparkles,
+  CircleDot,
   Network,
   ZoomIn,
 } from '@lucide/svelte'
 import { SPACINGS, STRUCTURES, spacingOf, structureOf } from './structures'
 import type { MenuEntry } from '@wylho/atrio'
-import { SEP, t } from '@wylho/atrio'
+import { SEP, STATUS, t, tn, type ReminderStatus } from '@wylho/atrio'
 import { doc } from './document.svelte'
 import { ui } from './ui.svelte'
 import { prefs } from './prefs.svelte'
 import { theme } from './theme.svelte'
 import { notes } from './notes.svelte'
-import { readClipboardCard, writeCard } from '@wylho/atrio'
+import { readClipboardCards, writeCards } from '@wylho/atrio'
 import { resolveNodeColor } from './palettes'
 
 const mac = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform)
@@ -70,8 +71,8 @@ function clipItems(withCopy: boolean): MenuEntry[] {
     icon: ClipboardPaste,
     hint: `${mod}V`,
     onSelect: async () => {
-      const card = await readClipboardCard()
-      if (card) await doc.pasteCard(card)
+      const cards = await readClipboardCards()
+      if (cards.length) await doc.pasteCards(cards)
       else ui.say(t('Nenhum card copiado. No Ideario, copie a nota com {tecla}', { tecla: `${mod}C` }))
     },
   }
@@ -85,7 +86,7 @@ function clipItems(withCopy: boolean): MenuEntry[] {
         const card = doc.selectedCard()
         if (!card) return
         try {
-          await writeCard(card)
+          await writeCards([card])
           ui.say(t('Copiado como card'))
         } catch {
           ui.say(t('Não foi possível copiar'))
@@ -94,6 +95,60 @@ function clipItems(withCopy: boolean): MenuEntry[] {
     },
     paste,
   ]
+}
+
+/** Menu do grupo escolhido (retângulo, ⇧ + clique): o que vale para todos de uma vez, num passo só do desfazer. */
+export function groupMenu(): MenuEntry[] {
+  const count = doc.selection.length + doc.pickedNotes.size
+  const topics = doc.selection.length
+  const items: MenuEntry[] = [{ label: tn(count, '{n} item escolhido', '{n} itens escolhidos'), disabled: true, onSelect: () => {} }, SEP]
+  if (topics) {
+    items.push({
+      label: tn(topics, 'Copiar como card', 'Copiar {n} cards'),
+      icon: Copy,
+      hint: `${mod}C`,
+      onSelect: async () => {
+        try {
+          await writeCards(doc.groupCards())
+          ui.say(tn(topics, 'Copiado como card', 'Copiados {n} cards'))
+        } catch {
+          ui.say(t('Não foi possível copiar'))
+        }
+      },
+    })
+    items.push(SEP, {
+      label: t('Cor do ramo'),
+      icon: Palette,
+      sub: [
+        { label: t('Sem cor'), onSelect: () => void doc.colorGroup(null) },
+        SEP,
+        ...COLORS.map(([token, name]): MenuEntry => ({
+          label: t(name),
+          swatch: tokenColor(token),
+          onSelect: () => void doc.colorGroup(resolveNodeColor(token, theme.colors)),
+        })),
+      ],
+    })
+    items.push({
+      label: t('Status'),
+      icon: CircleDot,
+      sub: [
+        ...(Object.keys(STATUS) as ReminderStatus[]).map((k): MenuEntry => ({
+          label: t(STATUS[k].label),
+          swatch: STATUS[k].color,
+          onSelect: () => void doc.statusGroup(k),
+        })),
+        SEP,
+        { label: t('Sem status'), onSelect: () => void doc.statusGroup('none') },
+      ],
+    })
+  }
+  items.push(
+    { label: t('Arrumar posições'), icon: WandSparkles, onSelect: () => void doc.relayout() },
+    SEP,
+    { label: t('Excluir'), icon: Trash2, hint: 'Delete', danger: true, onSelect: () => void doc.removeGroup() },
+  )
+  return items
 }
 
 /** Menu de um nó. Seleciona o nó antes de abrir, para que as ações (e os atalhos) valham para ele. */

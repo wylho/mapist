@@ -11,6 +11,8 @@
   import { notes } from '../lib/notes.svelte'
   import NodeNote from './NodeNote.svelte'
   import { prefs } from '../lib/prefs.svelte'
+  import { ui } from '../lib/ui.svelte'
+  import { groupMenu } from '../lib/mapmenus'
   import { branchColors, levelStyle, mapTheme } from '../lib/maptheme'
 
   import type { Snippet } from 'svelte'
@@ -48,6 +50,12 @@
   }
   let panning: { x: number; y: number } | null = null
   let dragging: { id: number; dx: number; dy: number; ox: number; oy: number } | null = null
+  /** Arrastando o grupo: onde o ponteiro começou e as posições de saída de cada tópico, para voltar antes de gravar. */
+  let groupDrag: { sx: number; sy: number; origins: Map<number, { x: number; y: number }> } | null = null
+  /** Quanto o grupo andou (unidades do mundo): as notas soltas do grupo andam junto na tela. */
+  let groupShift = $state<{ dx: number; dy: number } | null>(null)
+  /** O retângulo de escolher, em pixels da área do mapa; `add` soma ao grupo que já havia (⇧). */
+  let marquee = $state<{ x0: number; y0: number; x1: number; y1: number; add: boolean } | null>(null)
   let draggedFar = false
 
   export function zoomBy(factor: number, cx?: number, cy?: number) {
@@ -66,7 +74,8 @@
     e.preventDefault()
     const r = stageEl.getBoundingClientRect()
     const hit = hitTest(doc.snapshot, view, e.clientX, e.clientY, r)
-    if (hit !== null) doc.selected = hit
+    // No grupo, o menu é do grupo: a escolha fica como está.
+    if (hit !== null && !(doc.grouped && doc.isPicked(hit))) doc.selected = hit
     oncontext?.(e.clientX, e.clientY, hit)
   }
 
@@ -172,6 +181,7 @@
       colors,
       view,
       selected: doc.selected,
+      picked: doc.picked,
       hovered: doc.hovered,
       matches: doc.matches,
       width: r.width,
@@ -196,23 +206,49 @@
   $effect(() => {
     void doc.snapshot
     void doc.selected
+    void doc.picked
     void doc.hovered
     void doc.matches
     void prefs.linkStyle
     scheduleRender()
   })
 
+  // Com o Espaço apertado, a mão aparece: arrastar move o mapa.
+  $effect(() => {
+    stageEl?.classList.toggle('space', ui.spaceHeld)
+  })
+
   function onPointerDown(e: PointerEvent) {
     const r = stageEl.getBoundingClientRect()
+    // Mover o mapa: botão do meio, Espaço apertado, ou o arrasto do fundo quando a preferência é mover.
+    if (e.button === 1 || ui.spaceHeld) {
+      e.preventDefault()
+      startPan(e)
+      if (ui.spaceHeld) ui.spacePanned = true
+      return
+    }
+    if (e.button !== 0) return
+    const add = e.shiftKey || e.metaKey || e.ctrlKey
     // O botão no começo do ramo recolhe ou expande os filhos.
     const knob = hitKnob(doc.snapshot, view, e.clientX, e.clientY, r)
-    if (knob !== null) {
+    if (knob !== null && !add) {
       doc.selected = knob
       void doc.toggleFold()
       return
     }
     const hit = hitTest(doc.snapshot, view, e.clientX, e.clientY, r)
     if (hit !== null) {
+      // ⇧/⌘ + clique soma ou tira o tópico do grupo.
+      if (add) {
+        doc.toggle(hit)
+        return
+      }
+      // Num tópico do grupo, arrastar leva o grupo inteiro.
+      if (doc.grouped && doc.isPicked(hit)) {
+        doc.focus(hit)
+        startGroupDrag(e)
+        return
+      }
       doc.selected = hit
       const n = doc.node(hit)
       if (n) {
@@ -228,11 +264,72 @@
       }
       return
     }
+    // O fundo: escolher num retângulo (no toque, sempre mover).
+    if (e.pointerType !== 'touch' && (prefs.dragBackground === 'select' || e.shiftKey)) {
+      const x = e.clientX - r.left
+      const y = e.clientY - r.top
+      marquee = { x0: x, y0: y, x1: x, y1: y, add }
+      return
+    }
+    startPan(e)
+  }
+
+  function startPan(e: PointerEvent) {
     panning = { x: e.clientX - view.x, y: e.clientY - view.y }
     stageEl.classList.add('panning')
   }
 
+  /** Começa a arrastar o grupo (de um tópico ou de uma nota solta do grupo). */
+  function startGroupDrag(e: PointerEvent) {
+    const origins = new Map<number, { x: number; y: number }>()
+    for (const id of doc.selection) {
+      const n = doc.node(id)
+      if (n) origins.set(id, { x: n.x, y: n.y })
+    }
+    groupDrag = { sx: e.clientX, sy: e.clientY, origins }
+    draggedFar = false
+    stageEl.classList.add('moving')
+  }
+
+  /** Os tópicos e notas soltas que o retângulo toca, e escolhe eles. */
+  function finishMarquee(m: NonNullable<typeof marquee>) {
+    const small = Math.abs(m.x1 - m.x0) < 4 && Math.abs(m.y1 - m.y0) < 4
+    if (small) {
+      // Um clique no fundo desfaz o grupo.
+      if (!m.add) doc.clearGroup()
+      return
+    }
+    const wx0 = (Math.min(m.x0, m.x1) - view.x) / view.scale
+    const wy0 = (Math.min(m.y0, m.y1) - view.y) / view.scale
+    const wx1 = (Math.max(m.x0, m.x1) - view.x) / view.scale
+    const wy1 = (Math.max(m.y0, m.y1) - view.y) / view.scale
+    const touches = (x: number, y: number, w: number, h: number) => x < wx1 && x + w > wx0 && y < wy1 && y + h > wy0
+    const ids = doc.nodes.filter((n) => touches(n.x, n.y, n.width, n.height)).map((n) => n.id)
+    const noteIds = doc.snapshot.notes.filter((f) => touches(f.x, f.y, f.width, f.height)).map((f) => f.id)
+    doc.pickArea(ids, noteIds, m.add)
+  }
+
   function onPointerMove(e: PointerEvent) {
+    if (marquee) {
+      const r = stageEl.getBoundingClientRect()
+      marquee = { ...marquee, x1: e.clientX - r.left, y1: e.clientY - r.top }
+      return
+    }
+    if (groupDrag) {
+      const dx = (e.clientX - groupDrag.sx) / view.scale
+      const dy = (e.clientY - groupDrag.sy) / view.scale
+      if (Math.abs(dx) * view.scale > 2 || Math.abs(dy) * view.scale > 2) draggedFar = true
+      for (const [id, o] of groupDrag.origins) {
+        const n = doc.node(id)
+        if (n) {
+          n.x = o.x + dx
+          n.y = o.y + dy
+        }
+      }
+      groupShift = { dx, dy }
+      scheduleRender()
+      return
+    }
     if (dragging) {
       const n = doc.node(dragging.id)
       if (!n) return
@@ -269,6 +366,25 @@
   }
 
   function onPointerUp() {
+    if (marquee) {
+      finishMarquee(marquee)
+      marquee = null
+    }
+    if (groupDrag) {
+      const g = groupDrag
+      const shift = groupShift
+      groupDrag = null
+      // As posições voltam ao que eram: quem grava o movimento (num passo só) é o núcleo.
+      for (const [id, o] of g.origins) {
+        const n = doc.node(id)
+        if (n) {
+          n.x = o.x
+          n.y = o.y
+        }
+      }
+      if (draggedFar && shift) void doc.moveGroup(shift.dx, shift.dy).then(() => (groupShift = null))
+      else groupShift = null
+    }
     // Um arrasto de verdade vira uma edição desfazível; um clique não.
     if (dragging && draggedFar) {
       const n = doc.node(dragging.id)
@@ -286,7 +402,26 @@
   function startFreeDrag(e: PointerEvent, id: number) {
     // O seletor de status e os botões do card são deles.
     if (e.button !== 0 || (e.target as HTMLElement).closest('button')) return
+    // Espaço apertado: o arrasto move o mapa, mesmo começando em cima da nota.
+    if (ui.spaceHeld) return
     e.stopPropagation()
+    if (e.shiftKey || e.metaKey || e.ctrlKey) {
+      doc.toggle(id, true)
+      return
+    }
+    if (doc.pickedNotes.has(id)) {
+      startGroupDrag(e)
+      const up = () => {
+        window.removeEventListener('pointerup', up)
+        onPointerUp()
+      }
+      const move = (ev: PointerEvent) => onPointerMove(ev)
+      window.addEventListener('pointermove', move)
+      window.addEventListener('pointerup', () => window.removeEventListener('pointermove', move), { once: true })
+      window.addEventListener('pointerup', up)
+      return
+    }
+    if (doc.grouped) doc.clearGroup()
     const sx = e.clientX
     const sy = e.clientY
     const el = e.currentTarget as HTMLElement
@@ -314,6 +449,8 @@
   }
 
   function freeMenu(id: number): MenuEntry[] {
+    // Nota solta do grupo: o menu é o do grupo.
+    if (doc.pickedNotes.has(id) && doc.grouped) return groupMenu()
     return [
       { label: t('Abrir nota'), icon: BookOpen, onSelect: () => notes.showFree(id) },
       SEP,
@@ -512,10 +649,10 @@
       {#snippet children(trigger)}
         <Card
           {...trigger}
-          class="map-card free-card"
+          class="map-card free-card{doc.pickedNotes.has(f.id) ? ' picked' : ''}"
           card={freeSummary(f)}
           thumb={(h) => attachments.thumb(h)}
-          style="left: {f.x + (moved?.dx ?? 0) + view.x / view.scale}px; top: {f.y + (moved?.dy ?? 0) + view.y / view.scale}px; width: {f.width}px; zoom: {view.scale}"
+          style="left: {f.x + (moved?.dx ?? 0) + (doc.pickedNotes.has(f.id) ? (groupShift?.dx ?? 0) : 0) + view.x / view.scale}px; top: {f.y + (moved?.dy ?? 0) + (doc.pickedNotes.has(f.id) ? (groupShift?.dy ?? 0) : 0) + view.y / view.scale}px; width: {f.width}px; zoom: {view.scale}"
           data-free-note={f.id}
           onpointerdown={(e) => startFreeDrag(e, f.id)}
           ondblclick={(e) => {
@@ -538,11 +675,30 @@
     {/key}
   {/if}
 
+  {#if marquee}
+    <div
+      class="marquee"
+      style:left="{Math.min(marquee.x0, marquee.x1)}px"
+      style:top="{Math.min(marquee.y0, marquee.y1)}px"
+      style:width="{Math.abs(marquee.x1 - marquee.x0)}px"
+      style:height="{Math.abs(marquee.y1 - marquee.y0)}px"
+    ></div>
+  {/if}
   {@render children?.()}
 </div>
 
 <style>
   .stage:global(.on-dot) canvas { cursor: pointer; }
+  .stage:global(.space) canvas { cursor: grab; }
+  /* O retângulo de escolher, como no Figma e no Excalidraw: borda e fundo leves no destaque. */
+  .marquee {
+    position: absolute;
+    z-index: 6;
+    pointer-events: none;
+    border: 1px solid var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    border-radius: 2px;
+  }
   .stage {
     flex: 1;
     min-width: 0;

@@ -314,4 +314,6 @@ kbd {
 .map-card .status-toggle { pointer-events: auto; }
 /* Nota solta: o card padrão do Atrio, solto no mapa. Recebe o mouse (arrastar, abrir, menu); arrastar não seleciona texto. */
 .map-card.free-card { pointer-events: auto; cursor: grab; user-select: none; }
+/* Nota solta no grupo escolhido: a mesma moldura de destaque dos tópicos. */
+.map-card.free-card.picked { outline: 2px solid var(--accent); outline-offset: 3px; }
 .map-card.free-card:active { cursor: grabbing; }
