@@ -2440,7 +2440,7 @@ checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 
 [[package]]
 name = "nodo-app"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "nodo-core",
  "nodo-mcp",
@@ -2458,7 +2458,7 @@ dependencies = [
 
 [[package]]
 name = "nodo-core"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "atrio",
  "chrono",
@@ -2473,7 +2473,7 @@ dependencies = [
 
 [[package]]
 name = "nodo-mcp"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "nodo-core",
  "serde",

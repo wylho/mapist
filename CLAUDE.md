@@ -144,6 +144,8 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   mesmo efeito. Motivo: um laço assim (`colors`) fazia centenas de redesenhos por tecla e deixava a edição travando.
 
 ## Estado atual
+- **Versão 0.6.0** (22/10/2026, pedido do usuário: "lança tudo"): tela inicial com os recentes, tópico na largura do
+  card, caixinhas na matriz e na tabela em árvore, botão ? no canto e o resumo da tabela no card (Atrio 0.21.0).
 - **Versão 0.4.0 lançada** (22/10/2026, Release `v0.4.0`; o actool 26.6 compilou o `AppIcon.icon` no CI; pedido do usuário: lançar já e ajustar o ícone na próxima se precisar): inglês e
   português, linha do tempo, matriz e tabela em árvore, abas, anexos no `.nodo`, notas soltas como card, exportar o
   card inteiro, ícone do Icon Composer no macOS 26, Atrio 0.18.2 e licença GPL nos três projetos.
