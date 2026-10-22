@@ -2,7 +2,7 @@
   // Raiz da aplicação, com a casca do Ideario: barra superior, corpo (canvas + inspetor), aviso, confirmação e
   // configurações. Os atalhos globais ficam aqui.
   import { onMount } from 'svelte'
-  import { Maximize, Minus, Plus } from '@lucide/svelte'
+  import { CircleQuestionMark, Maximize, Minus, Plus } from '@lucide/svelte'
   import TopBar from './components/TopBar.svelte'
   import Canvas from './components/Canvas.svelte'
   import TabBar from './components/TabBar.svelte'
@@ -245,14 +245,26 @@
 
   </div>
 
-  <!-- O que dá para fazer agora: tira a dúvida de "já posso digitar?". Só com teclado, então não no celular. -->
+  <!-- Botão ? no canto (pedido do usuário): ao passar o mouse mostra o que dá para fazer agora (tira a dúvida de "já
+       posso digitar?"); o clique leva à lista de atalhos nas Configurações. Só com teclado, então não no celular. -->
   {#if doc.hasDocument}
-    <div class="key-hint" aria-live="polite">
-      {#if doc.editing}
-        <span><kbd>Enter</kbd> {t('confirma')}</span><span><kbd>Tab</kbd> {t('confirma e cria filho')}</span><span><kbd>Esc</kbd> {t('cancela')}</span>
-      {:else if doc.selectedNode}
-        <span>{t('Digite para escrever')}</span><span><kbd>Tab</kbd> {t('filho')}</span><span><kbd>Enter</kbd> {t('irmão')}</span><span><kbd>{t('Espaço')}</kbd> {t('editar')}</span>
-      {/if}
+    <div class="key-help">
+      <button
+        class="key-help-btn"
+        aria-label={t('Atalhos de teclado')}
+        aria-describedby="key-hint"
+        onclick={() => { ui.settingsSection = 'atalhos'; ui.settingsOpen = true }}
+      ><CircleQuestionMark size={19} /></button>
+      <div class="key-hint" id="key-hint" role="tooltip">
+        {#if doc.editing}
+          <span><kbd>Enter</kbd> {t('confirma')}</span><span><kbd>Tab</kbd> {t('confirma e cria filho')}</span><span><kbd>Esc</kbd> {t('cancela')}</span>
+        {:else if doc.selectedNode}
+          <span>{t('Digite para escrever')}</span><span><kbd>Tab</kbd> {t('filho')}</span><span><kbd>Enter</kbd> {t('irmão')}</span><span><kbd>{t('Espaço')}</kbd> {t('editar')}</span>
+        {:else}
+          <span>{t('Clique num tópico para começar')}</span>
+        {/if}
+        <span class="key-hint-more">{t('Clique para ver todos os atalhos')}</span>
+      </div>
     </div>
   {/if}
 

@@ -17,6 +17,8 @@ export type Choice = 'save' | 'discard' | 'cancel'
 
 class Ui {
   settingsOpen = $state(false)
+  /** Seção das Configurações para mostrar ao abrir (o botão ? do canto leva aos Atalhos). */
+  settingsSection = $state<'atalhos' | null>(null)
   /** Folha Tema do mapa aberta (pela barra ou pelo menu de contexto). */
   themeOpen = $state(false)
   /** Folha Exportar aberta. */

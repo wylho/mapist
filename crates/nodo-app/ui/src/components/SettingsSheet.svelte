@@ -33,6 +33,17 @@
     if (!(await updates.check())) ui.say(t('Você já tem a versão mais recente.'))
   }
 
+  // Aberta pelo botão ? do canto: rola até a seção pedida (os Atalhos).
+  $effect(() => {
+    const section = ui.settingsOpen ? ui.settingsSection : null
+    if (!section) return
+    untrack(() => {
+      ui.settingsSection = null
+      // Dois quadros: a folha precisa estar montada e com a animação de entrada começada.
+      requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById(`set-${section}`)?.scrollIntoView({ block: 'start' })))
+    })
+  })
+
   // ---------- Claude (MCP) ----------
   let mcp = $state.raw<McpInfo | null>(null)
   $effect(() => {
@@ -186,7 +197,7 @@
           </section>
         {/if}
 
-        <section class="set-group">
+        <section class="set-group" id="set-atalhos">
           <h3>{t('Atalhos')}</h3>
             <span class="keys-head">{t('Escrever')}</span>
             <div class="keys">
