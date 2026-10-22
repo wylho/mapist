@@ -4,7 +4,8 @@
 // conhece os nomes dos comandos e o formato do snapshot, para que os
 // componentes não dependam disso.
 
-import { invoke as tauriInvoke } from '@tauri-apps/api/core'
+import { convertFileSrc, invoke as tauriInvoke } from '@tauri-apps/api/core'
+import type { Attachment } from '@wylho/atrio'
 
 /** Um nó achatado, com geometria absoluta, pronto para desenhar. */
 export interface FlatNode {
@@ -134,6 +135,72 @@ async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> 
   if (isPreview) return previewCall<T>(cmd, args)
   if (!hasHost) throw new Error(`comando ${cmd} indisponível fora do Tauri`)
   return tauriInvoke<T>(cmd, args)
+}
+
+/** O que o núcleo guarda de um anexo; o card do Atrio espera também os campos de foto do Ideario (aqui vazios). */
+interface CoreAttachment {
+  hash: string
+  name: string
+  mime: string
+  kind: string
+  bytes: number
+  addedAt: number
+}
+
+const toAttachment = (a: CoreAttachment): Attachment =>
+  ({ ...a, origBytes: null, width: null, height: null, palette: null, tone: null }) as Attachment
+
+/** Anexos das notas (fotos, áudios, arquivos), guardados dentro do `.nodo`. Na prévia, em memória. */
+export const attachments = {
+  /** Endereço para mostrar ou tocar um anexo: o protocolo `att` do app, ou o blob da prévia. */
+  url(hash: string): string {
+    if (isPreview) return previewAttachmentUrl(hash)
+    return convertFileSrc(hash, 'att')
+  },
+
+  async importFile(file: Blob, name: string): Promise<Attachment> {
+    if (isPreview) return (await import('./preview')).previewImport(file, name)
+    const bytes = new Uint8Array(await file.arrayBuffer())
+    return toAttachment(await tauriInvoke<CoreAttachment>('import_file', bytes, { headers: { 'x-name': encodeURIComponent(name) } }))
+  },
+
+  async importPath(path: string): Promise<Attachment> {
+    return toAttachment(await call<CoreAttachment>('import_path', { path }))
+  },
+
+  async list(hashes: string[]): Promise<Attachment[]> {
+    if (isPreview) return (await import('./preview')).previewAttachments(hashes)
+    return (await call<CoreAttachment[]>('get_attachments', { hashes })).map(toAttachment)
+  },
+
+  /** Salva uma cópia onde a pessoa escolher (no preview, baixa pelo navegador). */
+  async download(a: Attachment) {
+    if (isPreview) {
+      const link = document.createElement('a')
+      link.href = previewAttachmentUrl(a.hash)
+      link.download = a.name
+      link.click()
+      return
+    }
+    const { save } = await import('@tauri-apps/plugin-dialog')
+    const path = await save({ defaultPath: a.name })
+    if (path) await call<void>('save_attachment', { hash: a.hash, path })
+  },
+
+  /** Abre no programa que o sistema usa para esse tipo de arquivo. */
+  async open(a: Attachment) {
+    if (isPreview) return void window.open(previewAttachmentUrl(a.hash), '_blank')
+    await call<void>('open_attachment', { hash: a.hash })
+  },
+}
+
+/** Prévia: os anexos importados aqui ficam como blobs, com o endereço de cada um. */
+const previewUrls = new Map<string, string>()
+export function previewAttachmentUrl(hash: string) {
+  return previewUrls.get(hash) ?? ''
+}
+export function rememberPreviewUrl(hash: string, url: string) {
+  previewUrls.set(hash, url)
 }
 
 export const api = {

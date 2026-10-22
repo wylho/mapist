@@ -45,8 +45,8 @@ importers:
         specifier: ^3.0.10
         version: 3.0.10(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.6)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33)
       '@wylho/atrio':
-        specifier: github:wylho/atrio#v0.9.0
-        version: https://codeload.github.com/wylho/atrio/tar.gz/4a28060a2f7596af79ed35cb456884c8fc57c2c6(@lucide/svelte@1.61.0(svelte@5.57.2))(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/extension-collaboration@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)(@tiptap/y-tiptap@3.0.10(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.6)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33))(yjs@13.6.33))(@tiptap/extension-list@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0))(@tiptap/extension-table@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0))(@tiptap/extensions@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)(@tiptap/starter-kit@3.32.0)(@tiptap/y-tiptap@3.0.10(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.6)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33))(bits-ui@2.20.0(@internationalized/date@3.12.4)(svelte@5.57.2))(emojibase-data@17.0.0(emojibase@18.0.0))(svelte@5.57.2)(yjs@13.6.33)
+        specifier: github:wylho/atrio#v0.11.0
+        version: https://codeload.github.com/wylho/atrio/tar.gz/e63b83b473fbe2f36b74c9494da93b2c00a6c9ae(@lucide/svelte@1.61.0(svelte@5.57.2))(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/extension-collaboration@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)(@tiptap/y-tiptap@3.0.10(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.6)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33))(yjs@13.6.33))(@tiptap/extension-list@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0))(@tiptap/extension-table@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0))(@tiptap/extensions@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)(@tiptap/starter-kit@3.32.0)(@tiptap/y-tiptap@3.0.10(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.6)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33))(bits-ui@2.20.0(@internationalized/date@3.12.4)(svelte@5.57.2))(emojibase-data@17.0.0(emojibase@18.0.0))(svelte@5.57.2)(yjs@13.6.33)
       bits-ui:
         specifier: ^2.20.0
         version: 2.20.0(@internationalized/date@3.12.4)(svelte@5.57.2)
@@ -573,9 +573,9 @@ packages:
   '@vitest/spy@5.0.5':
     resolution: {integrity: sha512-lwJRExuH417257Q5wv9QYugN9IMJkoxcrKrYxGPQkBzl7wlNpTUxD/5yNX4ESKVUIShKPgkGchYPFMWOOk0wzw==}
 
-  '@wylho/atrio@https://codeload.github.com/wylho/atrio/tar.gz/4a28060a2f7596af79ed35cb456884c8fc57c2c6':
-    resolution: {tarball: https://codeload.github.com/wylho/atrio/tar.gz/4a28060a2f7596af79ed35cb456884c8fc57c2c6}
-    version: 0.9.0
+  '@wylho/atrio@https://codeload.github.com/wylho/atrio/tar.gz/e63b83b473fbe2f36b74c9494da93b2c00a6c9ae':
+    resolution: {tarball: https://codeload.github.com/wylho/atrio/tar.gz/e63b83b473fbe2f36b74c9494da93b2c00a6c9ae}
+    version: 0.11.0
     peerDependencies:
       '@lucide/svelte': '>=1.0.0'
       '@tiptap/core': ^3.31.4
@@ -1643,7 +1643,7 @@ snapshots:
 
   '@vitest/spy@5.0.5': {}
 
-  ? '@wylho/atrio@https://codeload.github.com/wylho/atrio/tar.gz/4a28060a2f7596af79ed35cb456884c8fc57c2c6(@lucide/svelte@1.61.0(svelte@5.57.2))(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/extension-collaboration@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)(@tiptap/y-tiptap@3.0.10(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.6)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33))(yjs@13.6.33))(@tiptap/extension-list@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0))(@tiptap/extension-table@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0))(@tiptap/extensions@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)(@tiptap/starter-kit@3.32.0)(@tiptap/y-tiptap@3.0.10(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.6)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33))(bits-ui@2.20.0(@internationalized/date@3.12.4)(svelte@5.57.2))(emojibase-data@17.0.0(emojibase@18.0.0))(svelte@5.57.2)(yjs@13.6.33)'
+  ? '@wylho/atrio@https://codeload.github.com/wylho/atrio/tar.gz/e63b83b473fbe2f36b74c9494da93b2c00a6c9ae(@lucide/svelte@1.61.0(svelte@5.57.2))(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/extension-collaboration@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)(@tiptap/y-tiptap@3.0.10(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.6)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33))(yjs@13.6.33))(@tiptap/extension-list@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0))(@tiptap/extension-table@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0))(@tiptap/extensions@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)(@tiptap/starter-kit@3.32.0)(@tiptap/y-tiptap@3.0.10(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.6)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33))(bits-ui@2.20.0(@internationalized/date@3.12.4)(svelte@5.57.2))(emojibase-data@17.0.0(emojibase@18.0.0))(svelte@5.57.2)(yjs@13.6.33)'
   : dependencies:
       '@lucide/svelte': 1.61.0(svelte@5.57.2)
       bits-ui: 2.20.0(@internationalized/date@3.12.4)(svelte@5.57.2)

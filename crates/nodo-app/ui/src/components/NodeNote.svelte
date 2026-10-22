@@ -19,14 +19,16 @@
     type TagCount,
   } from '@wylho/atrio'
   import { NoteEditor } from '@wylho/atrio/editor'
-  import { api, type CardFields, type FlatNode } from '../lib/api'
+  import { api, attachments, hasHost, isPreview, type CardFields, type FlatNode } from '../lib/api'
   import { doc, nodeColorOf, noteColorOf } from '../lib/document.svelte'
   import { openLink } from '../lib/markdown'
   import { notes } from '../lib/notes.svelte'
 
   let { node, autofocus = false, onclose }: { node: FlatNode; autofocus?: boolean; onclose: () => void } = $props()
 
-  const FEATURES = features({ category: false, attachments: false, capture: false, links: false })
+  // Fotos, arquivos, câmera e gravador entram no `.nodo` (um zip com os anexos). Categoria é só do Ideario; a prévia
+  // de link fica desligada até o usuário decidir sobre buscar a página na internet.
+  const FEATURES = features({ category: false, links: false })
 
   const id = untrack(() => node.id)
 
@@ -141,6 +143,24 @@
 
   onDestroy(flush)
 
+  // Arquivos soltos do computador sobre a janela, com o card aberto: entram nele (no app, o sistema entrega o caminho).
+  $effect(() => {
+    if (!hasHost || isPreview) return
+    let stop: (() => void) | undefined
+    let gone = false
+    void import('@tauri-apps/api/webview').then(async ({ getCurrentWebview }) => {
+      const off = await getCurrentWebview().onDragDropEvent((e) => {
+        if (e.payload.type === 'drop' && e.payload.paths.length) card?.addFiles(e.payload.paths.map((path) => ({ path })))
+      })
+      if (gone) off()
+      else stop = off
+    })
+    return () => {
+      gone = true
+      stop?.()
+    }
+  })
+
   function close() {
     flush()
     onclose()
@@ -162,6 +182,13 @@
 
   const host: CardHost = {
     tags: knownTags,
+    mediaUrl: (h) => attachments.url(h),
+    imageUrl: (h) => attachments.url(h),
+    importFile: (f, name) => attachments.importFile(f, name),
+    importPath: (p) => attachments.importPath(p),
+    attachments: (hs) => attachments.list(hs),
+    download: (a) => void attachments.download(a),
+    openAttachment: (a) => void attachments.open(a),
     openUrl: (url) => void openLink(url),
     markdownToDoc: (md) => api.markdownDoc(md) as Promise<{ content?: unknown[] }>,
   }

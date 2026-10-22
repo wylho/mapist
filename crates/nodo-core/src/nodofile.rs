@@ -1,6 +1,7 @@
 //! The `.nodo` file: Nodo's own format (D27).
 //!
-//! JSON, pretty-printed, so a map stays readable and diffable without the app. It holds only what Nodo models —
+//! JSON, pretty-printed, so a map stays readable without the app: the `mapa.json` inside the `.nodo` package
+//! (`package.rs`), or the whole file in maps saved before attachments (still read). It holds only what Nodo models —
 //! topics, notes, branch colours, sides, folds, the map's theme, structure and spacing, and loose notes. Positions
 //! and box sizes are not stored: the layout is recomputed on open and the window measures text itself.
 //!
@@ -29,6 +30,9 @@ struct File {
     root: Topic,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     notes: Vec<Loose>,
+    /// The files the notes use; the bytes are beside this text in the package.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    attachments: Vec<crate::attachments::Attachment>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -80,7 +84,16 @@ fn is_false(b: &bool) -> bool {
 
 /// Write a map as `.nodo` text.
 pub fn to_nodo(map: &MindMap) -> crate::Result<String> {
+    to_nodo_with(map, &[])
+}
+
+/// The map's text with the list of its attachments.
+pub fn to_nodo_with(
+    map: &MindMap,
+    attachments: &[crate::attachments::Attachment],
+) -> crate::Result<String> {
     let file = File {
+        attachments: attachments.to_vec(),
         format: FORMAT.into(),
         version: VERSION,
         theme: map.theme.style.clone(),
@@ -124,6 +137,11 @@ fn topic(n: &Node) -> Topic {
 
 /// Read `.nodo` text. Unknown theme, structure or spacing names count as the default, like the old format did.
 pub fn from_nodo(text: &str) -> crate::Result<MindMap> {
+    from_nodo_with(text).map(|(map, _)| map)
+}
+
+/// The map and the list of its attachments.
+pub fn from_nodo_with(text: &str) -> crate::Result<(MindMap, Vec<crate::attachments::Attachment>)> {
     let file: File = serde_json::from_str(text).map_err(|e| crate::Error::Format(e.to_string()))?;
     if file.format != FORMAT {
         return Err(crate::Error::Format(format!(
@@ -166,7 +184,7 @@ pub fn from_nodo(text: &str) -> crate::Result<MindMap> {
             text: n.text,
         })
         .collect();
-    Ok(map)
+    Ok((map, file.attachments))
 }
 
 fn node(t: Topic) -> Node {

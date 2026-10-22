@@ -29,3 +29,6 @@ serde_json.workspace = true
 # para eles. Mesma dependência do Ideario.
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSWindow", "NSButton", "NSControl", "NSView", "NSResponder", "objc2-core-foundation"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+webkit2gtk = { version = "2.0", features = ["v2_40"] }

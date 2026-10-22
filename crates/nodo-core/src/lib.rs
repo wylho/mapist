@@ -15,6 +15,7 @@
 //! assert_eq!(map.node_count(), back.node_count());
 //! ```
 
+pub mod attachments;
 pub mod document;
 pub mod editor;
 pub mod export;
@@ -22,6 +23,7 @@ pub mod import;
 pub mod layout;
 pub mod model;
 pub mod nodofile;
+pub mod package;
 pub mod undo;
 
 /// The library shared with the Ideario: card rules (`atrio::text`) and note body ↔ Markdown (`atrio::markdown`).
@@ -106,16 +108,15 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// Extension of Nodo's own map files (D27).
 pub const EXTENSION: &str = "nodo";
 
-/// Read a `.nodo` map from a file. (A `.minder` from the early versions comes in through [`Editor::open_or_import`].)
+/// Read a `.nodo` map from a file, a package or the plain JSON of older maps. (A `.minder` from the early versions
+/// comes in through [`Editor::open_or_import`]; attachments come with [`Editor::open`].)
 pub fn load(path: impl AsRef<std::path::Path>) -> Result<MindMap> {
-    let text = std::fs::read_to_string(path)?;
-    nodofile::from_nodo(&text)
+    package::read(path.as_ref()).map(|(map, _)| map)
 }
 
-/// Write a map as `.nodo`, atomically: the text goes to a temporary file beside the target and is renamed over it,
-/// so a crash mid-save never leaves half a map.
+/// Write a map without attachments as a `.nodo` package, atomically (a crash mid-save never leaves half a map).
 pub fn save(map: &MindMap, path: impl AsRef<std::path::Path>) -> Result<()> {
-    write_atomic(path.as_ref(), nodofile::to_nodo(map)?.as_bytes())
+    package::write(path.as_ref(), map, &mut attachments::Attachments::default())
 }
 
 /// Write a file through a temporary sibling and a rename, so a crash never leaves it half written. Used for the map

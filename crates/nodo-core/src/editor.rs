@@ -28,6 +28,9 @@ pub struct Editor {
     saved_rev: Option<u64>,
     /// Modification time of the file when it was last read or written.
     disk_mtime: Option<SystemTime>,
+    /// Photos, audio and files the notes use (kept in the package; not part of the undo history: an undo that brings
+    /// a reference back finds the attachment still here).
+    attachments: crate::attachments::Attachments,
 }
 
 impl Editor {
@@ -49,9 +52,10 @@ impl Editor {
     /// Open a `.nodo` file.
     pub fn open(path: impl AsRef<Path>) -> crate::Result<Self> {
         let path = path.as_ref();
-        let mut map = crate::load(path)?;
+        let (mut map, attachments) = crate::package::read(path)?;
         layout::layout(&mut map);
         let mut ed = Self::from_map(map, Some(path.to_path_buf()));
+        ed.attachments = attachments;
         ed.saved_rev = Some(ed.rev);
         ed.disk_mtime = mtime(path);
         Ok(ed)
@@ -84,9 +88,13 @@ impl Editor {
                 Ok(Self::imported(crate::document::from_xml(&text)?))
             }
             "nodo" => Self::open(path),
-            // Sem extensão conhecida: decide pelo conteúdo (o XML antigo começa com `<`).
+            // Sem extensão conhecida: decide pelo conteúdo (um pacote começa com "PK"; o XML antigo, com `<`).
             _ => {
-                let text = std::fs::read_to_string(path)?;
+                let bytes = std::fs::read(path)?;
+                if crate::package::is_package(&bytes) {
+                    return Self::open(path);
+                }
+                let text = String::from_utf8_lossy(&bytes);
                 if text.trim_start().starts_with('<') {
                     Ok(Self::imported(crate::document::from_xml(&text)?))
                 } else {
@@ -113,7 +121,29 @@ impl Editor {
             future_revs: Vec::new(),
             saved_rev: None,
             disk_mtime: None,
+            attachments: crate::attachments::Attachments::default(),
         }
+    }
+
+    /// The attachments of this map.
+    pub fn attachments(&self) -> &crate::attachments::Attachments {
+        &self.attachments
+    }
+
+    /// Bring a file into the map (a photo, a recording, a document); the note then refers to it by its hash. Not an
+    /// edit by itself: the map changes when a note starts using it.
+    pub fn add_attachment(
+        &mut self,
+        name: &str,
+        bytes: Vec<u8>,
+        now: i64,
+    ) -> crate::attachments::Attachment {
+        self.attachments.add(name, bytes, now)
+    }
+
+    /// The content of an attachment.
+    pub fn attachment_bytes(&self, hash: &str) -> crate::Result<Vec<u8>> {
+        self.attachments.bytes(hash)
     }
 
     /// The map as it is now.
@@ -227,7 +257,8 @@ impl Editor {
         {
             target.set_extension(crate::EXTENSION);
         }
-        crate::save(self.map(), &target)?;
+        let map = self.history.current().clone();
+        crate::package::write(&target, &map, &mut self.attachments)?;
         self.disk_mtime = mtime(&target);
         self.path = Some(target.clone());
         self.saved_rev = Some(self.rev);

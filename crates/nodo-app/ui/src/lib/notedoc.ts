@@ -1,6 +1,6 @@
 // Nota em Markdown ↔ documento do editor do card, só para o preview no navegador. No app quem converte é o núcleo,
 // com as regras do Ideario (`atrio::markdown`); aqui basta o que o mapa de exemplo usa: parágrafos, títulos, listas,
-// tarefas e negrito/itálico.
+// tarefas, negrito/itálico, fotos e arquivos (`ideario://att/<hash>`, como o núcleo escreve).
 
 type Mark = { type: string }
 type Inline = { type: 'text'; text: string; marks?: Mark[] }
@@ -23,6 +23,17 @@ export function markdownToDoc(md: string): { type: 'doc'; content: Block[] } {
   const content: Block[] = []
   let list = null as Block | null
   for (const line of md.split('\n')) {
+    const images = /^\s*(?:!\[[^\]]*\]\(ideario:\/\/att\/[0-9a-f]+\)\s*)+$/.test(line)
+      ? [...line.matchAll(/!\[[^\]]*\]\(ideario:\/\/att\/([0-9a-f]+)\)/g)].map((m) => m[1])
+      : []
+    const file = /^\s*\[📎\s*(.*?)\]\(ideario:\/\/att\/([0-9a-f]+)\)\s*$/.exec(line)
+    if (images.length || file) {
+      list = null
+      if (file) content.push({ type: 'noteFile', attrs: { hash: file[2] } })
+      else if (images.length === 1) content.push({ type: 'noteImage', attrs: { hash: images[0] } })
+      else content.push({ type: 'imageRow', content: images.map((hash) => ({ type: 'noteImage', attrs: { hash } })) })
+      continue
+    }
     const task = /^\s*[-*] \[([ xX])\] (.*)$/.exec(line)
     const bullet = /^\s*[-*] (.*)$/.exec(line)
     const ordered = /^\s*\d+\. (.*)$/.exec(line)
@@ -54,11 +65,15 @@ function text(n: Block | Inline): string {
   return ((n as Block).content ?? []).map(text).join('')
 }
 
-export function docToMarkdown(doc: unknown): string {
+export function docToMarkdown(doc: unknown, name: (hash: string) => string | undefined = () => undefined): string {
   const blocks = ((doc as Block | null)?.content ?? []) as Block[]
   const out: string[] = []
+  const image = (b: Block) => `![${name(String(b.attrs?.hash)) ?? 'foto'}](ideario://att/${b.attrs?.hash})`
   for (const b of blocks) {
-    if (b.type === 'heading') out.push(`${'#'.repeat(Number(b.attrs?.level ?? 1))} ${text(b)}`)
+    if (b.type === 'noteImage') out.push(image(b))
+    else if (b.type === 'imageRow') out.push(((b.content ?? []) as Block[]).map(image).join(' '))
+    else if (b.type === 'noteFile') out.push(`[📎 ${name(String(b.attrs?.hash)) ?? 'arquivo'}](ideario://att/${b.attrs?.hash})`)
+    else if (b.type === 'heading') out.push(`${'#'.repeat(Number(b.attrs?.level ?? 1))} ${text(b)}`)
     else if (b.type === 'taskList' || b.type === 'bulletList' || b.type === 'orderedList')
       out.push(
         (b.content ?? [])

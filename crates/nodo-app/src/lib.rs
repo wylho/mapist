@@ -10,6 +10,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use tauri::{Emitter, Manager, State, WebviewWindowBuilder};
 
+mod attachments;
 mod tabs;
 mod updates;
 
@@ -454,8 +455,15 @@ fn set_note_doc(
     id: u64,
     doc: serde_json::Value,
 ) -> Result<Snapshot, String> {
-    let note = nodo_core::atrio::markdown::to_markdown(&doc, &|_| None);
-    mutate(state, Action::SetNote { id, note })
+    let mut tabs = lock(&state)?;
+    let ed = editor(&mut tabs)?;
+    // O nome de cada anexo vai no texto (`![praia.jpg](ideario://att/…)`), para a nota ser legível fora do app.
+    let atts = ed.attachments();
+    let note =
+        nodo_core::atrio::markdown::to_markdown(&doc, &|h| atts.get(h).map(|a| a.name.clone()));
+    ed.apply(Action::SetNote { id, note })
+        .map_err(|e| e.to_string())?;
+    Ok(snapshot(&tabs))
 }
 
 /// Put a loose note on the canvas, its top-left corner at `(x, y)`.
@@ -683,6 +691,37 @@ fn mac_lights_width(window: tauri::WebviewWindow) -> Option<f64> {
     }
 }
 
+/// Linux: a WebKitGTK vem com a captura de mídia desligada e nega o pedido de microfone e câmera se ninguém responder
+/// (o mesmo do Ideario). Liga a captura e aceita só áudio e vídeo, para o gravador e a câmera do card.
+#[cfg(target_os = "linux")]
+fn linux_media(app: &tauri::App) -> tauri::Result<()> {
+    use webkit2gtk::{
+        glib::prelude::*, PermissionRequestExt, SettingsExt, UserMediaPermissionRequest,
+        UserMediaPermissionRequestExt, WebViewExt,
+    };
+    let Some(window) = app.get_webview_window("main") else {
+        return Ok(());
+    };
+    window.with_webview(|wv| {
+        let view = wv.inner();
+        if let Some(settings) = view.settings() {
+            settings.set_enable_media_stream(true);
+            settings.set_enable_mediasource(true);
+        }
+        view.connect_permission_request(|_, request| {
+            let Some(media) = request.downcast_ref::<UserMediaPermissionRequest>() else {
+                return false;
+            };
+            if media.is_for_audio_device() || media.is_for_video_device() {
+                request.allow();
+            } else {
+                request.deny();
+            }
+            true
+        });
+    })
+}
+
 /// Whether closing now would lose unsaved work.
 fn has_unsaved(app: &tauri::AppHandle) -> bool {
     let state = app.state::<AppState>();
@@ -731,6 +770,12 @@ pub fn run() {
                 .build(),
         )
         .manage(state)
+        .manage(attachments::Served::default())
+        // Fotos, áudios, vídeos e arquivos das notas: `att://localhost/<hash>` (convertFileSrc(hash, 'att')).
+        .register_asynchronous_uri_scheme_protocol("att", |ctx, req, responder| {
+            let app = ctx.app_handle().clone();
+            std::thread::spawn(move || responder.respond(attachments::serve(&app, &req)));
+        })
         // The window is built here rather than from the config, so that macOS
         // gets the transparent title bar with the buttons inside the app bar.
         .setup(|app| {
@@ -751,6 +796,8 @@ pub fn run() {
             let window = WebviewWindowBuilder::from_config(app.handle(), &config)?
                 .initialization_script(TITLEBAR_SCRIPT);
             window.build()?;
+            #[cfg(target_os = "linux")]
+            linux_media(app)?;
             updates::init(app.handle())?;
             Ok(())
         })
@@ -770,6 +817,11 @@ pub fn run() {
             switch_tab,
             close_tab,
             open_map,
+            attachments::import_file,
+            attachments::import_path,
+            attachments::get_attachments,
+            attachments::save_attachment,
+            attachments::open_attachment,
             reload_map,
             save_map,
             add_node,

@@ -114,7 +114,7 @@ export function nodeMenu(id: number, view: ViewActions): MenuEntry[] {
   items.splice(
     1,
     0,
-    { label: 'Abrir card', icon: StickyNote, onSelect: () => notes.show(id, !n.note.trim()) },
+    { label: 'Abrir card', icon: StickyNote, hint: `${mod}↵`, onSelect: () => notes.show(id, !n.note.trim()) },
   )
   if (!isRoot) items.push({ label: 'Adicionar irmão', icon: CornerDownRight, hint: 'Enter', onSelect: () => void doc.addSibling() })
   items.push(SEP)

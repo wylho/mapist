@@ -164,6 +164,7 @@
               <div class="keys-row"><span>Adicionar irmão</span><kbd>Enter</kbd></div>
               <div class="keys-row"><span>Confirmar e criar o próximo</span><kbd>Tab (editando)</kbd></div>
               <div class="keys-row"><span>Cancelar a edição</span><kbd>Esc</kbd></div>
+              <div class="keys-row"><span>Abrir o card do tópico</span><kbd>{mod}Enter</kbd></div>
             </div>
             <span class="keys-head">Organizar</span>
             <div class="keys">
@@ -184,7 +185,9 @@
             </div>
             <span class="keys-head">Arquivo</span>
             <div class="keys">
-              <div class="keys-row"><span>Novo</span><kbd>{mod}N</kbd></div>
+              <div class="keys-row"><span>Novo mapa (aba nova)</span><kbd>{mod}N ou {mod}T</kbd></div>
+              <div class="keys-row"><span>Fechar a aba</span><kbd>{mod}W</kbd></div>
+              <div class="keys-row"><span>Próxima aba ou anterior</span><kbd>Ctrl+Tab Ctrl+⇧Tab</kbd></div>
               <div class="keys-row"><span>Abrir</span><kbd>{mod}O</kbd></div>
               <div class="keys-row"><span>Salvar</span><kbd>{mod}S</kbd></div>
               <div class="keys-row"><span>Salvar como</span><kbd>{mod}⇧S</kbd></div>

@@ -426,8 +426,11 @@ fn save_map_always_writes_nodo_and_says_where() {
     let saved = dir.join("plano.nodo");
     assert_eq!(r["path"], saved.to_str().unwrap());
     assert!(saved.exists() && !asked.exists());
-    let text = std::fs::read_to_string(&saved).unwrap();
-    assert!(text.contains("\"format\": \"nodo\""), "{text}");
+    assert!(nodo_core::package::is_package(
+        &std::fs::read(&saved).unwrap()
+    ));
+    let map = nodo_core::load(&saved).unwrap();
+    assert_eq!(map.nodes().count(), 2);
     let _ = std::fs::remove_dir_all(&dir);
 }
 

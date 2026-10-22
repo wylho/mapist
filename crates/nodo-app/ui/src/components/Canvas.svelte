@@ -5,7 +5,7 @@
   import { theme } from '../lib/theme.svelte'
   import { cardFill, draw, hitNoteDot, hitTest, readThemeColors, resolveColor, type Viewport } from '../lib/render'
   import { CARD, isCard } from '../lib/cardtext'
-  import { previewFromMarkdown } from '@wylho/atrio'
+  import { coverFromMarkdown, previewFromMarkdown } from '@wylho/atrio'
   import MapCard from './MapCard.svelte'
   import { notes } from '../lib/notes.svelte'
   import NoteCard from './NoteCard.svelte'
@@ -304,7 +304,7 @@
     if (list.length === 0) return []
     const c = readThemeColors()
     const branch = branchColors(doc.snapshot.nodes, mapTheme(doc.snapshot.style), theme.mode, c.nodeColors, (x) => resolveColor(x, c))
-    return list.map((n) => ({ n, fill: cardFill(branch.get(n.id) ?? c.muted, c.surface, theme.mode), blocks: previewFromMarkdown(n.note) }))
+    return list.map((n) => ({ n, fill: cardFill(branch.get(n.id) ?? c.muted, c.surface, theme.mode), blocks: previewFromMarkdown(n.note), cover: coverFromMarkdown(n.note) }))
   })
 
 
@@ -441,7 +441,7 @@
       style:width="{c.n.width}px"
       style:background={c.fill}
       style:transform="scale({view.scale})"
-    ><MapCard title={c.n.text} blocks={c.blocks} card={c.n.card} onstatus={(s) => void doc.setStatus(c.n.id, s)} /></div>
+    ><MapCard title={c.n.text} blocks={c.blocks} cover={c.cover} card={c.n.card} onstatus={(s) => void doc.setStatus(c.n.id, s)} /></div>
   {/each}
   {#if doc.editing && editorBox}
     <input

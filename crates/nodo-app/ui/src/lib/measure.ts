@@ -12,7 +12,7 @@ import type { CardFields, FlatNode } from './api'
 import { fontStack, levelFont } from './font'
 import { levelStyle, mapTheme, type MapTheme } from './maptheme'
 import { flushSync, mount, unmount } from 'svelte'
-import { previewFromMarkdown } from '@wylho/atrio'
+import { coverFromMarkdown, previewFromMarkdown } from '@wylho/atrio'
 import MapCard from '../components/MapCard.svelte'
 import { CARD, isCard } from './cardtext'
 
@@ -93,7 +93,7 @@ export function measureCard(title: string, note: string, card: CardFields = {}):
   }
   host.innerHTML = '<div class="card"></div>'
   const el = host.firstElementChild as HTMLElement
-  const app = mount(MapCard, { target: el, props: { title, blocks: previewFromMarkdown(note), card, onstatus: () => {} } })
+  const app = mount(MapCard, { target: el, props: { title, blocks: previewFromMarkdown(note), cover: coverFromMarkdown(note), card, onstatus: () => {} } })
   flushSync()
   const size = { width: CARD.width, height: Math.ceil(el.getBoundingClientRect().height) }
   unmount(app)

@@ -10,6 +10,8 @@
 
 import type { CardFields, NodeSize, NoteCard, Snapshot, TabInfo } from './api'
 import { docToMarkdown, markdownToDoc } from './notedoc'
+import { rememberPreviewUrl } from './api'
+import type { Attachment } from '@wylho/atrio'
 
 // ── modelo em memória ────────────────────────────────────────────────────
 
@@ -580,7 +582,7 @@ export const previewBackend = {
   markdown_doc: ({ markdown }: { markdown: string }) => markdownToDoc(markdown),
 
   set_note_doc: ({ id, doc }: { id: number; doc: unknown }) => {
-    const note = docToMarkdown(doc)
+    const note = docToMarkdown(doc, (h) => previewFiles.get(h)?.name)
     commit(() => {
       const n = nodes.get(id)
       if (!n) throw new Error(`node ${id} not found`)
@@ -830,4 +832,30 @@ function cleanCard(c: CardFields): CardFields {
   if (keep && c.reminder_doing && !c.reminder_done) out.reminder_doing = true
   if (c.status_on) out.status_on = true
   return out
+}
+
+// ── anexos da prévia: em memória, com o endereço de um blob para mostrar ──
+
+const previewFiles = new Map<string, Attachment>()
+
+export async function previewImport(file: Blob, name: string): Promise<Attachment> {
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))
+  const hash = [...digest.slice(0, 16)].map((b) => b.toString(16).padStart(2, '0')).join('')
+  const known = previewFiles.get(hash)
+  if (known) return known
+  const mime = file.type || 'application/octet-stream'
+  const kind = mime.startsWith('image/') ? 'image' : mime.startsWith('audio/') ? 'audio' : mime.startsWith('video/') ? 'video'
+    : mime === 'application/pdf' ? 'pdf' : 'other'
+  const a = {
+    hash, name, mime, kind, bytes: bytes.length, addedAt: Date.now(),
+    origBytes: null, width: null, height: null, palette: null, tone: null,
+  } as Attachment
+  previewFiles.set(hash, a)
+  rememberPreviewUrl(hash, URL.createObjectURL(new Blob([bytes], { type: mime })))
+  return a
+}
+
+export function previewAttachments(hashes: string[]): Attachment[] {
+  return hashes.flatMap((h) => previewFiles.get(h) ?? [])
 }

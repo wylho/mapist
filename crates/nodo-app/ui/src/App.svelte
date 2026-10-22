@@ -6,6 +6,7 @@
   import TopBar from './components/TopBar.svelte'
   import Canvas from './components/Canvas.svelte'
   import TabBar from './components/TabBar.svelte'
+  import { notes } from './lib/notes.svelte'
   import SettingsSheet from './components/SettingsSheet.svelte'
   import ConfirmDialog from './components/ConfirmDialog.svelte'
   import UpdateNotice from './components/UpdateNotice.svelte'
@@ -82,6 +83,8 @@
         o: () => doc.openDialog(),
         n: () => doc.newMap(),
         t: () => doc.newMap(),
+        // ⌘Enter abre o card do tópico, para escrever com detalhes sem tirar a mão do teclado.
+        enter: () => doc.selected !== null && notes.show(doc.selected, true),
         w: () => doc.closeTab(),
         f: () => {
           ui.searchOpen = true
@@ -97,7 +100,7 @@
         '/': () => doc.toggleFold(),
       }
       // Desfazer dentro de um campo de texto é do campo.
-      if (key in action && !(typing(e) && (key === 'z' || key === 'y'))) {
+      if (key in action && !(typing(e) && (key === 'z' || key === 'y' || key === 'enter'))) {
         e.preventDefault()
         action[key]()
       }
