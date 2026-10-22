@@ -37,10 +37,6 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@v2
       - run: pnpm --dir crates/nodo-app/ui install --frozen-lockfile
-      - name: Ícone do macOS 26 (Icon Composer)
-        id: icon
-        if: runner.os == 'macOS'
-        run: scripts/mac-icon.sh
       - run: scripts/check-version.sh
       - name: Chaves das atualizações e do repositório
         env:
@@ -100,6 +96,10 @@ jobs:
           targets: ${{ matrix.rust-targets }}
       - uses: Swatinem/rust-cache@v2
       - run: pnpm --dir crates/nodo-app/ui install --frozen-lockfile
+      - name: Ícone do macOS 26 (Icon Composer)
+        id: icon
+        if: runner.os == 'macOS'
+        run: scripts/mac-icon.sh
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
