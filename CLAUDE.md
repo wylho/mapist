@@ -335,6 +335,10 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   confere que todo `t(...)` do código e todo rótulo das listas tem inglês, que os marcadores `{…}` batem, os rótulos
   traduzidos e o exemplo em inglês. Fora: núcleo Rust e MCP (mensagens de erro do núcleo continuam em português), site
   e README (outra tarefa), textos das peças do Atrio (dicionário do próprio Atrio).
+- **Atrio 0.18.1** (os componentes do Atrio em inglês e português, datas pelo idioma). **Site abre no idioma do
+  navegador** (script depois do `hreflang` em cada página com par; a escolha no seletor fica em `site.lang`; robôs
+  não são redirecionados). `crates/nodo-app/Info.plist` com o motivo do microfone e da câmera (o card grava e
+  fotografa; sem isso o macOS nega o acesso).
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
   estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura

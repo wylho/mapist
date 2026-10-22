@@ -14,10 +14,10 @@ thiserror.workspace = true
 uuid.workspace = true
 # What the Nodo and the Ideario share (note Markdown, card rules, the card preview, attachments and the photo
 # pipeline): one crate.
-atrio = { git = "https://github.com/wylho/atrio", tag = "v0.18.0", features = ["media"] }
+atrio = { git = "https://github.com/wylho/atrio", tag = "v0.18.1", features = ["media"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 zip = { version = "4.2.0", default-features = false, features = ["deflate"] }
 
 [dev-dependencies]
 proptest = "1"
-atrio = { git = "https://github.com/wylho/atrio", tag = "v0.18.0", features = ["media", "testdoc"] }
+atrio = { git = "https://github.com/wylho/atrio", tag = "v0.18.1", features = ["media", "testdoc"] }
