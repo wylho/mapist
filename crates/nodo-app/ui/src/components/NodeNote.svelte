@@ -1,8 +1,8 @@
 <script lang="ts">
   // Um nó aberto: o card do Atrio, o mesmo do Ideario, na mesma janela (`CardDialog`: diálogo na janela larga, tela
   // cheia na estreita, modo documento). Título = texto do nó; o texto vira o Markdown da nota no núcleo; emoji,
-  // etiquetas, lembrete e status vão por `set_card`; a cor do card é a cor do ramo. Salva sozinho. O Nodo desliga o que
-  // ainda não guarda no arquivo: categoria, anexos, gravação e prévia de link.
+  // etiquetas, lembrete e status vão por `set_card`; a cor do card é a cor do ramo. Salva sozinho. Fotos, arquivos e
+  // gravações vão no `.nodo`; categoria e prévia de link ficam desligadas.
   import { onDestroy, untrack } from 'svelte'
   import { DropdownMenu } from 'bits-ui'
   import { ArrowLeft, BookOpen, Check, ChevronRight, CircleDashed, Minimize2, MoreVertical, SmilePlus, Trash2 } from '@lucide/svelte'

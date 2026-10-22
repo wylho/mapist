@@ -126,6 +126,12 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   "Abrir card" abre o mesmo card do Ideario (`CardDialog` + `NoteEditor`: diálogo na janela larga, tela cheia na
   estreita, modo documento), com `features({ category: false, attachments: false, capture: false, links: false })`.
   A edição do conteúdo sai da barra lateral (fica só o que é do mapa). Campos do card no núcleo: `CardFields`.
+- **D30:** **o `.nodo` é um zip** (opção B, escolha do usuário depois de medir: abrir e salvar um mapa de 20 MB
+  leva milissegundos): `mapa.json` (o JSON da D28, legível ao descompactar) + `anexos/<hash8>-<nome>` sem
+  compressão. Notas citam o anexo como o Ideario (`![nome](ideario://att/<hash>)`, `[📎 nome](…)`), pelo
+  `atrio::markdown`. `nodo_core::attachments` (hash = 16 bytes do SHA-256, bytes lidos sob demanda) e
+  `nodo_core::package` (gravação atômica; anexo que nenhuma nota usa sai do arquivo mas fica na memória para o
+  desfazer). O `.nodo` em JSON puro da 0.3.0 continua abrindo.
 - **D18:** **o canvas redesenha no máximo uma vez por quadro**, e o que o desenho lê não pode ser `$state` escrito no
   mesmo efeito. Motivo: um laço assim (`colors`) fazia centenas de redesenhos por tecla e deixava a edição travando.
 
@@ -245,6 +251,12 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   `Canvas.svelte`), atalhos ⌘T/⌘N, ⌘W, Ctrl+Tab/Ctrl+⇧Tab. A prévia tem abas também. **Caixa de três saídas**
   (pedido do usuário): fechar aba ou app com algo por salvar oferece Salvar / Cancelar / Fechar sem salvar
   (`ui.choose`, `ConfirmDialog.svelte`); sair com várias abas não salvas oferece "Salvar todos".
+- **Anexos e abas** (depois da 0.3.0): abas no canto do mapa (`src/tabs.rs`, `TabBar.svelte`, fechar com
+  Salvar/Cancelar/Fechar sem salvar); anexos (D30): `crates/nodo-app/src/attachments.rs` (`import_file` com o corpo
+  cru, `import_path`, `get_attachments`, `save_attachment`, `open_attachment`, protocolo `att://` com Range),
+  `linux_media` libera câmera e microfone no WebKitGTK; card com foto, arquivo, câmera e gravador
+  (`NodeNote.svelte`), capa no card do mapa (`coverFromMarkdown` do Atrio 0.10.0 em `MapCard.svelte`). ⌘/Ctrl+Enter
+  abre o card do tópico. Atrio 0.11.0: anexo com o cursor numa lista entra depois dela.
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
   estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura
