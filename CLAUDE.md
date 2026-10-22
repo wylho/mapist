@@ -279,7 +279,9 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
 - **Unificação, fase 3 (Atrio 0.15.1), em andamento:** o card do tópico é o `NoteCard` do Atrio, o mesmo do Ideario
   (`Canvas.svelte`; `lib/cardtext.ts` `summaryOf`; `MapCard.svelte` saiu), na cor de nota do Atrio mais próxima da
   cor do ramo (`nearestNoteColor`). Botão de recolher/expandir no começo do ramo (`render.ts` `drawKnob`/`hitKnob`,
-  `hidden` no snapshot = tópicos escondidos); três desenhos em prévia (`?fold=a|b|c`) esperando a escolha do usuário.
+  `hidden` no snapshot = tópicos escondidos), opção A do usuário (como o XMind): "−" ao passar o mouse ou com o tópico
+  escolhido, recolhido mostra sempre a bolinha com o número; em tela de toque (`hover: none`) o "−" fica sempre à
+  vista. A bolinha de nota da raiz saiu (a raiz abre o card com duplo clique, como os outros tópicos).
   Falta: notas soltas como card padrão, barra e menu do card aberto do Atrio, salvar/fechar, visualizador de anexos,
   exportar pelo próprio card.
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar

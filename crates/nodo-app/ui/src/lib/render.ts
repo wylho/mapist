@@ -138,12 +138,11 @@ export function draw(o: DrawOptions) {
   }
 }
 
-/** Como o botão de recolher aparece (prévia das opções: `?fold=a|b|c`). */
-export type KnobStyle = 'a' | 'b' | 'c'
-export let knobStyle: KnobStyle = (() => {
-  const v = typeof location === 'undefined' ? null : new URLSearchParams(location.search).get('fold')
-  return v === 'b' || v === 'c' ? v : 'a'
-})()
+/**
+ * Tela de toque (sem "mouse em cima"): o botão de recolher fica sempre à vista. Com mouse, aparece ao passar sobre o
+ * tópico ou com ele escolhido, como no XMind (escolha do usuário).
+ */
+const touch = typeof matchMedia !== 'undefined' && matchMedia('(hover: none)').matches
 
 /** Centro do botão de recolher: no começo do ramo dos filhos (do lado deles, ou embaixo no organograma). */
 export function knobAt(n: FlatNode, style: LevelStyle, down: boolean): { x: number; y: number } {
@@ -167,59 +166,30 @@ function drawKnob(
   ctx.font = `700 10px ${fontStack()}`
   if (n.folded) {
     // Recolhido: sempre à vista, na cor do ramo, com quantos tópicos estão escondidos.
-    if (knobStyle === 'c') {
-      const t = `+${label}`
-      const w = Math.max(22, ctx.measureText(t).width + 12)
-      const left = n.side === 'left' && !o.down ? x - w + KNOB_R : x - (o.down ? w / 2 : KNOB_R)
-      roundRect(ctx, left, y - KNOB_R, w, KNOB_R * 2, KNOB_R)
-      ctx.fillStyle = o.branch
-      ctx.fill()
-      ctx.fillStyle = textOn(o.branch, '#ffffff', '#16201c')
-      ctx.fillText(t, left + w / 2, y + 0.5)
-    } else {
-      ctx.beginPath()
-      ctx.arc(x, y, KNOB_R + (label.length > 1 ? 1.5 : 0), 0, Math.PI * 2)
-      ctx.fillStyle = o.branch
-      ctx.fill()
-      ctx.strokeStyle = o.colors.stage
-      ctx.lineWidth = 2
-      ctx.stroke()
-      ctx.fillStyle = textOn(o.branch, '#ffffff', '#16201c')
-      ctx.fillText(label, x, y + 0.5)
-    }
-  } else if (o.active || knobStyle === 'b') {
-    // Aberto: o botão de recolher aparece com o mouse em cima ou o tópico escolhido (na B, um anel discreto sempre).
-    const quiet = knobStyle === 'b' && !o.active
     ctx.beginPath()
-    ctx.arc(x, y, quiet ? 4 : KNOB_R, 0, Math.PI * 2)
-    ctx.fillStyle = quiet ? o.branch : o.colors.surface
+    ctx.arc(x, y, KNOB_R + (label.length > 1 ? 1.5 : 0), 0, Math.PI * 2)
+    ctx.fillStyle = o.branch
+    ctx.fill()
+    ctx.strokeStyle = o.colors.stage
+    ctx.lineWidth = 2
+    ctx.stroke()
+    ctx.fillStyle = textOn(o.branch, '#ffffff', '#16201c')
+    ctx.fillText(label, x, y + 0.5)
+  } else if (o.active || touch) {
+    // Aberto: "−" para recolher.
+    ctx.beginPath()
+    ctx.arc(x, y, KNOB_R, 0, Math.PI * 2)
+    ctx.fillStyle = o.colors.surface
     ctx.fill()
     ctx.strokeStyle = o.branch
     ctx.lineWidth = 1.5
     ctx.stroke()
-    if (!quiet) {
-      ctx.strokeStyle = o.branch
-      ctx.lineWidth = 1.8
-      ctx.lineCap = 'round'
-      ctx.beginPath()
-      if (knobStyle === 'c') {
-        // Seta para o lado do tópico: "recolher para cá".
-        const dir = o.down ? 0 : n.side === 'left' ? 1 : -1
-        if (o.down) {
-          ctx.moveTo(x - 3.5, y + 1.8)
-          ctx.lineTo(x, y - 1.8)
-          ctx.lineTo(x + 3.5, y + 1.8)
-        } else {
-          ctx.moveTo(x - dir * 1.8, y - 3.5)
-          ctx.lineTo(x + dir * 1.8, y)
-          ctx.lineTo(x - dir * 1.8, y + 3.5)
-        }
-      } else {
-        ctx.moveTo(x - 3.6, y)
-        ctx.lineTo(x + 3.6, y)
-      }
-      ctx.stroke()
-    }
+    ctx.lineWidth = 1.8
+    ctx.lineCap = 'round'
+    ctx.beginPath()
+    ctx.moveTo(x - 3.6, y)
+    ctx.lineTo(x + 3.6, y)
+    ctx.stroke()
   }
   ctx.restore()
 }
@@ -444,17 +414,6 @@ function drawNode(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
   const label = fitText(n.text, w - style.padX / 2, style)
   ctx.fillText(label, x + w / 2, style.underline ? y + h / 2 - 2 : y + h / 2)
 
-  // Marcador de nota
-  if (n.note) {
-    const d = noteDot(n)
-    ctx.beginPath()
-    ctx.arc(d.x, d.y, 3.2, 0, Math.PI * 2)
-    ctx.fillStyle = ink
-    ctx.globalAlpha = 0.6
-    ctx.fill()
-    ctx.globalAlpha = 1
-  }
-
   ctx.restore()
 }
 
@@ -553,25 +512,6 @@ export function hitTest(
   for (let i = snapshot.nodes.length - 1; i >= 0; i--) {
     const n = snapshot.nodes[i]
     if (wx >= n.x && wx <= n.x + n.width && wy >= n.y && wy <= n.y + n.height) return n.id
-  }
-  return null
-}
-
-/** Centro da bolinha de nota de um nó, em unidades de mundo (o mesmo ponto que o desenho usa). */
-export function noteDot(n: FlatNode): { x: number; y: number } {
-  return { x: n.x + n.width - 8, y: n.y + 8 }
-}
-
-/** O nó cuja bolinha de nota está sob o ponteiro. A área de toque tem ao menos 9 px na tela, em qualquer zoom. */
-export function hitNoteDot(snapshot: Snapshot, view: Viewport, clientX: number, clientY: number, rect: DOMRect): number | null {
-  const wx = (clientX - rect.left - view.x) / view.scale
-  const wy = (clientY - rect.top - view.y) / view.scale
-  const r = Math.max(7, 9 / view.scale)
-  for (let i = snapshot.nodes.length - 1; i >= 0; i--) {
-    const n = snapshot.nodes[i]
-    if (!n.note || isCard(n)) continue
-    const d = noteDot(n)
-    if (Math.hypot(wx - d.x, wy - d.y) <= r) return n.id
   }
   return null
 }

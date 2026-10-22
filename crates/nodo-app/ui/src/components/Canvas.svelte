@@ -3,7 +3,7 @@
   import { onMount, untrack } from 'svelte'
   import { doc } from '../lib/document.svelte'
   import { theme } from '../lib/theme.svelte'
-  import { draw, hitKnob, hitNoteDot, hitTest, readThemeColors, resolveColor, type Viewport } from '../lib/render'
+  import { draw, hitKnob, hitTest, readThemeColors, resolveColor, type Viewport } from '../lib/render'
   import { CARD, isCard, summaryOf } from '../lib/cardtext'
   import { attachments } from '../lib/api'
   import { NoteCard as Card, nearestNoteColor } from '@wylho/atrio'
@@ -211,13 +211,6 @@
       void doc.toggleFold()
       return
     }
-    // A bolinha de nota abre (ou fecha) a nota formatada ao lado do nó.
-    const dot = hitNoteDot(doc.snapshot, view, e.clientX, e.clientY, r)
-    if (dot !== null) {
-      doc.selected = dot
-      notes.toggle(dot)
-      return
-    }
     const hit = hitTest(doc.snapshot, view, e.clientX, e.clientY, r)
     if (hit !== null) {
       doc.selected = hit
@@ -262,7 +255,7 @@
     const knob = hitKnob(doc.snapshot, view, e.clientX, e.clientY, r)
     const hit = hitTest(doc.snapshot, view, e.clientX, e.clientY, r) ?? knob
     if (hit !== doc.hovered) doc.hovered = hit
-    stageEl.classList.toggle('on-dot', knob !== null || hitNoteDot(doc.snapshot, view, e.clientX, e.clientY, r) !== null)
+    stageEl.classList.toggle('on-dot', knob !== null)
   }
 
   /** Põe uma nota solta onde a pessoa clicou (coordenadas da janela) e já abre ela para escrever. */
