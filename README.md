@@ -25,7 +25,7 @@ readable without the app. And Claude can work on the same map you do, by the sam
 
 <picture>
   <source srcset="site/img/mapa-escuro.webp" media="(prefers-color-scheme: dark)">
-  <img src="site/img/mapa.webp" alt="A mind map in Nodo: the central topic in the middle, colorful branches on both sides and a panel with the selected topic’s text, note and color">
+  <img src="site/img/mapa.webp" alt="A mind map in Nodo: the central topic in the middle, colorful branches on both sides, topics shown as cards with checklists, tags and status, and a loose note">
 </picture>
 
 ## Built for fast thinking
@@ -70,14 +70,14 @@ The theme is saved in the map itself.
 - Curved or angled branches, with rounded corners
 - A color you pick by hand still wins over the theme
 
-<img src="site/img/temas.webp" alt="The Map theme sheet, with six sample maps: Classic, Outline, Underline, Vibrant, Pills and Monochrome (labels in Portuguese)">
+<img src="site/img/temas.webp" alt="The Map theme sheet, with six sample maps: Classic, Outline, Underline, Vibrant, Pills and Monochrome">
 
 ## Looks at home on your system
 
 Light and dark themes, and a System theme that matches the colors of Windows, macOS, GNOME and KDE. It works in a
 narrow window too.
 
-<img src="site/img/janela-estreita.webp" width="300" alt="Nodo in a narrow window, in dark mode, with the whole mind map on screen">
+<img src="site/img/janela-estreita.webp" width="300" alt="Nodo in a narrow window, in dark mode, zoomed in on a topic card with its checklist">
 
 ## Structures and formats
 

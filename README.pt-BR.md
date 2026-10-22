@@ -24,8 +24,8 @@ legível sem o app. E o Claude pode trabalhar no mesmo mapa que você, pelas mes
 </p>
 
 <picture>
-  <source srcset="site/img/mapa-escuro.webp" media="(prefers-color-scheme: dark)">
-  <img src="site/img/mapa.webp" alt="Um mapa mental no Nodo: a raiz no centro, ramos coloridos dos dois lados e o painel com o texto, a nota e a cor do nó selecionado">
+  <source srcset="site/img/pt/mapa-escuro.webp" media="(prefers-color-scheme: dark)">
+  <img src="site/img/pt/mapa.webp" alt="Um mapa mental no Nodo: a raiz no centro, ramos coloridos dos dois lados, tópicos em cards com checklist, etiquetas e status, e uma nota solta">
 </picture>
 
 ## Feito para pensar rápido
@@ -51,14 +51,14 @@ o que fez.
 - Claude Code: um comando para colar no terminal
 - Quando o Claude salva, a janela recarrega o mapa ao voltar para ela
 
-<img src="site/img/claude.webp" alt="Configurações do Nodo com a aparência, o traçado das linhas e a seção Claude, com o botão Ligar e o comando do Claude Code">
+<img src="site/img/pt/claude.webp" alt="Configurações do Nodo com a aparência, o traçado das linhas e a seção Claude, com o botão Ligar e o comando do Claude Code">
 
 ## O arquivo é seu
 
 Cada mapa é um arquivo `.nodo`: um zip com o mapa em JSON legível e os anexos, que abre sem o app. Salvar nunca deixa
 um arquivo pela metade. Mapas `.minder`, Markdown e OPML abrem como mapa novo, e o original fica como está.
 
-<img src="site/img/busca.webp" alt="Mapa com a busca aberta na barra, marcando os nós que contêm a palavra Design">
+<img src="site/img/pt/busca.webp" alt="Mapa com a busca aberta na barra, marcando os nós que contêm a palavra Design">
 
 ## Temas de mapa
 
@@ -68,14 +68,14 @@ Cada ramo principal ganha uma cor e os de baixo herdam. O tema fica salvo no pr�
 - Ramos em curva ou em ângulo, com cantos arredondados
 - Uma cor escolhida à mão continua valendo por cima do tema
 
-<img src="site/img/temas.webp" alt="A folha Tema do mapa, com seis mapinhas de exemplo: Clássico, Contorno, Sublinhado, Vibrante, Pílulas e Monocromático">
+<img src="site/img/pt/temas.webp" alt="A folha Tema do mapa, com seis mapinhas de exemplo: Clássico, Contorno, Sublinhado, Vibrante, Pílulas e Monocromático">
 
 ## Com a cara do seu sistema
 
 Temas claro e escuro, e um tema Sistema que imita as cores do Windows, do macOS, do GNOME e do KDE. Funciona também numa
 janela estreita.
 
-<img src="site/img/janela-estreita.webp" width="300" alt="O Nodo numa janela estreita, no tema escuro, com o mapa inteiro na tela">
+<img src="site/img/pt/janela-estreita.webp" width="300" alt="O Nodo numa janela estreita, no tema escuro, com zoom num card de tópico e o checklist dele">
 
 ## Estruturas e formatos
 
