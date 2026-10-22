@@ -264,6 +264,7 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   `linux_media` libera câmera e microfone no WebKitGTK; card com foto, arquivo, câmera e gravador
   (`NodeNote.svelte`), capa no card do mapa (`coverFromMarkdown` do Atrio 0.10.0 em `MapCard.svelte`). ⌘/Ctrl+Enter
   abre o card do tópico. Atrio 0.11.0: anexo com o cursor numa lista entra depois dela.
+- **Atrio 0.12.0** (unificação, fase 1: o Ideario passou a usar a mesma crate; plano em `atrio/docs/UNIFICACAO.md`).
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
   estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura
