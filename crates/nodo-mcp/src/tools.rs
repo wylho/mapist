@@ -222,7 +222,7 @@ pub fn catalog() -> Vec<Value> {
         ),
         tool(
             "set_layout",
-            "Arrange the map automatically. structure: mapa (branches on both sides of the root), logico (everything to the right), organograma (org chart, top to bottom) or arvore (indented tree). spacing: compacto, normal or largo. Both are saved in the file; omit one to keep it.",
+            "Arrange the map automatically. structure: mapa (branches on both sides of the root), logico (everything to the right), organograma (org chart, top to bottom), arvore (indented tree), matriz (a table: a row per main topic, its subtopics in columns) or tabela (tree table: each topic's cell spans its subtopics' cells). spacing: compacto, normal or largo. Both are saved in the file; omit one to keep it.",
             json!({
                 "type": "object",
                 "properties": {

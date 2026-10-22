@@ -727,3 +727,26 @@ describe('exportar com ramos abertos', () => {
     expect(previewBackend.get_snapshot()).toEqual(before)
   })
 })
+
+describe('estruturas de tabela', () => {
+  for (const structure of ['matriz', 'tabela']) {
+    it(`${structure}: cada tópico na sua célula, sem células sobrepostas, como o núcleo`, async () => {
+      const { seedDemo, previewBackend } = await import('../src/lib/preview')
+      seedDemo()
+      const s = previewBackend.set_structure({ structure })
+      const cells = s.nodes.filter((n) => n.cell)
+      expect(cells.length).toBeGreaterThan(5)
+      for (const n of cells) {
+        const [x, y, w, h] = n.cell!
+        expect(n.x >= x && n.y >= y && n.x + n.width <= x + w + 1e-6 && n.y + n.height <= y + h + 1e-6).toBe(true)
+      }
+      for (const [i, a] of cells.entries())
+        for (const b of cells.slice(i + 1)) {
+          const [ax, ay, aw, ah] = a.cell!
+          const [bx, by, bw, bh] = b.cell!
+          expect(ax < bx + bw - 1e-6 && bx < ax + aw - 1e-6 && ay < by + bh - 1e-6 && by < ay + ah - 1e-6, `${a.text} × ${b.text}`).toBe(false)
+        }
+      expect(s.bounds.max_x).toBeGreaterThanOrEqual(Math.max(...cells.map((n) => n.cell![0] + n.cell![2])) - 1e-6)
+    })
+  }
+})

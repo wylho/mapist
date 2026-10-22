@@ -59,6 +59,9 @@ pub struct FlatNode {
     has_children: bool,
     /// How many topics are hidden under this one while it is folded (the fold button shows it).
     hidden: usize,
+    /// The table cell it fills (x, y, width, height), in the table structures.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    cell: Option<[f64; 4]>,
 }
 
 /// Everything the renderer needs to draw the current map.
@@ -205,6 +208,7 @@ fn snapshot(doc: &Doc) -> Snapshot {
             parent,
             has_children: !node.children.is_empty(),
             hidden: if node.folded { descendants(node) } else { 0 },
+            cell: node.cell.map(|(x, y, w, h)| [x, y, w, h]),
         });
         if node.folded {
             return;
@@ -241,7 +245,8 @@ fn snapshot(doc: &Doc) -> Snapshot {
     // As notas soltas entram na extensão: "ver o mapa inteiro" e a exportação mostram elas também.
     let boxes = nodes
         .iter()
-        .map(|n| (n.x, n.y, n.width, n.height))
+        // Na tabela, a célula inteira (maior que o tópico) entra na extensão.
+        .map(|n| n.cell.map_or((n.x, n.y, n.width, n.height), |[x, y, w, h]| (x, y, w, h)))
         .chain(notes.iter().map(|n| (n.x, n.y, n.width, n.height)));
     for (x, y, w, h) in boxes {
         min_x = min_x.min(x);

@@ -29,6 +29,8 @@ export interface FlatNode {
   has_children: boolean
   /** Quantos tópicos estão escondidos debaixo deste, quando ele está recolhido. */
   hidden?: number
+  /** A célula que ele ocupa (x, y, largura, altura), nas estruturas de tabela. */
+  cell?: [number, number, number, number]
 }
 
 /** Foto da capa: o hash e o tamanho (a capa guarda a proporção antes de a foto carregar). */

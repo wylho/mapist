@@ -30,6 +30,8 @@ interface PNode {
   y: number
   width: number
   height: number
+  /** Célula nas estruturas de tabela (layout.rs: `Node::cell`). */
+  cell?: [number, number, number, number]
 }
 
 const CHAR_W = 7.6
@@ -49,7 +51,7 @@ const MAP_STYLES = ['classico', 'contorno', 'sublinhado', 'vibrante', 'pilulas',
 /** Estrutura e espaçamento, como `theme.structure` e `theme.spacing` no núcleo. */
 let structure: string | null = null
 let spacing: string | null = null
-const STRUCTURES = ['mapa', 'logico', 'organograma', 'arvore']
+const STRUCTURES = ['mapa', 'logico', 'organograma', 'arvore', 'matriz', 'tabela']
 const SPACINGS = ['compacto', 'normal', 'largo']
 // Notas soltas, como no núcleo (`MindMap.notes`).
 /** As cores de nota do Atrio (`nodo_core::model::NOTE_COLORS`). */
@@ -199,10 +201,12 @@ function mapSnapshot(): Omit<Snapshot, 'tabs' | 'active'> {
   let maxY = -Infinity
 
   const flat = list.map((n) => {
-    minX = Math.min(minX, n.x)
-    minY = Math.min(minY, n.y)
-    maxX = Math.max(maxX, n.x + n.width)
-    maxY = Math.max(maxY, n.y + n.height)
+    // Na tabela, a célula inteira entra na extensão (como o núcleo).
+    const [bx, by, bw, bh] = n.cell ?? [n.x, n.y, n.width, n.height]
+    minX = Math.min(minX, bx)
+    minY = Math.min(minY, by)
+    maxX = Math.max(maxX, bx + bw)
+    maxY = Math.max(maxY, by + bh)
     return {
       id: n.id,
       text: n.text,
@@ -221,6 +225,7 @@ function mapSnapshot(): Omit<Snapshot, 'tabs' | 'active'> {
       parent: n.parent,
       has_children: n.children.length > 0,
       hidden: n.folded ? descendants(n.id) : 0,
+      cell: n.cell ? ([...n.cell] as [number, number, number, number]) : undefined,
     }
   })
 
@@ -272,7 +277,13 @@ function measure(n: PNode) {
 
 /** Modo e folgas da passada de layout (layout.rs: `Params`). */
 function params() {
-  const mode = structure === 'logico' ? 'right' : structure === 'organograma' ? 'down' : structure === 'arvore' ? 'tree' : 'map'
+  const mode =
+    structure === 'logico' ? 'right'
+    : structure === 'organograma' ? 'down'
+    : structure === 'arvore' ? 'tree'
+    : structure === 'matriz' ? 'matrix'
+    : structure === 'tabela' ? 'treetable'
+    : 'map'
   const k = spacing === 'compacto' ? 0.6 : spacing === 'largo' ? 1.6 : 1
   return { mode, hGap: H_GAP * k, vGap: V_GAP * k }
 }
@@ -332,6 +343,99 @@ function placeTree(n: PNode, x: number, y: number): number {
   return next
 }
 
+/** Folga do tópico dentro da célula (layout.rs: `pad`). */
+const cellPad = () => Math.max(6, params().vGap * 0.5)
+const kids = (n: PNode) => (n.folded ? [] : n.children.map((id) => nodes.get(id)!).filter(Boolean))
+
+/** Tabela em árvore (layout.rs: `place_tree_table`). */
+function placeTreeTable(root: PNode) {
+  const pad = cellPad()
+  const rows: number[] = []
+  const measureRows = (n: PNode, d: number) => {
+    rows[d] = Math.max(rows[d] ?? 0, n.height + pad * 2)
+    for (const c of kids(n)) measureRows(c, d + 1)
+  }
+  const span = (n: PNode): number => {
+    const own = n.width + pad * 2
+    const cs = kids(n)
+    return cs.length ? Math.max(own, cs.reduce((a, c) => a + span(c), 0)) : own
+  }
+  const put = (n: PNode, x: number, y: number, w: number, d: number) => {
+    const cs = kids(n)
+    const h = cs.length ? rows[d] : rows.slice(d).reduce((a, b) => a + b, 0)
+    n.cell = [x, y, w, h]
+    n.x = x + pad
+    n.y = y + pad
+    if (!cs.length) return
+    const spans = cs.map(span)
+    const extra = Math.max(0, w - spans.reduce((a, b) => a + b, 0)) / spans.length
+    let cx = x
+    cs.forEach((c, i) => {
+      put(c, cx, y + rows[d], spans[i] + extra, d + 1)
+      cx += spans[i] + extra
+    })
+  }
+  measureRows(root, 0)
+  put(root, 0, 0, span(root), 0)
+}
+
+/** Matriz (layout.rs: `place_matrix`). */
+function placeMatrix(root: PNode) {
+  const { hGap, vGap } = params()
+  const pad = cellPad()
+  const indent = Math.max(14, hGap * 0.4)
+  const gap = Math.max(4, vGap * 0.4)
+  const content = (n: PNode): [number, number] => {
+    let [w, h] = [n.width, n.height]
+    for (const c of kids(n)) {
+      const [cw, ch] = content(c)
+      w = Math.max(w, cw + indent)
+      h += gap + ch
+    }
+    return [w, h]
+  }
+  const putList = (n: PNode, x: number, y: number): number => {
+    n.x = x
+    n.y = y
+    let next = y + n.height
+    for (const c of kids(n)) next = putList(c, x + indent, next + gap)
+    return next
+  }
+  const rowsN = kids(root)
+  const cols = Math.max(0, ...rowsN.map((r) => kids(r).length))
+  const headW = Math.max(0, ...rowsN.map((r) => r.width)) + pad * 2
+  const colW: number[] = Array(cols).fill(0)
+  const rowH = rowsN.map((r) => {
+    let h = r.height
+    kids(r).forEach((c, j) => {
+      const [cw, ch] = content(c)
+      colW[j] = Math.max(colW[j], cw + pad * 2)
+      h = Math.max(h, ch)
+    })
+    return h + pad * 2
+  })
+  const tableW = Math.max(headW + colW.reduce((a, b) => a + b, 0), root.width + pad * 2)
+  if (cols) colW[cols - 1] += tableW - headW - colW.reduce((a, b) => a + b, 0)
+  const titleH = root.height + pad * 2
+  root.cell = [0, 0, tableW, titleH]
+  root.x = pad
+  root.y = pad
+  let y = titleH
+  rowsN.forEach((r, i) => {
+    const h = rowH[i]
+    r.cell = [0, y, cols ? headW : tableW, h]
+    r.x = pad
+    r.y = y + pad
+    let x = headW
+    kids(r).forEach((c, j) => {
+      putList(c, x + pad, y + pad)
+      c.cell = [x, y, colW[j], h]
+      x += colW[j]
+    })
+    y += h
+  })
+}
+
 /** Mede tudo pela estimativa e posiciona (layout.rs: `layout`). */
 function relayout() {
   for (const n of nodes.values()) measure(n)
@@ -342,7 +446,11 @@ function relayout() {
 function reposition() {
   const root = nodes.get(rootId)
   if (!root) return
-  if (params().mode === 'tree') placeTree(root, 0, 0)
+  for (const n of nodes.values()) n.cell = undefined
+  const mode = params().mode
+  if (mode === 'tree') placeTree(root, 0, 0)
+  else if (mode === 'matrix') placeMatrix(root)
+  else if (mode === 'treetable') placeTreeTable(root)
   else place(root, 0, -extent(root) / 2)
 }
 

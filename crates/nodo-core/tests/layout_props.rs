@@ -75,7 +75,7 @@ proptest! {
     }
 
     #[test]
-    fn no_structure_or_spacing_makes_nodes_overlap(steps in edits(), st in 0usize..4, sp in 0usize..3) {
+    fn no_structure_or_spacing_makes_nodes_overlap(steps in edits(), st in 0usize..STRUCTURES.len(), sp in 0usize..3) {
         let mut ed = build(&steps);
         ed.apply(Action::SetStructure { structure: Some(STRUCTURES[st].to_string()) }).unwrap();
         ed.apply(Action::SetSpacing { spacing: Some(SPACINGS[sp].to_string()) }).unwrap();
@@ -93,6 +93,65 @@ proptest! {
         let back = document::from_xml(&document::to_xml(ed.map()).unwrap()).unwrap();
         prop_assert_eq!(back.theme.structure.as_deref(), Some(STRUCTURES[st]));
         prop_assert_eq!(back.theme.spacing.as_deref(), Some(SPACINGS[sp]));
+    }
+
+    #[test]
+    fn tables_tile_every_topic_into_its_own_cell(steps in edits(), matrix in any::<bool>(), sp in 0usize..3) {
+        let mut ed = build(&steps);
+        let st = if matrix { "matriz" } else { "tabela" };
+        ed.apply(Action::SetStructure { structure: Some(st.into()) }).unwrap();
+        ed.apply(Action::SetSpacing { spacing: Some(SPACINGS[sp].to_string()) }).unwrap();
+        let map = ed.map();
+        // Células: (x, y, largura, altura), o tópico dentro da dele.
+        let mut cells = Vec::new();
+        for n in visible(map) {
+            if let Some((_, _, w, h)) = n.cell {
+                let (x, y, _, _) = n.cell.unwrap();
+                prop_assert!(
+                    n.pos.x >= x - 1e-6 && n.pos.y >= y - 1e-6 && n.pos.x + n.width <= x + w + 1e-6 && n.pos.y + n.height <= y + h + 1e-6,
+                    "{st}: {} fora da própria célula", n.text
+                );
+                cells.push((n.text.clone(), n.pos, w, h));
+            }
+        }
+        prop_assert!(map.root.cell.is_some(), "a raiz é a primeira célula");
+        // Células não se sobrepõem (encostar pode), e cada tópico está dentro da sua.
+        for (i, a) in cells.iter().enumerate() {
+            for b in &cells[i + 1..] {
+                let (ax, ay) = cell_origin(map, &a.0);
+                let (bx, by) = cell_origin(map, &b.0);
+                let _ = (a.1, b.1);
+                let overlap = ax < bx + b.2 - 1e-6 && bx < ax + a.2 - 1e-6 && ay < by + b.3 - 1e-6 && by < ay + a.3 - 1e-6;
+                prop_assert!(!overlap, "{st}: célula de {} sobrepõe a de {}", a.0, b.0);
+            }
+        }
+        if matrix {
+            // A n-ésima célula de cada linha começa na mesma coluna.
+            let mut col_x: Vec<Option<f64>> = Vec::new();
+            for row in map.root.children.iter().filter(|_| !map.root.folded) {
+                if row.folded { continue }
+                for (j, c) in row.children.iter().enumerate() {
+                    if col_x.len() <= j { col_x.push(None) }
+                    let x = c.pos.x;
+                    match col_x[j] {
+                        Some(x0) => prop_assert!((x - x0).abs() < 1e-6, "coluna {j} desalinhada"),
+                        None => col_x[j] = Some(x),
+                    }
+                }
+            }
+        } else {
+            // A célula do pai cobre a largura das células dos filhos.
+            for n in visible(map) {
+                if n.folded || n.children.is_empty() { continue }
+                let (px, _) = cell_origin(map, &n.text);
+                let (_, _, pw, _) = n.cell.unwrap();
+                for c in &n.children {
+                    let (cx, _) = cell_origin(map, &c.text);
+                    let (_, _, cw, _) = c.cell.unwrap();
+                    prop_assert!(cx >= px - 1e-6 && cx + cw <= px + pw + 1e-6, "{} fora da célula de {}", c.text, n.text);
+                }
+            }
+        }
     }
 
     #[test]
@@ -148,4 +207,11 @@ proptest! {
         prop_assert_eq!(ed.map().node_count(), 1);
         prop_assert!(!ed.is_dirty());
     }
+}
+
+/// Canto da célula de um tópico.
+fn cell_origin(map: &MindMap, text: &str) -> (f64, f64) {
+    let n = map.nodes().find(|n| n.text == text).expect("tópico");
+    let (x, y, _, _) = n.cell.expect("célula");
+    (x, y)
 }

@@ -6,6 +6,8 @@ export const STRUCTURES = [
   { id: 'logico', label: 'Lógico', hint: 'Tudo para a direita' },
   { id: 'organograma', label: 'Organograma', hint: 'De cima para baixo' },
   { id: 'arvore', label: 'Árvore', hint: 'Lista recuada' },
+  { id: 'matriz', label: 'Matriz', hint: 'Linhas e colunas' },
+  { id: 'tabela', label: 'Tabela em árvore', hint: 'Cada tópico cobre os seus' },
 ] as const
 
 export type StructureId = (typeof STRUCTURES)[number]['id']
@@ -39,6 +41,18 @@ export function sketch(id: StructureId): { boxes: [number, number, number, numbe
       return {
         boxes: [[8, 3, 30, 8], [22, 15, 28, 7], [36, 25, 26, 7], [36, 35, 26, 7], [22, 45, 28, 7]],
         lines: ['M14 11 L14 18.5 L22 18.5', 'M28 22 L28 28.5 L36 28.5', 'M28 22 L28 38.5 L36 38.5', 'M14 11 L14 48.5 L22 48.5'],
+      }
+    case 'matriz':
+      // Título em cima; uma linha por tópico principal, os subtópicos em colunas.
+      return {
+        boxes: [[4, 3, 88, 11], [4, 16, 26, 11], [32, 16, 29, 11], [63, 16, 29, 11], [4, 29, 26, 11], [32, 29, 29, 11], [63, 29, 29, 11], [4, 42, 26, 11], [32, 42, 29, 11], [63, 42, 29, 11]],
+        lines: [],
+      }
+    case 'tabela':
+      // Cada célula cobre as dos filhos, um nível por linha.
+      return {
+        boxes: [[4, 3, 88, 13], [4, 18, 43, 11], [49, 18, 43, 11], [4, 31, 21, 22], [26, 31, 21, 22], [49, 31, 43, 11], [49, 44, 21, 9], [71, 44, 21, 9]],
+        lines: [],
       }
     default:
       return {

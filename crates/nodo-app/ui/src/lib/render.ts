@@ -106,8 +106,28 @@ export function draw(o: DrawOptions) {
   const mode = o.mode ?? 'light'
   const branch = branchColors(snapshot.nodes, theme, mode, colors.nodeColors, (c) => resolveColor(c, colors))
 
+  // Tabela: as células no lugar dos ramos. Cada uma na cor que o tópico teria; a mais funda que não tem célula (o que
+  // fica listado dentro de uma célula da matriz) usa a cor da célula onde está.
+  const table = isTable(snapshot.structure)
+  const tableBg = new Map<number, string>()
+  if (table) {
+    for (const n of snapshot.nodes) {
+      // Título e cabeçalhos (raiz e tópicos principais) na cor do tema; as células de dentro na cor suave do ramo.
+      const b = branch.get(n.id) ?? colors.muted
+      const own = !n.cell ? null
+        : n.depth <= 1 ? fillOf(levelStyle(theme, n.depth).fill, colors, b, mode) ?? colors.surface
+        : softFill(b, colors.surface, mode)
+      tableBg.set(n.id, own ?? tableBg.get(n.parent ?? -1) ?? colors.surface)
+      if (!n.cell) continue
+      const [cx, cy, cw, ch] = n.cell
+      roundRect(ctx, cx + 1, cy + 1, cw - 2, ch - 2, 6)
+      ctx.fillStyle = tableBg.get(n.id)!
+      ctx.fill()
+    }
+  }
+
   // Ramos primeiro, para os nós ficarem por cima.
-  for (const n of snapshot.nodes) {
+  for (const n of table ? [] : snapshot.nodes) {
     if (n.parent === null) continue
     const p = byId.get(n.parent)
     if (p) drawBranch(ctx, p, n, theme, branch.get(n.id) ?? colors.muted, linkStyle, snapshot.structure)
@@ -124,6 +144,7 @@ export function draw(o: DrawOptions) {
       isMatch: matches.has(n.id),
       paintCards: o.paintCards ?? false,
       cards: o.cards,
+      tableBg: table ? tableBg.get(n.id) : undefined,
     })
   }
 
@@ -139,7 +160,7 @@ export function draw(o: DrawOptions) {
   // ficou escondido); o "−" é só para a tela.
   {
     for (const n of snapshot.nodes) {
-      if (!n.has_children || n.parent === null || (o.paintCards && !n.folded)) continue
+      if (table || !n.has_children || n.parent === null || (o.paintCards && !n.folded)) continue
       drawKnob(ctx, n, {
         branch: branch.get(n.id) ?? colors.muted,
         colors,
@@ -214,6 +235,7 @@ export function hitKnob(snapshot: Snapshot, view: Viewport, clientX: number, cli
   const r = Math.max(KNOB_R + 2, 11 / view.scale)
   const theme = mapTheme(snapshot.style)
   const down = snapshot.structure === 'organograma'
+  if (isTable(snapshot.structure)) return null
   for (let i = snapshot.nodes.length - 1; i >= 0; i--) {
     const n = snapshot.nodes[i]
     if (!n.has_children || n.parent === null) continue
@@ -340,7 +362,21 @@ interface NodeOpts {
   isMatch: boolean
   paintCards: boolean
   cards?: Map<string, CardPaint>
+  /** Estrutura de tabela: a cor da célula por baixo do tópico (o tópico vira só o texto). */
+  tableBg?: string
 }
+
+/** O recheio de um nível do tema, já na cor do ramo. */
+function fillOf(kind: LevelStyle['fill'], colors: ThemeColors, branch: string, mode: 'light' | 'dark'): string | null {
+  return kind === 'accent' ? colors.accent
+    : kind === 'branch' ? branch
+    : kind === 'soft' ? softFill(branch, colors.surface, mode)
+    : kind === 'surface' ? colors.surface
+    : null
+}
+
+/** As estruturas desenhadas como tabela (células no lugar das linhas dos ramos). */
+export const isTable = (structure: string | null | undefined) => structure === 'matriz' || structure === 'tabela'
 
 function drawNode(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
   if (isCard(n)) {
@@ -353,12 +389,8 @@ function drawNode(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
   const style = levelStyle(theme, n.depth)
   const radius = Math.min(h * style.round, 18)
 
-  const fill =
-    style.fill === 'accent' ? colors.accent
-    : style.fill === 'branch' ? branch
-    : style.fill === 'soft' ? softFill(branch, colors.surface, mode)
-    : style.fill === 'surface' ? colors.surface
-    : null
+  // Na tabela, o recheio é da célula (já pintada em `draw`); o tópico é só o texto sobre ela.
+  const fill = o.tableBg !== undefined ? null : fillOf(style.fill, colors, branch, mode)
 
   ctx.save()
 
@@ -381,7 +413,9 @@ function drawNode(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
   }
 
   // Contorno do estilo.
-  if (style.border !== 'none') {
+  if (o.tableBg !== undefined) {
+    // sem contorno: a célula já é a caixa
+  } else if (style.border !== 'none') {
     roundRect(ctx, x, y, w, h, radius)
     ctx.strokeStyle = style.border === 'branch' ? branch : colors.cardEdge
     ctx.lineWidth = style.border === 'branch' ? 2 : 1
@@ -394,7 +428,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
   }
 
   // Sublinhado: a linha do ramo continua por baixo do texto.
-  if (style.underline) {
+  if (style.underline && o.tableBg === undefined) {
     ctx.beginPath()
     ctx.moveTo(x, y + h)
     ctx.lineTo(x + w, y + h)
@@ -417,12 +451,15 @@ function drawNode(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
 
   // Rótulo
   ctx.font = levelFont(style)
-  const ink = style.text === 'branch' ? branch : textOn(fill ?? colors.stage, colors.fg, colors.onAccent)
+  const ink =
+    o.tableBg !== undefined ? textOn(o.tableBg, colors.fg, colors.onAccent)
+    : style.text === 'branch' ? branch
+    : textOn(fill ?? colors.stage, colors.fg, colors.onAccent)
   ctx.fillStyle = ink
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   const label = fitText(n.text, w - style.padX / 2, style)
-  ctx.fillText(label, x + w / 2, style.underline ? y + h / 2 - 2 : y + h / 2)
+  ctx.fillText(label, x + w / 2, style.underline && o.tableBg === undefined ? y + h / 2 - 2 : y + h / 2)
 
   ctx.restore()
 }
@@ -536,6 +573,11 @@ export function hitTest(
   for (let i = snapshot.nodes.length - 1; i >= 0; i--) {
     const n = snapshot.nodes[i]
     if (wx >= n.x && wx <= n.x + n.width && wy >= n.y && wy <= n.y + n.height) return n.id
+  }
+  // Na tabela, a célula inteira é do tópico.
+  for (let i = snapshot.nodes.length - 1; i >= 0; i--) {
+    const c = snapshot.nodes[i].cell
+    if (c && wx >= c[0] && wx <= c[0] + c[2] && wy >= c[1] && wy <= c[1] + c[3]) return snapshot.nodes[i].id
   }
   return null
 }

@@ -251,6 +251,10 @@ pub struct Node {
     /// The card fields of the topic (tags, cover emoji, reminder, status), the same a card has in the Ideario.
     #[serde(default)]
     pub card: CardFields,
+    /// The table cell this node fills (x, y, width, height), in the table structures (`matriz`, `tabela`); the
+    /// layout sets it, nothing saves it. The node's own `width`/`height` stay what the renderer measured.
+    #[serde(skip)]
+    pub cell: Option<(f64, f64, f64, f64)>,
     pub children: Vec<Node>,
 }
 
@@ -358,6 +362,7 @@ impl Node {
             text: text.into(),
             note: String::new(),
             card: CardFields::default(),
+            cell: None,
             children: Vec::new(),
         }
     }
