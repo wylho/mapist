@@ -23,12 +23,16 @@ fi
 
 build="$app/icons/mac"
 rm -rf "$build" && mkdir -p "$build"
-xcrun actool "$app/icons/AppIcon.icon" --compile "$build" \
+if ! xcrun actool "$app/icons/AppIcon.icon" --compile "$build" \
   --app-icon AppIcon --include-all-app-icons --enable-on-demand-resources NO \
   --platform macosx --target-device mac --minimum-deployment-target 10.15 \
   --output-partial-info-plist "$build/partial.plist" \
-  --output-format human-readable-text --notices --warnings --errors
-[ -f "$build/Assets.car" ] || { echo "::error::o actool não gerou o Assets.car"; exit 1; }
+  --output-format human-readable-text --notices --warnings --errors || [ ! -f "$build/Assets.car" ]; then
+  # Um ícone que não compila não pode derrubar o lançamento: o app sai com o icon.icns.
+  echo "::warning::o actool não compilou o AppIcon.icon: o app sai com o icon.icns"
+  echo "args=" >> "$out"
+  exit 0
+fi
 
 /usr/libexec/PlistBuddy -c "Delete :CFBundleIconName" "$app/Info.plist" 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Add :CFBundleIconName string AppIcon" "$app/Info.plist"

@@ -144,6 +144,9 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   mesmo efeito. Motivo: um laço assim (`colors`) fazia centenas de redesenhos por tecla e deixava a edição travando.
 
 ## Estado atual
+- **Versão 0.4.0** (22/10/2026, pedido do usuário: lançar já e ajustar o ícone na próxima se precisar): inglês e
+  português, linha do tempo, matriz e tabela em árvore, abas, anexos no `.nodo`, notas soltas como card, exportar o
+  card inteiro, ícone do Icon Composer no macOS 26, Atrio 0.18.2 e licença GPL nos três projetos.
 - **Versão 0.3.0 lançada** (22/10/2026, Release `v0.3.0`: formato `.nodo`, o tópico é o card do Ideario, status no
   card do mapa, sem painel lateral). Quem tem a 0.2.0 recebe pelo atualizador.
 - **Fases 1 e 2 concluídas. Versão 0.2.0 lançada** (21/10/2026, Release `v0.2.0` com `latest.json` e `.sig` de todos os

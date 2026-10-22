@@ -218,8 +218,8 @@ checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
 name = "atrio"
-version = "0.18.1"
-source = "git+https://github.com/wylho/atrio?tag=v0.18.1#e967aedbf7d7d9155d436899d161b47c7c42b112"
+version = "0.18.2"
+source = "git+https://github.com/wylho/atrio?tag=v0.18.2#11969fa2fda7a80b1f87644e96413c6635ec8f05"
 dependencies = [
  "chrono",
  "fast_image_resize",
@@ -2440,7 +2440,7 @@ checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 
 [[package]]
 name = "nodo-app"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "nodo-core",
  "nodo-mcp",
@@ -2458,7 +2458,7 @@ dependencies = [
 
 [[package]]
 name = "nodo-core"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "atrio",
  "chrono",
@@ -2473,7 +2473,7 @@ dependencies = [
 
 [[package]]
 name = "nodo-mcp"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "nodo-core",
  "serde",
