@@ -398,6 +398,12 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   `lib/recents.svelte.ts` em `localStorage` `nodo.recents`; nome, pasta com `~`, "Hoje, 14:20"/"12 de out."; arquivo
   que sumiu sai da lista). A barra de cima, sem mapa, mostra só Novo, Abrir e Configurações; o título da janela é
   "Nodo". O MCP dos dois apps diz que o título é texto simples (Markdown não é reconhecido nele).
+- **Atrio 0.21.0** (escolha do usuário, opção D, numa página com cinco jeitos de mostrar): a tabela no card fechado é
+  só o resumo, "Tabela · N colunas × N linhas" e os nomes das colunas; a tabela inteira fica no card aberto. Mudou só
+  no Atrio (`CardBody`, `.pv-tsum`); no Nodo, só a tag.
+- **Botão ? no canto** (prévia para o usuário aprovar, só no branch de trabalho): no lugar da dica de teclado fixa, um
+  botão redondo; ao passar o mouse mostra a dica de agora, o clique abre as Configurações já nos Atalhos
+  (`ui.settingsSection`, `#set-atalhos` em `SettingsSheet.svelte`; `.key-help` em `map.css`).
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
   estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura
