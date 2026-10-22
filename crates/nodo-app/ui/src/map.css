@@ -309,3 +309,6 @@ kbd {
 .map-card:hover { box-shadow: none; }
 /* O seletor de status do card recebe o clique (o resto do card deixa o mouse com o canvas). */
 .map-card .status-toggle { pointer-events: auto; }
+/* Nota solta: o card padrão do Atrio, solto no mapa. Recebe o mouse (arrastar, abrir, menu); arrastar não seleciona texto. */
+.map-card.free-card { pointer-events: auto; cursor: grab; user-select: none; }
+.map-card.free-card:active { cursor: grabbing; }

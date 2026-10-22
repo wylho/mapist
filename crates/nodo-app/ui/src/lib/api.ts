@@ -68,13 +68,19 @@ export interface Edge {
 }
 
 /** Uma nota solta no mapa (não presa a um nó), em unidades de mundo. */
+/** Nota solta no mapa: o card padrão do Atrio (título, texto, cor de nota, campos e a prévia do núcleo). */
 export interface NoteCard {
   id: number
   x: number
   y: number
   width: number
   height: number
+  title: string
   text: string
+  /** Cor de nota do Atrio (`sky`…), ou null para a padrão. */
+  color: string | null
+  card: CardFields
+  view?: CardView
 }
 
 export interface Bounds {
@@ -264,6 +270,11 @@ export const api = {
     call<Snapshot>('place_free_note', { id, x, y, width, height }),
 
   removeFreeNote: (id: number) => call<Snapshot>('remove_free_note', { id }),
+  /** O texto da nota solta como documento do card (as mesmas regras da nota de um tópico). */
+  freeNoteDoc: (id: number) => call<unknown>('free_note_doc', { id }),
+  setFreeNoteDoc: (id: number, doc: unknown) => call<Snapshot>('set_free_note_doc', { id, doc }),
+  setFreeCard: (id: number, title: string, color: string | null, card: CardFields) =>
+    call<Snapshot>('set_free_card', { id, title, color, card }),
 
   setColor: (id: number, color: string | null) => call<Snapshot>('set_color', { id, color }),
 

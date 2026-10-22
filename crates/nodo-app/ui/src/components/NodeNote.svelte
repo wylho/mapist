@@ -1,8 +1,9 @@
 <script lang="ts">
-  // Um nó aberto: o card do Atrio, o mesmo do Ideario, na mesma janela (`CardDialog`: diálogo na janela larga, tela
-  // cheia na estreita, modo documento). Título = texto do nó; o texto vira o Markdown da nota no núcleo; emoji,
-  // etiquetas, lembrete e status vão por `set_card`; a cor do card é a cor do ramo. Salva sozinho. Fotos, arquivos e
-  // gravações vão no `.nodo`; categoria e prévia de link ficam desligadas.
+  // Um card aberto: o do Atrio, o mesmo do Ideario, na mesma janela (`CardDialog`: diálogo na janela larga, tela
+  // cheia na estreita, modo documento). Serve ao tópico (título = texto do nó; a cor do card é a cor do ramo) e à
+  // nota solta (título, cor de nota e campos dela). O texto vira o Markdown no núcleo; emoji, etiquetas, lembrete e
+  // status vão junto. Salva sozinho. Fotos, arquivos e gravações vão no `.nodo`; categoria e prévia de link ficam
+  // desligadas.
   import { onDestroy, untrack } from 'svelte'
   import { DropdownMenu } from 'bits-ui'
   import { ArrowLeft, BookOpen, Check, ChevronRight, CircleDashed, Minimize2, MoreVertical, SmilePlus, Trash2 } from '@lucide/svelte'
@@ -19,18 +20,24 @@
     type TagCount,
   } from '@wylho/atrio'
   import { NoteEditor } from '@wylho/atrio/editor'
-  import { api, attachments, hasHost, isPreview, type CardFields, type FlatNode } from '../lib/api'
+  import { api, attachments, hasHost, isPreview, type CardFields, type FlatNode, type NoteCard } from '../lib/api'
   import { doc, nodeColorOf, noteColorOf } from '../lib/document.svelte'
   import { openLink } from '../lib/markdown'
-  import { notes } from '../lib/notes.svelte'
+  import { notes, type NoteRef } from '../lib/notes.svelte'
 
-  let { node, autofocus = false, onclose }: { node: FlatNode; autofocus?: boolean; onclose: () => void } = $props()
+  let { target, autofocus = false, onclose }: { target: NoteRef; autofocus?: boolean; onclose: () => void } = $props()
 
   // Fotos, arquivos, câmera e gravador entram no `.nodo` (um zip com os anexos). Categoria é só do Ideario; a prévia
   // de link fica desligada até o usuário decidir sobre buscar a página na internet.
   const FEATURES = features({ category: false, links: false })
 
-  const id = untrack(() => node.id)
+  const id = untrack(() => target.id)
+  const free = untrack(() => target.kind === 'free')
+
+  /** O que está aberto, como o núcleo tem agora (tópico ou nota solta). */
+  const current = (): FlatNode | NoteCard | undefined => (free ? doc.freeNote(id) : (doc.node(id) ?? undefined))
+  const textOf = (x: FlatNode | NoteCard) => ('note' in x ? x.note : x.text)
+  const isRoot = untrack(() => !free && doc.node(id)?.parent === null)
 
   // Modo documento só na janela larga, como no Ideario.
   const wideQuery = matchMedia('(min-width: 960px)')
@@ -41,11 +48,11 @@
     return () => wideQuery.removeEventListener('change', on)
   })
 
-  function metaOf(n: FlatNode): CardMeta {
+  function metaOf(n: FlatNode | NoteCard): CardMeta {
     const c = n.card ?? {}
     return emptyMeta({
-      title: n.text,
-      color: noteColorOf(n.color),
+      title: 'note' in n ? n.text : n.title,
+      color: 'note' in n ? noteColorOf(n.color) : ((n.color ?? 'none') as CardMeta['color']),
       emoji: c.emoji ?? null,
       tags: [...(c.tags ?? [])],
       reminderAt: c.reminder_at ?? null,
@@ -69,16 +76,17 @@
   // O que o núcleo tem agora, na forma de comparar: muda por aqui ou por fora (desfazer, um agente pelo MCP).
   const keyOf = (m: CardMeta) => JSON.stringify([m.title, m.color, fieldsOf(m)])
 
-  const meta = $state<CardMeta>(untrack(() => metaOf(node)))
+  const meta = $state<CardMeta>(untrack(() => metaOf(current()!)))
   let saved = untrack(() => keyOf(meta))
   let content = $state<unknown>(null)
-  let lastNote = untrack(() => node.note)
+  let lastNote = untrack(() => textOf(current()!))
+  const readDoc = () => (free ? api.freeNoteDoc(id) : api.noteDoc(id))
   let card = $state<ReturnType<typeof NoteEditor> | undefined>(undefined)
   let bodyTimer: ReturnType<typeof setTimeout> | undefined
   let metaTimer: ReturnType<typeof setTimeout> | undefined
   let pendingBody: unknown = null
 
-  void api.noteDoc(id).then((d) => (content = d))
+  void readDoc().then((d) => (content = d))
 
   // Os campos mudaram no card: grava (um passo do desfazer por grupo de mudanças).
   $effect(() => {
@@ -93,19 +101,23 @@
     metaTimer = undefined
     const key = keyOf(meta)
     if (key === saved) return
-    const n = doc.node(id)
+    const n = current()
     if (!n) return
     const was = metaOf(n)
     saved = key
+    if (free) {
+      await doc.setFreeCard(id, meta.title, meta.color === 'none' ? null : meta.color, fieldsOf(meta))
+      return
+    }
     const title = meta.title.trim()
-    if (title && title !== n.text) await doc.setText(id, title)
+    if (title && title !== (n as FlatNode).text) await doc.setText(id, title)
     if (meta.color !== was.color) await doc.setColor(id, nodeColorOf(meta.color))
     if (JSON.stringify(fieldsOf(meta)) !== JSON.stringify(fieldsOf(was))) await doc.setCard(id, fieldsOf(meta))
   }
 
   // O núcleo mudou por fora (desfazer, MCP): o card acompanha, se não houver nada nosso por gravar.
   $effect(() => {
-    const n = doc.node(id)
+    const n = current()
     if (!n) return
     untrack(() => {
       const fresh = metaOf(n)
@@ -113,9 +125,9 @@
         Object.assign(meta, fresh)
         saved = keyOf(fresh)
       }
-      if (!bodyTimer && n.note !== lastNote) {
-        lastNote = n.note
-        void api.noteDoc(id).then((d) => card?.getEditor()?.commands.setContent(d as never, { emitUpdate: false }))
+      if (!bodyTimer && textOf(n) !== lastNote) {
+        lastNote = textOf(n)
+        void readDoc().then((d) => card?.getEditor()?.commands.setContent(d as never, { emitUpdate: false }))
       }
     })
   })
@@ -131,8 +143,9 @@
     const body = pendingBody
     pendingBody = null
     if (body == null) return (bodyTimer = undefined)
-    await doc.setNoteDoc(id, body)
-    lastNote = doc.node(id)?.note ?? lastNote
+    await (free ? doc.setFreeNoteDoc(id, body) : doc.setNoteDoc(id, body))
+    const n = current()
+    if (n) lastNote = textOf(n)
     bodyTimer = undefined
   }
 
@@ -169,6 +182,7 @@
   async function removeTopic() {
     flush()
     onclose()
+    if (free) return void (await doc.removeFreeNote(id))
     doc.selected = id
     await doc.remove()
   }
@@ -210,7 +224,7 @@
       {#snippet top()}
         <div class="ed-top">
           <button class="icon-btn" aria-label="Voltar ao mapa" onclick={close}><ArrowLeft size={20} /></button>
-          <span class="ed-saved">{node.parent === null ? 'Tópico central' : 'Tópico'}</span>
+          <span class="ed-saved">{free ? 'Nota' : isRoot ? 'Tópico central' : 'Tópico'}</span>
           {#if wide}<button
             class="icon-btn"
             aria-pressed={notes.docMode}
@@ -246,9 +260,9 @@
                   </DropdownMenu.SubContent>
                 </DropdownMenu.Sub>
                 <DropdownMenu.Item class="menu-item" onSelect={() => card?.chooseEmoji()}><SmilePlus size={16} />{meta.emoji ? 'Mudar emoji de capa' : 'Emoji de capa'}</DropdownMenu.Item>
-                {#if node.parent !== null}
+                {#if !isRoot}
                   <DropdownMenu.Separator class="menu-sep" />
-                  <DropdownMenu.Item class="menu-item danger" onSelect={() => void removeTopic()}><Trash2 size={16} />Apagar tópico</DropdownMenu.Item>
+                  <DropdownMenu.Item class="menu-item danger" onSelect={() => void removeTopic()}><Trash2 size={16} />{free ? 'Apagar nota' : 'Apagar tópico'}</DropdownMenu.Item>
                 {/if}
               </DropdownMenu.Content>
             </DropdownMenu.Portal>

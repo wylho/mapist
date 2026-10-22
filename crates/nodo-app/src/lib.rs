@@ -108,7 +108,7 @@ fn tab_infos(doc: &Doc) -> Vec<TabInfo> {
         .collect()
 }
 
-/// A loose note on the canvas, in world units.
+/// A loose note on the canvas, in world units: the standard card (title, text, note colour, fields, preview).
 #[derive(Serialize)]
 pub struct NoteCard {
     id: u64,
@@ -116,7 +116,13 @@ pub struct NoteCard {
     y: f64,
     width: f64,
     height: f64,
+    title: String,
     text: String,
+    /// One of `nodo_core::model::NOTE_COLORS`, or the default.
+    color: Option<String>,
+    card: nodo_core::model::CardFields,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    view: Option<nodo_core::preview::CardView>,
 }
 
 /// A drawn connection between two nodes.
@@ -225,7 +231,11 @@ fn snapshot(doc: &Doc) -> Snapshot {
             y: n.pos.y,
             width: n.width,
             height: n.height,
+            title: n.title.clone(),
             text: n.text.clone(),
+            color: n.color.clone(),
+            card: n.card.clone(),
+            view: nodo_core::preview::card_view(&n.text, ed.attachments()),
         })
         .collect();
     // As notas soltas entram na extensão: "ver o mapa inteiro" e a exportação mostram elas também.
@@ -475,6 +485,54 @@ fn set_note_doc(
     ed.apply(Action::SetNote { id, note })
         .map_err(|e| e.to_string())?;
     Ok(snapshot(&tabs))
+}
+
+/// A loose note's text as the card editor's document (the same rules as a topic's note).
+#[tauri::command]
+fn free_note_doc(state: State<'_, AppState>, id: u64) -> Result<serde_json::Value, String> {
+    let mut doc = lock(&state)?;
+    let note = editor(&mut doc)?
+        .map()
+        .free_note(id)
+        .ok_or_else(|| format!("nota {id} não encontrada"))?;
+    Ok(nodo_core::atrio::markdown::from_markdown(&note.text))
+}
+
+/// Save the card editor's document as a loose note's Markdown text.
+#[tauri::command]
+fn set_free_note_doc(
+    state: State<'_, AppState>,
+    id: u64,
+    doc: serde_json::Value,
+) -> Result<Snapshot, String> {
+    let mut tabs = lock(&state)?;
+    let ed = editor(&mut tabs)?;
+    let atts = ed.attachments();
+    let text =
+        nodo_core::atrio::markdown::to_markdown(&doc, &|h| atts.get(h).map(|a| a.name.clone()));
+    ed.apply(Action::SetFreeNote { id, text })
+        .map_err(|e| e.to_string())?;
+    Ok(snapshot(&tabs))
+}
+
+/// Set a loose note's title, note colour and card fields.
+#[tauri::command]
+fn set_free_card(
+    state: State<'_, AppState>,
+    id: u64,
+    title: String,
+    color: Option<String>,
+    card: nodo_core::model::CardFields,
+) -> Result<Snapshot, String> {
+    mutate(
+        state,
+        Action::SetFreeCard {
+            id,
+            title,
+            color,
+            card,
+        },
+    )
 }
 
 /// Put a loose note on the canvas, its top-left corner at `(x, y)`.
@@ -848,6 +906,9 @@ pub fn run() {
             set_note_doc,
             add_free_note,
             set_free_note,
+            free_note_doc,
+            set_free_note_doc,
+            set_free_card,
             place_free_note,
             remove_free_note,
             set_color,

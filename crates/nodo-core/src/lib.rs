@@ -196,6 +196,7 @@ mod tests {
             width: 300.0,
             height: 200.0,
             text: "# Ideias\n\n- a & b < c\n- **forte**".into(),
+            ..Default::default()
         });
         map.notes.push(model::FreeNote {
             id: 2,
@@ -203,6 +204,7 @@ mod tests {
             width: 260.0,
             height: 180.0,
             text: String::new(),
+            ..Default::default()
         });
         let xml = document::to_xml(&map).unwrap();
         assert_eq!(document::from_xml(&xml).unwrap().notes, map.notes);

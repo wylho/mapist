@@ -121,10 +121,11 @@ pub fn catalog() -> Vec<Value> {
         ),
         tool(
             "add_free_note",
-            "Put a loose Markdown note on the canvas, not attached to any node (a node's own note is set_note). Without x/y it goes to the right of the map. Returns the note id.",
+            "Put a loose note on the canvas, not attached to any node (a node's own note is set_note): the standard card, with an optional title. Without x/y it goes to the right of the map. Returns the note id; set_free_note changes its colour, tags, reminder and status.",
             json!({
                 "type": "object",
                 "properties": {
+                    "title": { "type": "string" },
                     "text": { "type": "string", "description": "Markdown text of the note." },
                     "x": { "type": "number", "description": "Left edge, in map units." },
                     "y": { "type": "number", "description": "Top edge, in map units." }
@@ -134,12 +135,19 @@ pub fn catalog() -> Vec<Value> {
         ),
         tool(
             "set_free_note",
-            "Change a loose note: its text, and optionally where it sits (x, y) and its size (width, height).",
+            "Change a loose note, the standard card (the same as an Ideario card except the category). Only the fields given change: title, text (Markdown), color (sand, sage, sky, rose, lilac, butter, or null for the default), the card fields as in set_card (tags, emoji, reminder_at, repeat, status), and where it sits (x, y) and its width.",
             json!({
                 "type": "object",
                 "properties": {
                     "id": { "type": "integer" },
+                    "title": { "type": "string" },
                     "text": { "type": "string" },
+                    "color": { "type": ["string", "null"], "enum": ["sand", "sage", "sky", "rose", "lilac", "butter", null] },
+                    "tags": { "type": "array", "items": { "type": "string" } },
+                    "emoji": { "type": ["string", "null"] },
+                    "reminder_at": { "type": ["integer", "null"] },
+                    "repeat": { "type": ["string", "null"], "enum": ["day", "week", "month", "year", null] },
+                    "status": { "type": "string", "enum": ["todo", "doing", "done", "none"] },
                     "x": { "type": "number" },
                     "y": { "type": "number" },
                     "width": { "type": "number" },
@@ -309,7 +317,10 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
                 "tree": tree_json(&map.root),
                 "notes": map.notes.iter().map(|n| json!({
                     "id": n.id,
+                    "title": n.title,
                     "text": n.text,
+                    "color": n.color,
+                    "card": card_json(&n.card),
                     "x": n.pos.x,
                     "y": n.pos.y,
                     "width": n.width,
@@ -364,36 +375,7 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
                 .ok_or_else(|| format!("node {id} not found"))?
                 .card
                 .clone();
-            if let Some(tags) = args.get("tags") {
-                let tags = tags.as_array().ok_or("tags must be an array of strings")?;
-                card.tags = tags
-                    .iter()
-                    .filter_map(|t| t.as_str().map(str::to_string))
-                    .collect();
-            }
-            if let Some(emoji) = args.get("emoji") {
-                card.emoji = emoji.as_str().map(str::to_string);
-            }
-            if let Some(at) = args.get("reminder_at") {
-                card.reminder_at = at.as_i64();
-                if card.reminder_at.is_none() {
-                    card.reminder_repeat = None;
-                }
-            }
-            if let Some(repeat) = args.get("repeat") {
-                card.reminder_repeat = repeat.as_str().map(str::to_string);
-            }
-            if let Some(status) = args.get("status") {
-                let status = status.as_str().unwrap_or_default();
-                let now = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .map_or(0, |d| d.as_millis() as i64);
-                if !card.set_status(status, now) {
-                    return Err(format!(
-                        "unknown status {status:?}: use todo, doing, done or none"
-                    ));
-                }
-            }
+            apply_card_args(&mut card, &args)?;
             mutate(session, Action::SetCard { id, card })?;
             let card = &session
                 .require()?
@@ -414,6 +396,17 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
             let x = num_arg(&args, "x").unwrap_or(right + 80.0);
             let y = num_arg(&args, "y").unwrap_or(map.root.pos.y);
             let id = mutate(session, Action::AddFreeNote { x, y, text })?;
+            if let Some(title) = args.get("title").and_then(|v| v.as_str()) {
+                mutate(
+                    session,
+                    Action::SetFreeCard {
+                        id,
+                        title: title.to_string(),
+                        color: None,
+                        card: Default::default(),
+                    },
+                )?;
+            }
             json!({ "ok": true, "id": id })
         }
         "set_free_note" => {
@@ -429,6 +422,36 @@ pub fn call(session: &mut Session, params: &Value) -> Result<Value, String> {
                     Action::SetFreeNote {
                         id,
                         text: text.to_string(),
+                    },
+                )?;
+            }
+            let card_keys = [
+                "title",
+                "color",
+                "tags",
+                "emoji",
+                "reminder_at",
+                "repeat",
+                "status",
+            ];
+            if card_keys.iter().any(|k| args.get(*k).is_some()) {
+                let mut card = note.card.clone();
+                apply_card_args(&mut card, &args)?;
+                let title = args
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .map_or(note.title.clone(), str::to_string);
+                let color = match args.get("color") {
+                    Some(c) => c.as_str().map(str::to_string),
+                    None => note.color.clone(),
+                };
+                mutate(
+                    session,
+                    Action::SetFreeCard {
+                        id,
+                        title,
+                        color,
+                        card,
                     },
                 )?;
             }
@@ -637,6 +660,41 @@ fn node_json(n: &nodo_core::model::Node) -> Value {
         "height": n.height,
         "children": n.children.iter().map(|c| c.id).collect::<Vec<_>>()
     })
+}
+
+/// The card fields given to `set_card` or `set_free_note` (only those present change), by Atrio's rules.
+fn apply_card_args(card: &mut nodo_core::model::CardFields, args: &Value) -> Result<(), String> {
+    if let Some(tags) = args.get("tags") {
+        let tags = tags.as_array().ok_or("tags must be an array of strings")?;
+        card.tags = tags
+            .iter()
+            .filter_map(|t| t.as_str().map(str::to_string))
+            .collect();
+    }
+    if let Some(emoji) = args.get("emoji") {
+        card.emoji = emoji.as_str().map(str::to_string);
+    }
+    if let Some(at) = args.get("reminder_at") {
+        card.reminder_at = at.as_i64();
+        if card.reminder_at.is_none() {
+            card.reminder_repeat = None;
+        }
+    }
+    if let Some(repeat) = args.get("repeat") {
+        card.reminder_repeat = repeat.as_str().map(str::to_string);
+    }
+    if let Some(status) = args.get("status") {
+        let status = status.as_str().unwrap_or_default();
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(0, |d| d.as_millis() as i64);
+        if !card.set_status(status, now) {
+            return Err(format!(
+                "unknown status {status:?}: use todo, doing, done or none"
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn card_json(c: &nodo_core::model::CardFields) -> Value {

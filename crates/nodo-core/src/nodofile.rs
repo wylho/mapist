@@ -62,8 +62,15 @@ struct Loose {
     y: f64,
     width: f64,
     height: f64,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    title: String,
     #[serde(default)]
     text: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    color: Option<String>,
+    /// Tags, cover emoji, reminder and status, as in a topic.
+    #[serde(flatten)]
+    card: CardFields,
 }
 
 #[derive(Serialize, Deserialize, Default, PartialEq, Clone, Copy)]
@@ -109,7 +116,10 @@ pub fn to_nodo_with(
                 y: n.pos.y,
                 width: n.width,
                 height: n.height,
+                title: n.title.clone(),
                 text: n.text.clone(),
+                color: n.color.clone(),
+                card: n.card.clone(),
             })
             .collect(),
     };
@@ -181,7 +191,12 @@ pub fn from_nodo_with(text: &str) -> crate::Result<(MindMap, Vec<crate::attachme
             pos: Point { x: n.x, y: n.y },
             width: n.width,
             height: n.height,
+            title: n.title,
             text: n.text,
+            color: n
+                .color
+                .filter(|c| crate::model::NOTE_COLORS.contains(&c.as_str())),
+            card: n.card.cleaned(),
         })
         .collect();
     Ok((map, file.attachments))
@@ -236,6 +251,14 @@ mod tests {
             width: 300.0,
             height: 200.0,
             text: "Ideias soltas ✨".into(),
+            title: "Rascunho".into(),
+            color: Some("sky".into()),
+            card: CardFields {
+                tags: vec!["ideia".into()],
+                status_on: true,
+                reminder_doing: true,
+                ..Default::default()
+            },
         });
         map
     }

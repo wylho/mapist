@@ -486,19 +486,30 @@ impl Default for ThemeRef {
     }
 }
 
-/// Size of a new loose note, in world units.
-pub const FREE_NOTE_WIDTH: f64 = 260.0;
-pub const FREE_NOTE_HEIGHT: f64 = 180.0;
+/// Size of a new loose note, in world units: the width of a topic's card (the card grows with its text).
+pub const FREE_NOTE_WIDTH: f64 = 240.0;
+pub const FREE_NOTE_HEIGHT: f64 = 120.0;
 
-/// A note placed on the map itself, not on a node: a loose card on the canvas. Kept in a `<nodo-notes>` element that
-/// Minder skips, so the original app opens the map without it.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+/// The note colours of Atrio's card (`NoteColor` in `@wylho/atrio`), besides the default.
+pub const NOTE_COLORS: [&str; 6] = ["sand", "sage", "sky", "rose", "lilac", "butter"];
+
+/// A note placed on the map itself, not on a node: the standard card of both apps (Atrio's), loose on the canvas
+/// (pedido do usuário: o mapa é um canvas e a nota é a nota padrão). Title, Markdown text, note colour and the card
+/// fields, like a topic's card.
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct FreeNote {
     pub id: u64,
     pub pos: Point,
     pub width: f64,
     pub height: f64,
+    #[serde(default)]
+    pub title: String,
     pub text: String,
+    /// One of [`NOTE_COLORS`], or the default with `None`.
+    #[serde(default)]
+    pub color: Option<String>,
+    #[serde(default)]
+    pub card: CardFields,
 }
 
 /// A complete mind map.

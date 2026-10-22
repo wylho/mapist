@@ -460,6 +460,29 @@ class Document {
     })
   }
 
+  /** Status de uma nota solta, pela mesma regra do Atrio. */
+  setFreeStatus(id: number, to: ReminderStatus | 'none') {
+    const f = this.freeNote(id)
+    if (!f) return
+    const c = f.card ?? {}
+    const m = emptyMeta({
+      reminderAt: c.reminder_at ?? null,
+      reminderRepeat: (c.reminder_repeat ?? null) as RepeatKind | null,
+      reminderDone: !!c.reminder_done,
+      reminderDoing: !!c.reminder_doing,
+      statusOn: !!c.status_on,
+    })
+    setStatus(m, to)
+    return this.setFreeCard(id, f.title, f.color, {
+      ...c,
+      reminder_at: m.reminderAt,
+      reminder_repeat: m.reminderRepeat,
+      reminder_done: m.reminderDone,
+      reminder_doing: m.reminderDoing,
+      status_on: m.statusOn,
+    })
+  }
+
   /** Grava o documento do editor do card como a nota do nó (o núcleo converte para Markdown). */
   setNoteDoc(id: number, body: unknown) {
     return this.run(() => api.setNoteDoc(id, body))
@@ -478,6 +501,19 @@ class Document {
 
   placeFreeNote(id: number, x: number, y: number, width: number, height: number) {
     return this.run(() => api.placeFreeNote(id, x, y, width, height))
+  }
+
+  /** A nota solta `id`, como o núcleo mandou. */
+  freeNote(id: number) {
+    return this.snapshot.notes.find((n) => n.id === id)
+  }
+
+  setFreeCard(id: number, title: string, color: string | null, card: CardFields) {
+    return this.run(() => api.setFreeCard(id, title, color, card))
+  }
+
+  setFreeNoteDoc(id: number, body: unknown) {
+    return this.run(() => api.setFreeNoteDoc(id, body))
   }
 
   removeFreeNote(id: number) {

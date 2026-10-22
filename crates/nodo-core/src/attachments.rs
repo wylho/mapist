@@ -208,6 +208,7 @@ mod tests {
             width: 200.0,
             height: 100.0,
             text: "![](ideario://att/0f0f)".into(),
+            ..Default::default()
         });
         let refs = referenced(&map);
         assert_eq!(

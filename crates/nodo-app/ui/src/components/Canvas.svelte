@@ -6,9 +6,9 @@
   import { draw, hitKnob, hitTest, readThemeColors, resolveColor, type Viewport } from '../lib/render'
   import { CARD, isCard, summaryOf } from '../lib/cardtext'
   import { attachments } from '../lib/api'
-  import { NoteCard as Card, nearestNoteColor } from '@wylho/atrio'
+  import { ContextMenu, NoteCard as Card, nearestNoteColor, SEP, type MenuEntry, type NoteColor } from '@wylho/atrio'
+  import { BookOpen, Trash2 } from '@lucide/svelte'
   import { notes } from '../lib/notes.svelte'
-  import NoteCard from './NoteCard.svelte'
   import NodeNote from './NodeNote.svelte'
   import { prefs } from '../lib/prefs.svelte'
   import { branchColors, levelStyle, mapTheme } from '../lib/maptheme'
@@ -264,7 +264,8 @@
     const x = (clientX - r.left - view.x) / view.scale
     const y = (clientY - r.top - view.y) / view.scale
     const id = await doc.addFreeNote(Math.round(x), Math.round(y))
-    if (id !== null) notes.editing = { kind: 'free', id }
+    // A nota nova já abre como card, para escrever.
+    if (id !== null) notes.showFree(id, true)
   }
 
   function onPointerUp() {
@@ -277,6 +278,47 @@
     dragging = null
     draggedFar = false
     stageEl?.classList.remove('panning', 'moving')
+  }
+
+  // Arrastar uma nota solta: o card anda já, e o mapa recebe uma edição só, ao soltar.
+  let freeDrag = $state<{ id: number; dx: number; dy: number } | null>(null)
+
+  function startFreeDrag(e: PointerEvent, id: number) {
+    // O seletor de status e os botões do card são deles.
+    if (e.button !== 0 || (e.target as HTMLElement).closest('button')) return
+    e.stopPropagation()
+    const sx = e.clientX
+    const sy = e.clientY
+    const el = e.currentTarget as HTMLElement
+    const move = (ev: PointerEvent) => {
+      freeDrag = { id, dx: (ev.clientX - sx) / view.scale, dy: (ev.clientY - sy) / view.scale }
+    }
+    const up = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      const d = freeDrag
+      const f = doc.freeNote(id)
+      if (d && f && Math.hypot(d.dx, d.dy) * view.scale > 3) {
+        // A altura gravada é a do card na tela (cresce com o texto): "ver o mapa inteiro" conta com ela.
+        const h = Math.ceil(el.getBoundingClientRect().height / view.scale)
+        void doc.placeFreeNote(id, Math.round(f.x + d.dx), Math.round(f.y + d.dy), f.width, h).then(() => (freeDrag = null))
+      } else freeDrag = null
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+  }
+
+  /** O resumo do card de uma nota solta, como o de um tópico (mesmo `NoteCard`, cor de nota dela). */
+  function freeSummary(f: (typeof doc.snapshot.notes)[number]) {
+    return summaryOf({ text: f.title, card: f.card, view: f.view }, (f.color ?? 'none') as NoteColor)
+  }
+
+  function freeMenu(id: number): MenuEntry[] {
+    return [
+      { label: 'Abrir nota', icon: BookOpen, onSelect: () => notes.showFree(id) },
+      SEP,
+      { label: 'Apagar nota', icon: Trash2, danger: true, onSelect: () => void doc.removeFreeNote(id) },
+    ]
   }
 
   function onWheel(e: WheelEvent) {
@@ -465,27 +507,35 @@
   {/if}
 
   {#each doc.snapshot.notes as f (f.id)}
-    <NoteCard
-      note={{ kind: 'free', id: f.id }}
-      text={f.text}
-      left={f.x * view.scale + view.x}
-      top={f.y * view.scale + view.y}
-      width={f.width}
-      height={f.height}
-      scale={view.scale}
-      onsave={(t) => void doc.setFreeNote(f.id, t)}
-      onremove={() => void doc.removeFreeNote(f.id)}
-      onmove={(dx, dy) => void doc.placeFreeNote(f.id, Math.round(f.x + dx), Math.round(f.y + dy), f.width, f.height)}
-      onresize={(w, h) => void doc.placeFreeNote(f.id, f.x, f.y, w, h)}
-    />
+    {@const moved = freeDrag?.id === f.id ? freeDrag : null}
+    <ContextMenu items={() => freeMenu(f.id)}>
+      {#snippet children(trigger)}
+        <Card
+          {...trigger}
+          class="map-card free-card"
+          card={freeSummary(f)}
+          thumb={(h) => attachments.thumb(h)}
+          style="left: {(f.x + (moved?.dx ?? 0)) * view.scale + view.x}px; top: {(f.y + (moved?.dy ?? 0)) * view.scale + view.y}px; width: {f.width}px; transform: scale({view.scale})"
+          data-free-note={f.id}
+          onpointerdown={(e) => startFreeDrag(e, f.id)}
+          ondblclick={(e) => {
+            e.stopPropagation()
+            notes.showFree(f.id)
+          }}
+          onkeydown={(e) => e.key === 'Enter' && notes.showFree(f.id)}
+          onstatus={(st) => void doc.setFreeStatus(f.id, st)}
+        />
+      {/snippet}
+    </ContextMenu>
   {/each}
-  {#if notes.opened !== null}
-    {@const opened = doc.node(notes.opened)}
-    {#if opened}
-      {#key opened.id}
-        <NodeNote node={opened} autofocus={notes.focus} onclose={() => notes.close()} />
-      {/key}
-    {/if}
+  {#if notes.opened !== null && doc.node(notes.opened)}
+    {#key notes.opened}
+      <NodeNote target={{ kind: 'node', id: notes.opened }} autofocus={notes.focus} onclose={() => notes.close()} />
+    {/key}
+  {:else if notes.openedFree !== null && doc.freeNote(notes.openedFree)}
+    {#key notes.openedFree}
+      <NodeNote target={{ kind: 'free', id: notes.openedFree }} autofocus={notes.focus} onclose={() => notes.closeFree()} />
+    {/key}
   {/if}
 
   {@render children?.()}

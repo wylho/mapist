@@ -489,3 +489,26 @@ fn set_card_changes_only_what_it_gets_and_undoes() {
     .unwrap_err();
     assert!(err.contains("unknown status"), "got: {err}");
 }
+
+#[test]
+fn a_loose_note_is_the_standard_card() {
+    let mut s = fresh();
+    let a = call(
+        &mut s,
+        "add_free_note",
+        json!({ "title": "Compras", "text": "- [ ] pão" }),
+    );
+    let id = a["id"].as_u64().unwrap();
+    call(
+        &mut s,
+        "set_free_note",
+        json!({ "id": id, "color": "sage", "tags": ["#Casa"], "status": "doing" }),
+    );
+    let map = call(&mut s, "get_map", json!({}));
+    let note = &map["notes"][0];
+    assert_eq!(note["title"], "Compras");
+    assert_eq!(note["color"], "sage");
+    assert_eq!(note["card"]["tags"], json!(["casa"]));
+    assert_eq!(note["card"]["status"], "doing");
+    assert_eq!(note["text"], "- [ ] pão", "o texto fica como estava");
+}

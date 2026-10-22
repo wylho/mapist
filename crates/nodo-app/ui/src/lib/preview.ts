@@ -52,6 +52,9 @@ let spacing: string | null = null
 const STRUCTURES = ['mapa', 'logico', 'organograma', 'arvore']
 const SPACINGS = ['compacto', 'normal', 'largo']
 // Notas soltas, como no núcleo (`MindMap.notes`).
+/** As cores de nota do Atrio (`nodo_core::model::NOTE_COLORS`). */
+const NOTE_IDS = ['sand', 'sage', 'sky', 'rose', 'lilac', 'butter']
+
 let freeNotes: NoteCard[] = []
 const past: string[] = []
 const future: string[] = []
@@ -234,7 +237,7 @@ function mapSnapshot(): Omit<Snapshot, 'tabs' | 'active'> {
   return {
     nodes: flat,
     connections: [],
-    notes: freeNotes.map((f) => ({ ...f })),
+    notes: freeNotes.map((f) => ({ ...f, card: { ...f.card }, view: viewOf(f.text) })),
     dirty,
     path,
     title: nodes.get(rootId)?.text ?? 'Sem título',
@@ -417,6 +420,21 @@ function fillDemo() {
   nodes.get(root.children[root.children.length - 1])!.folded = true
 
   relayout()
+  // Uma nota solta (o card padrão, sem ramo), no vão embaixo da raiz.
+  const r = nodes.get(root.id)!
+  freeNotes = [
+    {
+      id: 1,
+      x: Math.round(r.x - 70),
+      y: Math.round(r.y + r.height + 110),
+      width: 240,
+      height: 150,
+      title: 'Ideias soltas',
+      text: '- [ ] Pedir feedback da beta\n- [ ] Ver preço do domínio\n\nAnotar tudo antes da reunião. #reuniao',
+      color: 'lilac',
+      card: { emoji: '💡' },
+    },
+  ]
 }
 
 // ── comandos ─────────────────────────────────────────────────────────────
@@ -596,7 +614,7 @@ export const previewBackend = {
   add_free_note: ({ x, y, text }: { x: number; y: number; text: string }) => {
     commit(() => {
       const id = freeNotes.reduce((m, f) => Math.max(m, f.id), 0) + 1
-      freeNotes.push({ id, x, y, width: 260, height: 180, text })
+      freeNotes.push({ id, x, y, width: 240, height: 120, title: '', text, color: null, card: {} })
     }, false)
     return snapshotOf()
   },
@@ -615,6 +633,27 @@ export const previewBackend = {
       const f = freeNotes.find((n) => n.id === id)
       if (!f) throw new Error(`note ${id} not found`)
       Object.assign(f, { x, y, width: Math.min(1600, Math.max(120, width)), height: Math.min(1600, Math.max(80, height)) })
+    }, false)
+    return snapshotOf()
+  },
+
+  free_note_doc: ({ id }: { id: number }) => markdownToDoc(freeNotes.find((n) => n.id === id)?.text ?? ''),
+
+  set_free_note_doc: ({ id, doc }: { id: number; doc: unknown }) => {
+    const text = docToMarkdown(doc, (h) => previewFiles.get(h)?.name)
+    commit(() => {
+      const f = freeNotes.find((n) => n.id === id)
+      if (!f) throw new Error(`note ${id} not found`)
+      f.text = text
+    }, false)
+    return snapshotOf()
+  },
+
+  set_free_card: ({ id, title, color, card }: { id: number; title: string; color: string | null; card: CardFields }) => {
+    commit(() => {
+      const f = freeNotes.find((n) => n.id === id)
+      if (!f) throw new Error(`note ${id} not found`)
+      Object.assign(f, { title: title.trim(), color: color && NOTE_IDS.includes(color) ? color : null, card: cleanCard(card) })
     }, false)
     return snapshotOf()
   },

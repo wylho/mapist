@@ -282,8 +282,15 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   `hidden` no snapshot = tópicos escondidos), opção A do usuário (como o XMind): "−" ao passar o mouse ou com o tópico
   escolhido, recolhido mostra sempre a bolinha com o número; em tela de toque (`hover: none`) o "−" fica sempre à
   vista. A bolinha de nota da raiz saiu (a raiz abre o card com duplo clique, como os outros tópicos).
-  Falta: notas soltas como card padrão, barra e menu do card aberto do Atrio, salvar/fechar, visualizador de anexos,
-  exportar pelo próprio card.
+  **A nota solta é o card padrão** (pedido do usuário: o mapa é um canvas, a nota é a nota padrão): `FreeNote` com
+  `title`, `color` (cor de nota do Atrio, `NOTE_COLORS`) e `card` (`CardFields`), no `.nodo` como num tópico;
+  `Action::SetFreeCard`; app `free_note_doc`/`set_free_note_doc`/`set_free_card` e `view` (prévia) no snapshot; MCP
+  `add_free_note` com `title` e `set_free_note` com cor e campos do card (`apply_card_args`, a mesma leitura do
+  `set_card`). No mapa, o `NoteCard` do Atrio (`Canvas.svelte`: arrastar, duplo clique abre, menu Abrir/Apagar);
+  aberta, o mesmo `NodeNote.svelte` do tópico (`target` = tópico ou nota solta); "Nova nota aqui" já abre o card.
+  O `components/NoteCard.svelte` antigo (o card translúcido) saiu.
+  Falta: barra e menu do card aberto no Atrio (iguais ao Ideario), salvar/fechar, visualizador de anexos, exportar
+  pelo próprio card.
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
   estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura

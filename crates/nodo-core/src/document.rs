@@ -286,6 +286,7 @@ fn parse_free_note(e: &quick_xml::events::BytesStart) -> FreeNote {
         width: attr_f64(e, "width", crate::model::FREE_NOTE_WIDTH),
         height: attr_f64(e, "height", crate::model::FREE_NOTE_HEIGHT),
         text: String::new(),
+        ..Default::default()
     }
 }
 

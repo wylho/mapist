@@ -70,6 +70,13 @@ pub enum Action {
     },
     /// Take a loose note off the canvas.
     RemoveFreeNote { id: u64 },
+    /// Set a loose note's title, note colour and card fields (the text goes by [`Action::SetFreeNote`]).
+    SetFreeCard {
+        id: u64,
+        title: String,
+        color: Option<String>,
+        card: CardFields,
+    },
 }
 
 impl Action {
@@ -191,6 +198,7 @@ impl Action {
                     width: FREE_NOTE_WIDTH,
                     height: FREE_NOTE_HEIGHT,
                     text: text.clone(),
+                    ..FreeNote::default()
                 });
                 Ok(Some(id))
             }
@@ -210,6 +218,21 @@ impl Action {
                 // Um card menor que isto some de vista; maior que isto não é mais uma nota.
                 n.width = width.clamp(120.0, 1600.0);
                 n.height = height.clamp(80.0, 1600.0);
+                Ok(Some(*id))
+            }
+            Action::SetFreeCard {
+                id,
+                title,
+                color,
+                card,
+            } => {
+                let n = free_note_mut(map, *id)?;
+                n.title = title.trim().to_string();
+                // Unknown colour (a hand-edited file, an agent): the default, as the Ideario does.
+                n.color = color
+                    .clone()
+                    .filter(|c| crate::model::NOTE_COLORS.contains(&c.as_str()));
+                n.card = card.cleaned();
                 Ok(Some(*id))
             }
             Action::RemoveFreeNote { id } => {

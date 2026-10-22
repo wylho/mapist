@@ -543,16 +543,30 @@ describe('notas soltas no mapa', () => {
     const { seedDemo, previewBackend } = await import('../src/lib/preview')
     seedDemo()
     const before = previewBackend.get_snapshot().bounds
+    const count = before ? previewBackend.get_snapshot().notes.length : 0
     let snap = previewBackend.add_free_note({ x: before.max_x + 100, y: 0, text: '' })
-    const id = snap.notes[0].id
-    expect(snap.bounds.max_x).toBe(before.max_x + 100 + 260)
+    const id = snap.notes.at(-1)!.id
+    const mine = () => snap.notes.find((n) => n.id === id)
+    expect(snap.bounds.max_x).toBe(before.max_x + 100 + 240)
     snap = previewBackend.set_free_note({ id, text: '**Prazo** sexta' })
     snap = previewBackend.place_free_note({ id, x: 10, y: 20, width: 50, height: 300 })
-    expect(snap.notes[0]).toMatchObject({ x: 10, y: 20, width: 120, height: 300, text: '**Prazo** sexta' })
+    expect(mine()).toMatchObject({ x: 10, y: 20, width: 120, height: 300, text: '**Prazo** sexta' })
     snap = previewBackend.remove_free_note({ id })
-    expect(snap.notes).toHaveLength(0)
+    expect(snap.notes).toHaveLength(count)
     snap = previewBackend.undo()
-    expect(snap.notes[0].text).toBe('**Prazo** sexta')
+    expect(mine()?.text).toBe('**Prazo** sexta')
+  })
+
+  it('a nota solta é o card padrão: título, cor de nota, campos e a prévia, como um tópico', async () => {
+    const { seedDemo, previewBackend } = await import('../src/lib/preview')
+    seedDemo()
+    let snap = previewBackend.add_free_note({ x: 0, y: 0, text: '- [ ] pão #casa' })
+    const id = snap.notes.at(-1)!.id
+    snap = previewBackend.set_free_card({ id, title: '  Compras ', color: 'roxo', card: { tags: ['#Feira'], status_on: true } })
+    const f = snap.notes.find((n) => n.id === id)!
+    expect(f).toMatchObject({ title: 'Compras', color: null, card: { tags: ['feira'], status_on: true } })
+    expect(f.view?.preview[0]).toMatchObject({ kind: 'task', text: 'pão #casa' })
+    expect(f.view?.hash_tags).toEqual(['casa'])
   })
 })
 

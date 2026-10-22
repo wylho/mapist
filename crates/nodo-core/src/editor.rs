@@ -197,6 +197,7 @@ impl Editor {
             | Action::AddFreeNote { .. }
             | Action::SetFreeNote { .. }
             | Action::PlaceFreeNote { .. }
+            | Action::SetFreeCard { .. }
             | Action::RemoveFreeNote { .. } => {}
             Action::AddChild { .. } | Action::AddTopic { .. } | Action::SetText { .. } => {
                 // Only the touched node gets the core's estimate; every other box
@@ -288,7 +289,7 @@ fn mtime(path: &Path) -> Option<SystemTime> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::NodeSide;
+    use crate::model::{CardFields, NodeSide};
 
     fn add(ed: &mut Editor, parent: u64, text: &str) -> u64 {
         ed.apply(Action::AddChild {
@@ -386,6 +387,56 @@ mod tests {
             }),
             Err(crate::Error::NodeNotFound(99))
         ));
+    }
+
+    #[test]
+    fn a_loose_note_is_the_standard_card_with_title_colour_and_fields() {
+        let mut ed = Editor::new("Mapa");
+        let id = ed
+            .apply(Action::AddFreeNote {
+                x: 0.0,
+                y: 0.0,
+                text: "Ligar para o fornecedor".into(),
+            })
+            .unwrap()
+            .unwrap();
+        ed.apply(Action::SetFreeCard {
+            id,
+            title: "  Compras  ".into(),
+            color: Some("sage".into()),
+            card: CardFields {
+                tags: vec!["Casa".into(), "casa".into()],
+                status_on: true,
+                reminder_doing: true,
+                ..Default::default()
+            },
+        })
+        .unwrap();
+        let n = ed.map().free_note(id).unwrap();
+        assert_eq!(
+            (n.title.as_str(), n.color.as_deref()),
+            ("Compras", Some("sage"))
+        );
+        assert_eq!(n.card.tags, vec!["casa"], "etiquetas pelas regras do Atrio");
+        assert_eq!(n.card.status(), Some("doing"));
+        ed.apply(Action::SetFreeCard {
+            id,
+            title: "Compras".into(),
+            color: Some("roxo-neon".into()),
+            card: CardFields::default(),
+        })
+        .unwrap();
+        assert_eq!(
+            ed.map().free_note(id).unwrap().color,
+            None,
+            "cor desconhecida vira a padrão"
+        );
+        ed.undo();
+        assert_eq!(
+            ed.map().free_note(id).unwrap().color.as_deref(),
+            Some("sage"),
+            "desfaz como tudo"
+        );
     }
 
     #[test]
