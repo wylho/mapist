@@ -377,6 +377,12 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
 - **Atrio 0.20.0: tabela de verdade no card** (pedido do usuário: a tabela só aparecia aberta; no card fechado era
   "a · b · c"): a prévia do Atrio ganhou o bloco `table` (as primeiras 8 linhas, títulos em `th`, "+N linhas"), no
   card do mapa e no do Ideario. O Nodo calcula a prévia na hora (`preview.rs`), sem nada guardado para refazer.
+- **Cards no mapa afastado** (print do usuário: cards compridos "bugadasso" a 35% no Mac): o `zoom` da 0.4.1 fazia o
+  WebKit do macOS segurar a letra em ~9 px com a caixa encolhida, e o texto estourava. Agora `cardStyle` em
+  `Canvas.svelte`: até 100% o card é encolhido por `transform` (como antes da 0.4.1); acima, `zoom` (emoji nítido ao
+  aproximar). **Abaixo de 50% (`FAR`), o card mostra só o emoji e o título** (escolha do usuário, opção A: como no
+  Miro), na mesma caixa e no mesmo lugar (o mapa não se rearruma ao mudar o zoom), com o título a ~12 px na tela
+  (`--far-font`; CSS `.map-card.far` em `map.css`); sem título, o primeiro bloco do texto.
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
   estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura

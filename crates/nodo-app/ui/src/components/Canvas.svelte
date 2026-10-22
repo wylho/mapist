@@ -213,6 +213,24 @@
     scheduleRender()
   })
 
+  /** Abaixo desta escala o card mostra só o emoji e o título, legíveis (como no Miro): o mapa afastado é visão geral. */
+  const FAR = 0.5
+  /** Tamanho do título do card afastado, na tela. */
+  const FAR_FONT = 12
+
+  /**
+   * Onde e como o card fica por cima do canvas (x, y, largura e altura em unidades do mundo). Até 100% ele é montado no
+   * tamanho do mapa e encolhido por `transform`: com `zoom`, o WebKit do macOS não deixa a letra ficar menor que ~9 px
+   * e o texto estourava a caixa (0.4.1). Acima de 100%, `zoom`: o card é desenhado já ampliado, e o emoji (imagem no
+   * macOS) e as fotos ficam nítidos; com `zoom`, `left`/`top` também são ampliados, por isso vão em unidades do mundo.
+   */
+  function cardStyle(x: number, y: number, w: number, h: number) {
+    const s = view.scale
+    if (s >= 1) return `left: ${x + view.x / s}px; top: ${y + view.y / s}px; width: ${w}px; zoom: ${s}`
+    const far = s < FAR ? `; height: ${h}px; --far-font: ${FAR_FONT / s}px` : ''
+    return `left: ${x * s + view.x}px; top: ${y * s + view.y}px; width: ${w}px; transform: scale(${s})${far}`
+  }
+
   // Com o Espaço apertado, a mão aparece: arrastar move o mapa.
   $effect(() => {
     stageEl?.classList.toggle('space', ui.spaceHeld)
@@ -617,10 +635,10 @@
   <canvas bind:this={canvas}></canvas>
   {#each cardNodes as c (c.n.id)}
     <Card
-      class="map-card"
+      class="map-card{view.scale < FAR ? ' far' : ''}"
       card={c.summary}
       thumb={(h) => attachments.thumb(h)}
-      style="left: {c.n.x + view.x / view.scale}px; top: {c.n.y + view.y / view.scale}px; width: {c.n.width}px; zoom: {view.scale}"
+      style={cardStyle(c.n.x, c.n.y, c.n.width, c.n.height)}
       tabindex={-1}
       onstatus={(s) => void doc.setStatus(c.n.id, s)}
     />
@@ -649,10 +667,15 @@
       {#snippet children(trigger)}
         <Card
           {...trigger}
-          class="map-card free-card{doc.pickedNotes.has(f.id) ? ' picked' : ''}"
+          class="map-card free-card{doc.pickedNotes.has(f.id) ? ' picked' : ''}{view.scale < FAR ? ' far' : ''}"
           card={freeSummary(f)}
           thumb={(h) => attachments.thumb(h)}
-          style="left: {f.x + (moved?.dx ?? 0) + (doc.pickedNotes.has(f.id) ? (groupShift?.dx ?? 0) : 0) + view.x / view.scale}px; top: {f.y + (moved?.dy ?? 0) + (doc.pickedNotes.has(f.id) ? (groupShift?.dy ?? 0) : 0) + view.y / view.scale}px; width: {f.width}px; zoom: {view.scale}"
+          style={cardStyle(
+            f.x + (moved?.dx ?? 0) + (doc.pickedNotes.has(f.id) ? (groupShift?.dx ?? 0) : 0),
+            f.y + (moved?.dy ?? 0) + (doc.pickedNotes.has(f.id) ? (groupShift?.dy ?? 0) : 0),
+            f.width,
+            f.height,
+          )}
           data-free-note={f.id}
           onpointerdown={(e) => startFreeDrag(e, f.id)}
           ondblclick={(e) => {

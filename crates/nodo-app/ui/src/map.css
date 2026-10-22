@@ -308,7 +308,18 @@ kbd {
 /* Ampliado por `zoom`, não por `transform`: o card é desenhado já no tamanho da tela, e o emoji colorido (que é
    imagem no macOS) e as fotos saem nítidos. Com `zoom`, `left`/`top` também são ampliados: o Canvas os passa em
    unidades do mundo. */
-.map-card { position: absolute; z-index: 1; pointer-events: none; transition: none; }
+.map-card { position: absolute; z-index: 1; transform-origin: 0 0; pointer-events: none; transition: none; }
+/* Mapa afastado (abaixo de 50%): o card guarda a caixa e o lugar, mas mostra só o emoji e o título, numa letra que
+   fica legível na tela (`--far-font`, ~12 px). Sem título (nota solta), o primeiro bloco do texto faz as vezes dele. */
+.map-card.far { overflow: hidden; box-sizing: border-box; }
+.map-card.far :is(.card-media, .card-file, .card-meta, .card-pills, .status-toggle) { display: none; }
+.map-card.far .card-body { gap: calc(var(--far-font) * .3); }
+.map-card.far .card-body > h3 { font-size: var(--far-font); line-height: 1.2; overflow-wrap: anywhere; }
+.map-card.far .card-emoji { font-size: calc(var(--far-font) * 1.4); line-height: 1.2; height: auto; }
+.map-card.far .card-body:has(> h3) .preview { display: none; }
+.map-card.far .preview { mask-image: none; -webkit-mask-image: none; max-height: none; }
+.map-card.far .preview > :not(:first-child) { display: none; }
+.map-card.far .preview > * { font-size: var(--far-font); line-height: 1.2; }
 .map-card:hover { box-shadow: none; }
 /* O seletor de status do card recebe o clique (o resto do card deixa o mouse com o canvas). */
 .map-card .status-toggle { pointer-events: auto; }
