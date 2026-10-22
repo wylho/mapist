@@ -304,6 +304,15 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   para a imagem e devolve exatamente como estava (`Editor::stash_view`/`restore_view`, comando `export_layout`,
   `exportView` em `exporter.ts`); o documento, o desfazer e o "não salvo" não mudam.
   Fase 3 da unificação concluída no Nodo.
+- **Matriz e tabela em árvore** (pedido do usuário; as outras do XMind ficaram de fora por escolha dele):
+  `STRUCTURES` ganha `matriz` e `tabela` (`layout.rs`: `place_matrix` = título em cima, uma linha por tópico
+  principal com os subtópicos em colunas alinhadas e o resto listado dentro da célula; `place_tree_table` = cada
+  célula cobre as dos filhos, uma linha por nível, folhas até o fim da tabela). A célula (`Node::cell`, x/y/largura/
+  altura, não vai para o arquivo) é separada do tamanho medido, para a interface não medir de novo; o snapshot leva
+  `cell` e a extensão conta a célula. `render.ts`: sem linhas de ramo, células pintadas (título e cabeçalhos na cor
+  do tema, o resto na cor suave do ramo), tópico só como texto, clique em qualquer ponto da célula escolhe o tópico,
+  sem botão de recolher. Esquemas na folha Mapa (`structures.ts`), espelho na prévia, MCP `set_layout`. Testes de
+  propriedade: cada tópico na sua célula, células sem sobreposição, colunas da matriz alinhadas, pai cobrindo filhos.
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
   estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura

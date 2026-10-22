@@ -246,7 +246,10 @@ fn snapshot(doc: &Doc) -> Snapshot {
     let boxes = nodes
         .iter()
         // Na tabela, a célula inteira (maior que o tópico) entra na extensão.
-        .map(|n| n.cell.map_or((n.x, n.y, n.width, n.height), |[x, y, w, h]| (x, y, w, h)))
+        .map(|n| {
+            n.cell
+                .map_or((n.x, n.y, n.width, n.height), |[x, y, w, h]| (x, y, w, h))
+        })
         .chain(notes.iter().map(|n| (n.x, n.y, n.width, n.height)));
     for (x, y, w, h) in boxes {
         min_x = min_x.min(x);
