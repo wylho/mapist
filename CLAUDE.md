@@ -349,6 +349,8 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   `scripts/mac-icon.sh` compila com o `actool` do Xcode 26 no CI (Build e Release, passo "Ícone do macOS 26") num
   `Assets.car` que vai para `Contents/Resources` com `CFBundleIconName = AppIcon`; o `icon.icns` continua para os macOS
   anteriores. Sem Xcode 26 no runner, avisa e sai com o ícone antigo. Mudou o desenho: mudar `source/` e o `.icon`.
+- **Versão 0.5.1** (22/10/2026, pedido do usuário: "pode lançar tudo"): os cards do mapa afastado (abaixo de 100%
+  por `transform`, abaixo de 50% só o título), a correção do texto estourando no Mac que veio com a 0.4.1.
 - **Versão 0.5.0 lançada** (22/10/2026, Release `v0.5.0`; pedido do usuário: "lança a próxima versão com a seleção"): escolher vários tópicos
   arrastando o fundo (e tudo em grupo) e a tabela de verdade no card (Atrio 0.20.0). Lançada depois que a 0.4.1
   publicou, para a ordem dos Releases ficar certa.
