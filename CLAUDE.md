@@ -349,6 +349,9 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   `scripts/mac-icon.sh` compila com o `actool` do Xcode 26 no CI (Build e Release, passo "Ícone do macOS 26") num
   `Assets.car` que vai para `Contents/Resources` com `CFBundleIconName = AppIcon`; o `icon.icns` continua para os macOS
   anteriores. Sem Xcode 26 no runner, avisa e sai com o ícone antigo. Mudou o desenho: mudar `source/` e o `.icon`.
+- **Versão 0.5.0** (22/10/2026, pedido do usuário: "lança a próxima versão com a seleção"): escolher vários tópicos
+  arrastando o fundo (e tudo em grupo) e a tabela de verdade no card (Atrio 0.20.0). Lançada depois que a 0.4.1
+  publicou, para a ordem dos Releases ficar certa.
 - **Versão 0.4.1** (22/10/2026, pedido do usuário; o ícone do macOS 26 da 0.4.0 aprovado por ele: "ficou
   lindíssimo"): mapa importado de um Markdown do usuário): o título do tópico importado é texto puro
   (`import.rs` `plain_title`: lido pelo `atrio::markdown`, sai negrito, itálico, código e riscado; link vira
