@@ -6,6 +6,13 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
 **Especificação completa: `docs/SPEC.md`. Leia antes de qualquer tarefa.** O protótipo de design está em `prototype/`.
 
 ## Regras do projeto
+- **O Atrio é o hub (regra do usuário, vale para toda tarefa):** tudo o que o Ideario e o Nodo têm em comum mora
+  **só** no Atrio (`wylho/atrio`: componentes, CSS, regras do card, formatos, e no Rust a crate `atrio`), e os apps
+  só usam. O card é **um só**: não parecido, **exatamente o mesmo** nos dois programas (mesma prévia, mesmas regras,
+  mesmo visual). Antes de criar ou corrigir algo num app, perguntar: isto existe ou deveria existir no outro? Se sim,
+  a mudança se faz no Atrio, sobe a tag e os **dois** apps sobem juntos (nunca deixar um app numa tag velha). Mesmo
+  quando o usuário fala de um app só, se o assunto é peça do Atrio, o caminho é o Atrio. Plano em
+  `atrio/docs/UNIFICACAO.md`.
 - **Local-first**: o mapa vive num arquivo no disco do usuário. Nada de servidor, conta ou rede para abrir, editar ou salvar.
 - **O arquivo é do usuário**: texto legível sem o app, gravado de forma atômica, ida e volta sem perda. É o `.nodo`
   (JSON, D28); compatibilidade com o Minder original **não** é requisito (D27).
