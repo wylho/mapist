@@ -44,7 +44,7 @@ export function measureNode(node: FlatNode, theme: MapTheme = mapTheme(null), ti
   c.font = levelFont(style)
 
   // O texto quebra em linhas na largura máxima do nível, em vez de esticar a caixa (pedido do usuário).
-  const lines = wrapText(node.text, maxBoxWidth(node.depth) - style.padX, style)
+  const lines = wrapText(node.text, MAX_BOX_WIDTH - style.padX, style)
   let widest = 0
   for (const line of lines) {
     const w = c.measureText(line).width
@@ -62,12 +62,11 @@ export function measureAll(nodes: FlatNode[], theme: MapTheme = mapTheme(null)):
   return nodes.map((n) => ({ id: n.id, ...measureNode(n, theme) }))
 }
 
-/** Largura máxima da caixa de um tópico: a mesma do card (`CARD.width`), e um pouco mais na raiz. */
-export function maxBoxWidth(depth: number): number {
-  // PRÉVIA DE OPÇÕES (provisório): `?maxw=1|2|3` = vezes a largura do card.
-  const k = Number(typeof location !== 'undefined' ? new URLSearchParams(location.search).get('maxw') ?? 1 : 1) || 1
-  return CARD.width * k
-}
+/**
+ * Largura máxima da caixa de um tópico: a mesma do card completo (`CARD.width`), também na raiz. Texto maior quebra em
+ * linhas (escolha do usuário: um tópico de largura sem fim deixava o mapa confuso, sobretudo na matriz e na tabela).
+ */
+export const MAX_BOX_WIDTH = CARD.width
 
 /**
  * Quebra o texto em linhas que cabem em `maxWidth` (unidades de mundo), nas palavras; uma palavra maior que a linha
@@ -76,7 +75,12 @@ export function maxBoxWidth(depth: number): number {
 export function wrapText(text: string, maxWidth: number, style: { size: number; weight: number }): string[] {
   const c = context()
   c.font = levelFont(style)
-  const fits = (s: string) => c.measureText(s).width <= maxWidth
+  return wrapLines(text, maxWidth, (s) => c.measureText(s).width)
+}
+
+/** A quebra em si, com a medida passada de fora (os testes medem sem canvas). */
+export function wrapLines(text: string, maxWidth: number, measure: (s: string) => number): string[] {
+  const fits = (s: string) => measure(s) <= maxWidth
   const out: string[] = []
   for (const para of text.split('\n')) {
     let line = ''
@@ -100,18 +104,6 @@ export function wrapText(text: string, maxWidth: number, style: { size: number; 
     out.push(line)
   }
   return out
-}
-
-/** Trunca um texto para caber em `maxWidth`, com reticências, na fonte do nível. Tudo em unidades de mundo. */
-export function fitText(text: string, maxWidth: number, style: { size: number; weight: number }): string {
-  const c = context()
-  c.font = levelFont(style)
-  if (c.measureText(text).width <= maxWidth) return text
-  let out = text
-  while (out.length > 1 && c.measureText(out + '…').width > maxWidth) {
-    out = out.slice(0, -1)
-  }
-  return out + '…'
 }
 
 let host: HTMLElement | null = null

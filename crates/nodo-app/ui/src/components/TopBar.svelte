@@ -58,6 +58,8 @@
   <div class="top-left">
     <button class="icon-btn roomy" aria-label={t('Novo mapa')} title="{t('Novo mapa')} ({mod}N)" onclick={() => doc.newMap()}><FilePlus2 size={20} /></button>
     <button class="icon-btn roomy" aria-label={t('Abrir')} title="{t('Abrir')} ({mod}O)" onclick={() => doc.openDialog()}><FolderOpen size={20} /></button>
+    <!-- Na tela inicial (nenhum mapa aberto) só Novo e Abrir fazem sentido. -->
+    {#if doc.hasDocument}
     <button class="icon-btn" aria-label={t('Salvar')} title="{t('Salvar')} ({mod}S)" onclick={() => doc.saveDialog()}><Save size={20} /></button>
     <button class="icon-btn roomy" aria-label={t('Exportar')} title="{t('Exportar')} ({mod}⇧E)" onclick={() => (ui.exportOpen = true)}><Share size={19} /></button>
     <button class="icon-btn" aria-label={t('Estrutura e tema do mapa')} title={t('Estrutura e tema do mapa')} onclick={() => (ui.themeOpen = true)}><Palette size={20} /></button>
@@ -65,6 +67,7 @@
       <span class="grow">{title}</span>
       {#if doc.snapshot.dirty}<i class="dirty" aria-label={t('Alterações não salvas')} title={t('Alterações não salvas')}></i>{/if}
     </span>
+    {/if}
   </div>
 
   <div class="top-actions">
@@ -87,7 +90,9 @@
         <button class="icon-btn" aria-label={t('Refazer')} title="{t('Refazer')} ({mod}⇧Z)" disabled={!doc.snapshot.can_redo} onclick={() => doc.redo()}><Redo2 size={19} /></button>
       </div>
     {/if}
-    {#if searchShown}
+    {#if !doc.hasDocument}
+      <!-- sem mapa, nada para buscar -->
+    {:else if searchShown}
       <label class="search inline">
         <Search size={16} aria-hidden="true" />
         <input

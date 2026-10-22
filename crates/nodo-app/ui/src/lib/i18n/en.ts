@@ -8,6 +8,8 @@ export const EN: Record<string, string> = {
   'Comece um mapa': 'Start a map',
   'Recentes': 'Recent',
   'Abrir…': 'Open…',
+  'Os mapas que você abrir ou salvar aparecem aqui.': 'Maps you open or save show up here.',
+  '“{nome}” não foi encontrado e saiu dos recentes.': '“{nome}” was not found and was removed from recents.',
   Abrir: 'Open',
   Salvar: 'Save',
   Exportar: 'Export',

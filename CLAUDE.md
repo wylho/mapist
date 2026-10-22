@@ -170,7 +170,7 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   palettes, theme, render com `traceBranch` curvas/em ângulo, measure, font, preview). `atrio.css` (do Atrio) + `map.css`.
 - **Preview** (`ui/src/lib/preview.ts`): espelha o núcleo (mesmo layout, recolhidos escondidos); `?preview`, e
   `?select=Texto` abre com o nó selecionado. Mapa de exemplo "Lançamento do app", inventado.
-- **Testes:** 122 Rust + 61 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
+- **Testes:** 122 Rust + 69 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
   `.AppImage`; a janela abre um `.minder` passado como argumento) e `nodo --mcp` testado de ponta a ponta.
 - **CI/Release:** `.github/workflows/build.yml` (verificação + instaladores dos três sistemas nos Artifacts) e
   `release.yml` (rascunho → publicar); `scripts/check-version.sh` e `scripts/bump-version.sh`; guia em
@@ -387,6 +387,17 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   aproximar). **Abaixo de 50% (`FAR`), o card mostra só o emoji e o título** (escolha do usuário, opção A: como no
   Miro), na mesma caixa e no mesmo lugar (o mapa não se rearruma ao mudar o zoom), com o título a ~12 px na tela
   (`--far-font`; CSS `.map-card.far` em `map.css`); sem título, o primeiro bloco do texto.
+- **Largura máxima do tópico, caixinhas na matriz e tela inicial** (pedido do usuário, escolhas feitas numa página de
+  opções com prints do preview): o tópico só com título para na largura do card completo (`MAX_BOX_WIDTH` =
+  `CARD.width`, também na raiz) e quebra em linhas alinhadas à esquerda (`measure.ts` `wrapText`/`wrapLines`, a mesma
+  conta mede e desenha em `render.ts`); o campo de edição virou `textarea` que quebra e cresce (`Canvas.svelte`). Na
+  matriz e na tabela em árvore, cada tópico dentro da célula é uma caixinha de card (borda do card, fundo claro: a
+  superfície a 60% sobre a cor da célula) e, na matriz, o que fica recuado na célula ganha a linha do ramo em cotovelo
+  até o pai. **Tela inicial** (opção A, lista com 8): sem mapa aberto (ao abrir o app sem arquivo e ao fechar a última
+  aba), Novo mapa e Abrir no meio e os últimos `.nodo` abertos ou salvos (`components/StartScreen.svelte`,
+  `lib/recents.svelte.ts` em `localStorage` `nodo.recents`; nome, pasta com `~`, "Hoje, 14:20"/"12 de out."; arquivo
+  que sumiu sai da lista). A barra de cima, sem mapa, mostra só Novo, Abrir e Configurações; o título da janela é
+  "Nodo". O MCP dos dois apps diz que o título é texto simples (Markdown não é reconhecido nele).
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
   estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura

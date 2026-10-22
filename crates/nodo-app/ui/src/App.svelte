@@ -7,7 +7,6 @@
   import Canvas from './components/Canvas.svelte'
   import TabBar from './components/TabBar.svelte'
   import StartScreen from './components/StartScreen.svelte'
-  const startVariant = isPreview ? new URLSearchParams(location.search).get('start') : null
   import { notes } from './lib/notes.svelte'
   import SettingsSheet from './components/SettingsSheet.svelte'
   import ConfirmDialog from './components/ConfirmDialog.svelte'
@@ -242,12 +241,12 @@
         <button aria-label={t('Ver o mapa inteiro')} title="{t('Ver o mapa inteiro')} (⇧1)" onclick={() => canvasRef?.fit(true)}><Maximize size={17} /></button>
       </div>
     </Canvas>
-    {#if startVariant}<StartScreen variant={startVariant} />{/if}
+    {#if doc.loaded && !doc.hasDocument}<StartScreen />{/if}
 
   </div>
 
   <!-- O que dá para fazer agora: tira a dúvida de "já posso digitar?". Só com teclado, então não no celular. -->
-  {#if doc.hasDocument && !startVariant}
+  {#if doc.hasDocument}
     <div class="key-hint" aria-live="polite">
       {#if doc.editing}
         <span><kbd>Enter</kbd> {t('confirma')}</span><span><kbd>Tab</kbd> {t('confirma e cria filho')}</span><span><kbd>Esc</kbd> {t('cancela')}</span>

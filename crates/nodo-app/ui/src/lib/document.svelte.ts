@@ -9,6 +9,7 @@ import { t, tn } from '@wylho/atrio'
 import { measureAll } from './measure'
 import { mapTheme } from './maptheme'
 import { ui } from './ui.svelte'
+import { recents } from './recents.svelte'
 import { notes } from './notes.svelte'
 import { emptyMeta, setStatus, type ClipCard, type NoteColor, type ReminderStatus, type RepeatKind } from '@wylho/atrio'
 import { NODE_COLOR_TOKENS, resolveNodeColor } from './palettes'
@@ -87,6 +88,8 @@ class Document {
   /** Dimensões medidas no frontend, por id. */
   sizes = $state<Map<number, { width: number; height: number }>>(new Map())
   busy = $state(false)
+  /** O primeiro snapshot já chegou (antes disso, nem mapa nem tela inicial). */
+  loaded = $state(false)
   /**
    * Nó sendo editado no lugar, como no XMind. `draft` é o texto no campo; `selectAll` diz se ele abre com tudo
    * selecionado (Espaço, F2, nó novo) ou com o cursor no fim (começou digitando uma letra).
@@ -133,7 +136,7 @@ class Document {
     if (!hasHost) return
     const s = this.snapshot
     const name = s.path ? s.path.split(/[\\/]/).pop() : s.title || t('Sem título')
-    const title = `${s.dirty ? '• ' : ''}${name} — Nodo`
+    const title = s.active === null ? 'Nodo' : `${s.dirty ? '• ' : ''}${name} — Nodo`
     import('@tauri-apps/api/window')
       .then(({ getCurrentWindow }) => getCurrentWindow().setTitle(title))
       .catch(() => {})
@@ -188,13 +191,15 @@ class Document {
     if (!hasHost && !isPreview) return
     try {
       const snap = await api.snapshot()
-      if (snap.nodes.length > 0) await this.adopt(snap)
-      else await this.create(t('Tópico central'))
+      // Sem arquivo para abrir, o app começa na tela inicial (Novo, Abrir e os recentes), não num mapa vazio.
+      await this.adopt(snap)
       // Prévia: `?select=Texto do nó` já abre com ele selecionado (prints do site, scripts/site-shots.mjs).
       const pick = isPreview ? new URLSearchParams(location.search).get('select') : null
       if (pick) this.selected = this.snapshot.nodes.find((n) => n.text === pick)?.id ?? null
     } catch (e) {
       this.error = String(e)
+    } finally {
+      this.loaded = true
     }
   }
 
@@ -205,6 +210,7 @@ class Document {
   /** Abre um .nodo, ou importa um .minder antigo, Markdown ou OPML como mapa novo (que pergunta onde salvar). */
   async open(path: string) {
     await this.run(() => api.open(path))
+    if (!this.error) recents.add(path)
     const name = path.split(/[\\/]/).pop() ?? path
     if (!this.error && /\.(md|markdown|txt|opml|minder)$/i.test(path)) {
       ui.say(t('{nome} virou um mapa. Salve para guardá-lo como .nodo; o original fica como está.', { nome: name }), 5200)
@@ -213,7 +219,9 @@ class Document {
 
   async save(path?: string) {
     await this.run(() => api.save(path))
-    if (!this.error) ui.say(t('Mapa salvo'))
+    if (this.error) return
+    if (this.snapshot.path) recents.add(this.snapshot.path)
+    ui.say(t('Mapa salvo'))
   }
 
   /** Zoom e posição de cada aba, para voltar a ela como estava (o Canvas guarda e lê). */
@@ -271,7 +279,7 @@ class Document {
     return !this.snapshot.dirty
   }
 
-  /** Fecha uma aba (⌘W ou o × dela). Com algo por salvar, pergunta antes; a última aba dá lugar a um mapa novo. */
+  /** Fecha uma aba (⌘W ou o × dela). Com algo por salvar, pergunta antes; sem abas, volta a tela inicial. */
   async closeTab(id = this.snapshot.active) {
     const tab = this.snapshot.tabs.find((t) => t.id === id)
     if (!tab || id === null) return
@@ -283,7 +291,6 @@ class Document {
     this.selections.delete(id)
     this.views.delete(id)
     await this.run(() => api.closeTab(id))
-    if (this.snapshot.tabs.length === 0) return this.create(t('Tópico central'))
     // A aba que veio para a frente volta com a seleção que tinha.
     const back = this.snapshot.active !== null ? this.selections.get(this.snapshot.active) : null
     if (back != null && this.snapshot.nodes.some((n) => n.id === back)) this.selected = back

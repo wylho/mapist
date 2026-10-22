@@ -30,7 +30,7 @@
 
   let canvas: HTMLCanvasElement
   let stageEl: HTMLDivElement
-  let editorEl = $state<HTMLInputElement | undefined>(undefined)
+  let editorEl = $state<HTMLTextAreaElement | undefined>(undefined)
 
 
   const view = $state<Viewport>({ x: 0, y: 0, scale: 1 })
@@ -514,6 +514,7 @@
     if (!ed) return
     requestAnimationFrame(() => {
       if (!editorEl) return
+      grow(editorEl)
       editorEl.focus()
       if (ed.selectAll) editorEl.select()
       else editorEl.setSelectionRange(editorEl.value.length, editorEl.value.length)
@@ -551,6 +552,8 @@
         height: (CARD.titleSize * CARD.titleLine + 8) * view.scale,
         font: CARD.titleSize * view.scale,
         weight: 600,
+        padX: 4 * view.scale,
+        padY: 4 * view.scale,
       }
     }
     const style = levelStyle(mapTheme(doc.snapshot.style), n.depth)
@@ -561,8 +564,17 @@
       height: Math.max(24, n.height * view.scale),
       font: style.size * view.scale,
       weight: style.weight,
+      // O texto no mesmo lugar em que o nó o desenha (quebrado na largura dele, à esquerda).
+      padX: (style.padX / 2) * view.scale,
+      padY: (style.padY / 2) * view.scale,
     }
   })
+
+  /** O campo cresce para baixo com o texto (quebrado na largura do nó), sem barra de rolagem. */
+  function grow(el: HTMLTextAreaElement) {
+    el.style.height = 'auto'
+    el.style.height = `${Math.max(editorBox?.height ?? 0, el.scrollHeight)}px`
+  }
 
   let ro: ResizeObserver | undefined
   /** Tamanho do palco, para os cards de nota não saírem dele. */
@@ -644,8 +656,9 @@
     />
   {/each}
   {#if doc.editing && editorBox}
-    <input
+    <textarea
       class="inline-editor"
+      rows="1"
       bind:this={editorEl}
       bind:value={doc.editing.draft}
       style:left="{editorBox.left}px"
@@ -654,11 +667,13 @@
       style:height="{editorBox.height}px"
       style:font-size="{editorBox.font}px"
       style:font-weight={editorBox.weight}
+      style:padding="{editorBox.padY}px {editorBox.padX}px"
+      oninput={(e) => grow(e.currentTarget)}
       onkeydown={onEditorKey}
       onblur={() => void doc.commitEdit()}
       onpointerdown={(e) => e.stopPropagation()}
       aria-label={t('Texto do nó')}
-    />
+    ></textarea>
   {/if}
 
   {#each doc.snapshot.notes as f (f.id)}
@@ -740,9 +755,12 @@
     position: absolute;
     z-index: 5;
     margin: 0;
-    padding: 0 8px;
     font-family: var(--font-body);
-    text-align: center;
+    line-height: 1.4;
+    text-align: left;
+    resize: none;
+    overflow: hidden;
+    box-sizing: border-box;
     color: var(--fg);
     background: var(--surface);
     border: 2px solid var(--accent);

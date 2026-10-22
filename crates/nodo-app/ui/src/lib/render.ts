@@ -450,29 +450,18 @@ function drawNode(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
     }
   }
 
-  // PRÉVIA DE OPÇÕES (provisório): `?chip=a|b` dá caixa própria a cada tópico dentro da célula.
-  const chip = o.tableBg !== undefined && n.depth >= 2 ? (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('chip') : null) : null
-  let chipFill: string | null = null
-  if (chip === 'a') {
+  // Matriz e tabela em árvore: cada tópico dentro da célula é uma caixinha própria, como um card (escolha do usuário:
+  // a borda do card com o fundo claro, a superfície em parte transparente sobre a cor da célula).
+  const chip = o.tableBg !== undefined && n.depth >= 2
+  if (chip) {
     roundRect(ctx, x, y, w, h, 10)
-    ctx.fillStyle = colors.surface
-    ctx.fill()
-    ctx.strokeStyle = colors.cardEdge
-    ctx.lineWidth = 1
-    ctx.stroke()
-    chipFill = colors.surface
-  } else if (chip === 'b') {
-    roundRect(ctx, x, y, w, h, 8)
     ctx.globalAlpha = 0.6
     ctx.fillStyle = colors.surface
     ctx.fill()
     ctx.globalAlpha = 1
-    ctx.save()
-    roundRect(ctx, x, y, w, h, 8)
-    ctx.clip()
-    ctx.fillStyle = branch
-    ctx.fillRect(x, y, 4, h)
-    ctx.restore()
+    ctx.strokeStyle = colors.cardEdge
+    ctx.lineWidth = 1
+    ctx.stroke()
   }
 
   // Contorno do estilo.
@@ -515,7 +504,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
   // Rótulo
   ctx.font = levelFont(style)
   const ink =
-    chipFill ? textOn(chipFill, colors.fg, colors.onAccent)
+    chip ? textOn(colors.surface, colors.fg, colors.onAccent)
     : o.tableBg !== undefined ? textOn(o.tableBg, colors.fg, colors.onAccent)
     : style.text === 'branch' ? branch
     : textOn(fill ?? colors.stage, colors.fg, colors.onAccent)

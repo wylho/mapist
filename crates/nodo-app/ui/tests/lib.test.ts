@@ -16,6 +16,9 @@ import {
   systemColors,
 } from '../src/lib/palettes'
 import { hitTest, resolveColor, traceBranch } from '../src/lib/render'
+import { MAX_BOX_WIDTH, wrapLines } from '../src/lib/measure'
+import { CARD } from '../src/lib/cardtext'
+import { MAX_RECENTS, pushRecent, recentFolder, recentName, recents } from '../src/lib/recents.svelte'
 import type { Snapshot } from '../src/lib/api'
 
 describe('mix', () => {
@@ -687,10 +690,11 @@ describe('abas', () => {
     expect(doc.tabs.map((t) => t.id)).toEqual([second])
     expect(doc.snapshot.active).toBe(second)
 
-    // Fechar a última: um mapa novo no lugar, nunca a janela vazia.
+    // Fechar a última: volta a tela inicial (Novo, Abrir e os recentes), sem mapa vazio inventado.
     await doc.closeTab(second)
-    expect(doc.tabs).toHaveLength(1)
-    expect(doc.hasDocument).toBe(true)
+    expect(doc.tabs).toHaveLength(0)
+    expect(doc.hasDocument).toBe(false)
+    expect(doc.snapshot.active).toBeNull()
   })
 
   it('abrir um arquivo já aberto traz a aba dele, sem abrir de novo', async () => {
@@ -773,5 +777,64 @@ describe('linha do tempo', () => {
     for (const [i, a] of s.nodes.entries())
       for (const b of s.nodes.slice(i + 1))
         expect(a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height, `${a.text} × ${b.text}`).toBe(false)
+  })
+})
+
+describe('largura máxima do tópico', () => {
+  // Medida de mentira: 10 por caractere, para a conta não depender de fonte.
+  const m = (s: string) => s.length * 10
+
+  it('quebra nas palavras sem passar da largura', () => {
+    const lines = wrapLines('Entrevistar dez pessoas que usam planilhas', 120, m)
+    expect(lines).toEqual(['Entrevistar', 'dez pessoas', 'que usam', 'planilhas'])
+    for (const l of lines) expect(m(l)).toBeLessThanOrEqual(120)
+  })
+
+  it('texto curto fica numa linha só', () => {
+    expect(wrapLines('Preço', 120, m)).toEqual(['Preço'])
+  })
+
+  it('palavra maior que a linha vai em pedaços, sem perder letra', () => {
+    const lines = wrapLines('https://exemplo.com.br/caminho', 100, m)
+    expect(lines.join('')).toBe('https://exemplo.com.br/caminho')
+    for (const l of lines) expect(m(l)).toBeLessThanOrEqual(100)
+  })
+
+  it('mantém as quebras de linha do próprio texto', () => {
+    expect(wrapLines('um\ndois', 200, m)).toEqual(['um', 'dois'])
+  })
+
+  it('a caixa do tópico é a do card completo', () => {
+    expect(MAX_BOX_WIDTH).toBe(CARD.width)
+  })
+})
+
+describe('recentes da tela inicial', () => {
+  it('o último aberto vai para o topo, sem repetir, até o limite', () => {
+    let list: { path: string; at: number }[] = []
+    for (let i = 0; i < 10; i++) list = pushRecent(list, `/m/${i}.nodo`, i)
+    expect(list.length).toBe(MAX_RECENTS)
+    expect(list[0].path).toBe('/m/9.nodo')
+    list = pushRecent(list, '/m/5.nodo', 99)
+    expect(list[0]).toEqual({ path: '/m/5.nodo', at: 99 })
+    expect(list.filter((r) => r.path === '/m/5.nodo').length).toBe(1)
+  })
+
+  it('mostra o nome sem .nodo e a pasta com ~', () => {
+    expect(recentName('/Users/ana/Documentos/Viagem.nodo')).toBe('Viagem')
+    expect(recentFolder('/Users/ana/Documentos/Viagem.nodo')).toBe('~/Documentos')
+    expect(recentFolder('/home/ana/Viagem.nodo')).toBe('~')
+    expect(recentFolder('C:\\Users\\Ana\\Mapas\\Viagem.nodo')).toBe('~\\Mapas')
+    expect(recentFolder('/mnt/dados/Viagem.nodo')).toBe('/mnt/dados')
+  })
+
+  it('só .nodo entra (importar Markdown não guarda o mapa naquele arquivo)', () => {
+    const before = recents.list.length
+    recents.add('/tmp/lista.md')
+    expect(recents.list.length).toBe(before)
+    recents.add('/tmp/mapa.nodo')
+    expect(recents.list[0].path).toBe('/tmp/mapa.nodo')
+    recents.remove('/tmp/mapa.nodo')
+    expect(recents.list.some((r) => r.path === '/tmp/mapa.nodo')).toBe(false)
   })
 })
