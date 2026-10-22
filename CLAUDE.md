@@ -55,7 +55,9 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   HTML/JS puro foi descartado: sem componentes, o porte do design system viraria duplicação.
 - **D2:** desktop primeiro (macOS, Linux, Windows). O Minder original é GTK4 e não roda bem no macOS, que é o alvo principal.
 - **D3:** nome **Nodo**. Binário `nodo`; crates `nodo-core`, `nodo-mcp`, `nodo-app`.
-- **D4:** licença **GPL-3.0-or-later**, herdada do Minder (é obra derivada; o copyleft vale).
+- **D4:** licença **GPL-3.0-or-later**, herdada do Minder (é obra derivada; o copyleft vale). Desde 22/10/2026 é a
+  licença dos três (Nodo, Ideario e Atrio), escolha do usuário: a mesma em todos, e a do Nodo não muda sem auditar o
+  código vindo do Minder.
 - **D5:** (substituída pela D28) o formato era o `.minder` do Minder 2.0.9.
 - **D6:** o servidor MCP é o **próprio executável** com `--mcp` (padrão copiado do Ideario), não um segundo binário.
   O `nodo-mcp` continua existindo como binário enxuto para uso sem interface.
@@ -118,11 +120,10 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   componentes do Ideario e do Nodo, por dependência git numa tag (`github:wylho/atrio#vX.Y.Z`). Tem o `atrio.css`, o
   `CardBody` (miolo do card de nota), a prévia de Markdown com as regras do Ideario e o **card na área de
   transferência** (HTML com `data-atrio-card` + Markdown). Mudança de visual compartilhado se faz lá, e aqui só sobe
-  a tag. Licença MIT (o Nodo é GPL e o Ideario não).
+  a tag. Licença GPL-3.0-or-later desde a 0.18.2, como os apps (até a 0.18.1 saiu como MIT).
 - **D27:** **o Nodo não é mais preso ao Minder** (pedido do usuário: "esquece o Minder"; foi inspiração, não é fork).
-  Funcionalidade nova não precisa caber no formato nem no comportamento do Minder. Ainda em aberto com o usuário: a
-  licença (a GPL veio do Minder; trocar pede conferir que nenhum código dele foi copiado). O rodapé do site mantém a
-  atribuição enquanto isso.
+  Funcionalidade nova não precisa caber no formato nem no comportamento do Minder. A licença ficou a GPL (D4), agora nos três projetos. O rodapé do site mantém a
+  atribuição ao Minder.
 - **D28:** **formato próprio `.nodo`** (escolha do usuário): JSON legível e versionado (`format: "nodo"`, `version`),
   só com o que o Nodo modela, sem posições (o layout é recalculado ao abrir). `nodo_core::nodofile` (`to_nodo`,
   `from_nodo`; aceita versão até `VERSION` e ignora campos desconhecidos), `load`/`save` gravam `.nodo`. Um `.minder`
