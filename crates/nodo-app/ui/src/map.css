@@ -44,32 +44,50 @@
   border: 1px solid var(--line);
   box-shadow: var(--float-shadow);
 }
-/* Abas dos mapas abertos: no canto de cima do mapa, no desenho flutuante da barra de zoom. */
+/* Abas dos mapas abertos, no canto de cima do mapa. No desenho das abas do shadcn com os tokens do Atrio: um trilho
+   apagado e a aba da frente em relevo (a superfície do card, com sombra leve). */
 .map-tabs {
-  position: absolute; left: 16px; top: 16px; z-index: 6; display: flex; align-items: center; gap: 2px; padding: 5px;
-  max-width: calc(100% - 32px); overflow-x: auto; scrollbar-width: none; border-radius: 999px;
-  background: color-mix(in oklab, var(--surface) 92%, transparent); backdrop-filter: blur(16px);
-  border: 1px solid var(--line); box-shadow: var(--float-shadow);
+  position: absolute; left: 16px; top: 16px; z-index: 6; display: flex; align-items: center; gap: 2px; padding: 3px;
+  max-width: calc(100% - 32px); overflow-x: auto; scrollbar-width: none; border-radius: 12px;
+  background: color-mix(in oklab, var(--raised) 88%, transparent); backdrop-filter: blur(16px);
+  border: 1px solid var(--line);
 }
 .map-tabs::-webkit-scrollbar { display: none; }
-.map-tab { flex: none; display: flex; align-items: center; height: 34px; border-radius: 999px; color: var(--muted); }
-.map-tab:hover { background: var(--raised); color: var(--fg); }
-.map-tab.on { background: var(--accent-soft); color: var(--accent); }
+.map-tab {
+  flex: none; position: relative; display: flex; align-items: center; height: 30px; border-radius: 9px;
+  color: var(--muted); transition: background .12s ease, color .12s ease, box-shadow .12s ease;
+}
+.map-tab:hover { color: var(--fg); }
+.map-tab.on {
+  background: var(--surface); color: var(--fg);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--line) 70%, transparent), 0 1px 2px rgb(0 0 0 / .08);
+}
 .map-tab-name {
-  display: flex; align-items: center; gap: 7px; height: 100%; padding: 0 4px 0 14px; max-width: 220px;
-  font-size: 13px; font-weight: 600; color: inherit; border-radius: 999px;
+  display: flex; align-items: center; gap: 7px; height: 100%; padding: 0 12px; max-width: 220px; overflow: hidden;
+  white-space: nowrap; font-size: 13px; font-weight: 500; color: inherit; border-radius: 9px;
 }
-.map-tab-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.map-tab-dirty { flex: none; width: 7px; height: 7px; border-radius: 999px; background: currentColor; }
+.map-tab.on .map-tab-name { padding-right: 2px; }
+/* No escuro a superfície fica quase igual ao trilho: a aba da frente clareia um pouco. */
+:root[data-mode='dark'] .map-tab.on { background: color-mix(in oklab, var(--fg) 7%, var(--surface)); }
+.map-tab-dirty { flex: none; width: 7px; height: 7px; border-radius: 999px; background: currentColor; opacity: .7; }
+/* Nas abas de trás o × flutua sobre a borda direita, com o fundo do trilho, só ao passar o mouse. */
+.map-tab-slot { position: absolute; right: 5px; top: 5px; width: 20px; height: 20px; display: grid; place-items: center; }
+.map-tab.on .map-tab-slot { position: relative; right: auto; top: auto; flex: none; margin: 0 5px 0 4px; }
 .map-tab-close {
-  display: grid; place-items: center; width: 24px; height: 24px; margin-right: 5px; border-radius: 999px;
-  color: inherit; opacity: 0; transition: opacity .12s ease;
+  position: absolute; inset: 0; display: grid; place-items: center; border-radius: 6px; color: inherit;
+  background: var(--raised); box-shadow: -10px 0 8px var(--raised); opacity: 0; pointer-events: none;
+  transition: opacity .12s ease;
 }
-.map-tab:hover .map-tab-close, .map-tab.on .map-tab-close, .map-tab-close:focus-visible { opacity: 1; }
-.map-tab-close:hover { background: color-mix(in oklab, currentColor 14%, transparent); }
-@media (hover: none) { .map-tab-close { opacity: 1; } }
-.map-tab-new { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 999px; color: var(--fg); }
-.map-tab-new:hover { background: var(--raised); }
+.map-tab.on .map-tab-close { background: transparent; box-shadow: none; }
+.map-tab:hover .map-tab-close, .map-tab.on .map-tab-close, .map-tab-close:focus-visible { opacity: 1; pointer-events: auto; }
+.map-tab.on:not(:hover) .map-tab-slot:has(.map-tab-dirty) .map-tab-close { opacity: 0; }
+.map-tab.on:hover .map-tab-slot .map-tab-dirty { opacity: 0; }
+.map-tab-close:hover { background: color-mix(in oklab, currentColor 12%, var(--raised)); }
+@media (hover: none) { .map-tab.on .map-tab-close { opacity: 1; } .map-tab.on .map-tab-slot .map-tab-dirty { display: none; } }
+.map-tab-new {
+  flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; color: var(--muted);
+}
+.map-tab-new:hover { color: var(--fg); background: color-mix(in oklab, var(--surface) 60%, transparent); }
 .zoombar button { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 999px; color: var(--fg); }
 .zoombar button:hover { background: var(--raised); }
 .zoombar svg { width: 17px; height: 17px; }

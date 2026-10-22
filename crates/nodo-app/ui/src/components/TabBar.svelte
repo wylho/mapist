@@ -20,11 +20,13 @@
           aria-selected={on}
           onclick={() => void doc.switchTab(t.id)}
           onauxclick={(e) => e.button === 1 && void doc.closeTab(t.id)}
-        >
-          {#if t.dirty}<i class="map-tab-dirty" aria-label="não salvo"></i>{/if}
-          <span>{name}</span>
-        </button>
-        <button class="map-tab-close" aria-label="Fechar {name}" title="Fechar ({mod}W)" onclick={() => void doc.closeTab(t.id)}><X size={13} /></button>
+        >{name}{#if t.dirty && !on}<i class="map-tab-dirty" aria-label="não salvo"></i>{/if}</button>
+        <!-- Na aba da frente o × fica ao lado do nome (com o ponto de não salvo no lugar dele até passar o mouse, como
+             no VS Code); nas outras ele só aparece ao passar o mouse, por cima da borda, e o espaço entre elas não muda. -->
+        <span class="map-tab-slot">
+          {#if t.dirty && on}<i class="map-tab-dirty" aria-label="não salvo"></i>{/if}
+          <button class="map-tab-close" aria-label="Fechar {name}" title="Fechar ({mod}W)" onclick={() => void doc.closeTab(t.id)}><X size={12} strokeWidth={2.4} /></button>
+        </span>
       </div>
     {/each}
     <button class="map-tab-new" aria-label="Novo mapa" title="Novo mapa ({mod}N)" onclick={() => void doc.newMap()}><Plus size={16} /></button>

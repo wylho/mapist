@@ -137,6 +137,7 @@ class Theme {
     const vars = cssVars(this.colors, this.mode)
     for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, v)
     root.style.colorScheme = this.mode
+    root.dataset.mode = this.mode
     // Mantém o seletor [data-theme] coerente para o CSS que ainda o usa.
     if (this.pref === 'system') root.removeAttribute('data-theme')
     else root.setAttribute('data-theme', this.pref)

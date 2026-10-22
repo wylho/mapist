@@ -238,7 +238,9 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   `nodo-app/src/tabs.rs` (`Tabs`: um `Editor` por aba, id estável; abrir um arquivo ocupa o lugar de um mapa novo
   intocado, e um arquivo já aberto traz a aba dele; fechar traz a vizinha), comandos `switch_tab`/`close_tab`,
   `new_map` abre aba, snapshot com `tabs`/`active`, fechar o app olha todas as abas. Interface:
-  `components/TabBar.svelte` (no desenho da barra de zoom; ponto = não salvo; × ou botão do meio fecha; + novo),
+  `components/TabBar.svelte` (no desenho das abas do shadcn com o Atrio: trilho apagado e a aba da frente em relevo,
+  espaço igual entre as abas, × na da frente e ao passar o mouse, ponto = não salvo; `data-mode` no `<html>` para o
+  escuro; botão do meio fecha; + novo),
   `doc.switchTab`/`closeTab`/`cycleTab` (seleção de cada aba guardada), zoom e posição por aba (`doc.views`,
   `Canvas.svelte`), atalhos ⌘T/⌘N, ⌘W, Ctrl+Tab/Ctrl+⇧Tab. A prévia tem abas também. **Caixa de três saídas**
   (pedido do usuário): fechar aba ou app com algo por salvar oferece Salvar / Cancelar / Fechar sem salvar
