@@ -9,7 +9,7 @@
 
 import type { CardFields, CardView, FlatNode } from './api'
 
-import { fontStack, levelFont } from './font'
+import { levelFont } from './font'
 import { levelStyle, mapTheme, type MapTheme } from './maptheme'
 import { flushSync, mount, unmount } from 'svelte'
 import { NoteCard } from '@wylho/atrio'
@@ -37,8 +37,8 @@ function context(): CanvasRenderingContext2D {
  * quanto ele está ampliado na tela. O desenho escala tudo junto com
  * `ctx.scale()`, então medir e desenhar usam sempre a mesma referência.
  */
-export function measureNode(node: FlatNode, theme: MapTheme = mapTheme(null)): { width: number; height: number } {
-  if (isCard(node)) return measureCard(node.text, node.view, node.card)
+export function measureNode(node: FlatNode, theme: MapTheme = mapTheme(null), titleOnly = false): { width: number; height: number } {
+  if (!titleOnly && isCard(node)) return measureCard(node.text, node.view, node.card)
   const c = context()
   const style = levelStyle(theme, node.depth)
   c.font = levelFont(style)
@@ -106,9 +106,3 @@ export function resetCardSizes() {
   cardSizes.clear()
 }
 
-/** Largura de um trecho numa fonte do card (o desenho para exportar usa, inclusive o SVG, que não sabe medir). */
-export function measureRun(text: string, size: number, weight: number, mono = false): number {
-  const c = context()
-  c.font = `${weight} ${size}px ${mono ? 'ui-monospace, monospace' : fontStack()}`
-  return c.measureText(text).width
-}

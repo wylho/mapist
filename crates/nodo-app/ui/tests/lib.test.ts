@@ -536,6 +536,14 @@ describe('exportação', () => {
     expect(pickOrientation(snap(300, 1500), 'auto')).toBe('portrait')
     expect(pickOrientation(snap(1200, 400), 'portrait')).toBe('portrait')
   })
+
+  it('a moldura conta a altura real do card da nota solta (ele cresce com o texto)', async () => {
+    const { exportFrame } = await import('../src/lib/exporter')
+    const s = { bounds: { min_x: 0, min_y: 0, max_x: 500, max_y: 300 }, notes: [{ id: 7, x: 0, y: 200, height: 120 }] } as unknown as import('../src/lib/api').Snapshot
+    expect(exportFrame(s).height).toBe(300 + 80)
+    const cards = new Map([['f:7', { width: 240, height: 400, ops: [] }]])
+    expect(exportFrame(s, cards).height).toBe(600 + 80)
+  })
 })
 
 describe('notas soltas no mapa', () => {
@@ -695,5 +703,27 @@ describe('abas', () => {
     await doc.openPath('/mapas/viagem.nodo')
     expect(doc.tabs.filter((t) => t.path === '/mapas/viagem.nodo')).toHaveLength(1)
     expect(doc.tabs.find((t) => t.id === doc.snapshot.active)?.path).toBe('/mapas/viagem.nodo')
+  })
+})
+
+describe('exportação: o card lido da tela', () => {
+  it('cor de opacidade zero não é tinta, mas uma cor com azul zero é', async () => {
+    const { clear } = await import('../src/lib/domcard')
+    expect(['transparent', 'rgba(0, 0, 0, 0)', 'rgba(10, 20, 30, 0.0)', ''].every(clear)).toBe(true)
+    expect(['rgb(232, 164, 0)', 'rgba(232, 164, 0, 0.22)', 'rgb(0, 0, 0)'].some(clear)).toBe(false)
+  })
+})
+
+
+describe('exportar com ramos abertos', () => {
+  it('a prévia abre tudo para a imagem e devolve o mapa exatamente como estava', async () => {
+    const { seedDemo, previewBackend } = await import('../src/lib/preview')
+    seedDemo()
+    const before = previewBackend.get_snapshot()
+    expect(before.nodes.some((n) => n.folded)).toBe(true)
+    const open = previewBackend.export_layout({ sizes: [], unfold: true })
+    expect(open.nodes.length).toBeGreaterThan(before.nodes.length)
+    expect(open.nodes.some((n) => n.folded)).toBe(false)
+    expect(previewBackend.get_snapshot()).toEqual(before)
   })
 })

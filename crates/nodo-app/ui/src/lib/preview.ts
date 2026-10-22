@@ -425,8 +425,8 @@ function fillDemo() {
   freeNotes = [
     {
       id: 1,
-      x: Math.round(r.x - 70),
-      y: Math.round(r.y + r.height + 110),
+      x: Math.round(r.x - 10),
+      y: Math.round(r.y + r.height + 150),
       width: 240,
       height: 150,
       title: 'Ideias soltas',
@@ -806,6 +806,15 @@ export const previewBackend = {
     }
     reposition() // como o núcleo: as medidas vieram da tela, não estimar de novo
     return snapshotOf()
+  },
+
+  export_layout: ({ sizes, unfold }: { sizes: NodeSize[]; unfold: boolean }) => {
+    // Como o núcleo: arruma uma cópia por um instante e devolve tudo exatamente como estava.
+    const saved = new Map([...nodes].map(([id, n]) => [id, { ...n, children: [...n.children] }]))
+    if (unfold) for (const n of nodes.values()) n.folded = false
+    const out = previewBackend.set_sizes({ sizes })
+    nodes = saved
+    return out
   },
 
   undo: () => {

@@ -5,7 +5,7 @@
   import { Download, FileCode2, FileImage, FileText, FileType2, ListTree, X } from '@lucide/svelte'
   import { doc } from '../lib/document.svelte'
   import { ui } from '../lib/ui.svelte'
-  import { FORMATS, exportTo, pickOrientation, type ExportFormat, type Orientation, type Paper } from '../lib/exporter'
+  import { FORMATS, exportTo, pickOrientation, type CardsMode, type ExportFormat, type Orientation, type Paper } from '../lib/exporter'
 
   const ICONS = { png: FileImage, svg: FileCode2, pdf: FileType2, markdown: FileText, opml: ListTree }
 
@@ -14,6 +14,9 @@
   let background = $state(true)
   let orientation = $state<Orientation>('auto')
   let paper = $state<Paper>('a4')
+  let cards = $state<CardsMode>('full')
+  let unfold = $state(false)
+  const hasFolded = $derived(doc.snapshot.nodes.some((n) => n.folded))
   let busy = $state(false)
 
   const autoIs = $derived(pickOrientation(doc.snapshot, 'auto') === 'landscape' ? 'paisagem' : 'retrato')
@@ -22,7 +25,7 @@
     if (busy || !doc.hasDocument) return
     busy = true
     try {
-      const where = await exportTo(format, doc.snapshot, { scale: Number(scale), background, orientation, paper })
+      const where = await exportTo(format, doc.snapshot, { scale: Number(scale), background, orientation, paper, cards, unfold })
       if (where) {
         ui.exportOpen = false
         ui.say(`Exportado: ${where.split(/[\\/]/).pop()}`)
@@ -55,6 +58,24 @@
           {/each}
         </div>
 
+        {#if format === 'png' || format === 'svg' || format === 'pdf'}
+          <div class="set-row">
+            <span class="grow"><b>Cards</b><small>Inteiros como na tela, ou só o título de cada tópico (um mapa mais limpo).</small></span>
+            <ToggleGroup.Root type="single" value={cards} onValueChange={(v) => v && (cards = v as CardsMode)} class="seg tight" aria-label="Cards">
+              <ToggleGroup.Item value="full" class="seg-item">Inteiros</ToggleGroup.Item>
+              <ToggleGroup.Item value="title" class="seg-item">Só o título</ToggleGroup.Item>
+            </ToggleGroup.Root>
+          </div>
+          {#if hasFolded}
+            <div class="set-row">
+              <span class="grow"><b>Ramos recolhidos</b><small>Como estão no mapa, ou todos abertos na imagem (o mapa não muda).</small></span>
+              <ToggleGroup.Root type="single" value={unfold ? 'all' : 'keep'} onValueChange={(v) => v && (unfold = v === 'all')} class="seg tight" aria-label="Ramos recolhidos">
+                <ToggleGroup.Item value="keep" class="seg-item">Como estão</ToggleGroup.Item>
+                <ToggleGroup.Item value="all" class="seg-item">Expandir tudo</ToggleGroup.Item>
+              </ToggleGroup.Root>
+            </div>
+          {/if}
+        {/if}
         {#if format === 'png'}
           <div class="set-row">
             <span class="grow"><b>Tamanho</b><small>2× fica nítido em telas de alta resolução.</small></span>

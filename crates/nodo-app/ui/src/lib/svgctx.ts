@@ -12,6 +12,8 @@ interface State {
   textAlign: CanvasTextAlign
   textBaseline: CanvasTextBaseline
   transform: [number, number, number, number, number, number]
+  /** Recorte em vigor (id de um `<clipPath>`), até o `restore`. */
+  clip: string | null
 }
 
 const fmt = (n: number) => (Math.round(n * 100) / 100).toString()
@@ -34,7 +36,9 @@ export class SvgContext {
     textAlign: 'start',
     textBaseline: 'alphabetic',
     transform: [1, 0, 0, 1, 0, 0],
+    clip: null,
   }
+  private clips = 0
   // Sombras não vão para o SVG (o arquivo fica limpo e leve); as propriedades existem para o desenho não quebrar.
   shadowColor = 'transparent'
   shadowBlur = 0
@@ -123,7 +127,8 @@ export class SvgContext {
     const [a, b, c, d, e, f] = this.s.transform
     const t = a === 1 && b === 0 && c === 0 && d === 1 && e === 0 && f === 0 ? '' : ` transform="matrix(${[a, b, c, d, e, f].map(fmt).join(' ')})"`
     const o = this.s.globalAlpha < 1 ? ` opacity="${fmt(this.s.globalAlpha)}"` : ''
-    return t + o
+    const cl = this.s.clip ? ` clip-path="url(#${this.s.clip})"` : ''
+    return t + o + cl
   }
 
   fill() {
@@ -151,6 +156,30 @@ export class SvgContext {
     this.parts.push(
       `<text x="${fmt(x)}" y="${fmt(y)}" font-family="${esc(family)}" font-size="${size}" font-weight="${weight}" fill="${esc(this.s.fillStyle)}" text-anchor="${anchor}" dominant-baseline="${base}"${this.attrs()}>${esc(text)}</text>`,
     )
+  }
+
+  /** Recorta o que vier depois pelo caminho atual (o canto arredondado da capa do card). */
+  clip() {
+    if (!this.d) return
+    const id = `c${++this.clips}`
+    // Em `userSpaceOnUse` o recorte usa o sistema de quem o recebe, já com a mesma transformação.
+    this.parts.push(`<clipPath id="${id}" clipPathUnits="userSpaceOnUse"><path d="${this.d}"/></clipPath>`)
+    this.s.clip = id
+  }
+
+  /** Uma foto: vai dentro do SVG como `data:` (o `src` da imagem já é um, feito em `domcard.ts`). */
+  drawImage(img: HTMLImageElement, x: number, y: number, w: number, h: number) {
+    this.parts.push(
+      `<image href="${esc(img.src)}" x="${fmt(x)}" y="${fmt(y)}" width="${fmt(w)}" height="${fmt(h)}" preserveAspectRatio="xMidYMid slice"${this.attrs()}/>`,
+    )
+  }
+
+  /** Um ícone em SVG, como vetor (não como imagem). */
+  drawSvgMarkup(markup: string, x: number, y: number, w: number, h: number) {
+    // O ícone já vem com a largura e a altura do lugar (`domcard.ts`); aqui só vai para a posição.
+    void w
+    void h
+    this.parts.push(`<g${this.attrs()}><g transform="translate(${fmt(x)} ${fmt(y)})">${markup}</g></g>`)
   }
 
   /** O documento SVG, com fundo opcional. */

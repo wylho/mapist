@@ -2,7 +2,10 @@
 // OPML vêm do núcleo (nodo_core::export), os mesmos que o Claude exporta pelo MCP. Gravar no disco passa pelo Rust
 // (gravação atômica); na prévia, vira um download do navegador.
 import { api, hasHost, type Snapshot } from './api'
-import { draw, readThemeColors } from './render'
+import { draw, readThemeColors, resolveColor } from './render'
+import { cardKey, paintCards, type CardPaint } from './domcard'
+import { branchColors, mapTheme } from './maptheme'
+import { measureNode } from './measure'
 import { prefs } from './prefs.svelte'
 import { theme } from './theme.svelte'
 import { SvgContext } from './svgctx'
@@ -10,6 +13,8 @@ import { SvgContext } from './svgctx'
 export type ExportFormat = 'png' | 'svg' | 'pdf' | 'markdown' | 'opml'
 export type Orientation = 'auto' | 'portrait' | 'landscape'
 export type Paper = 'a4' | 'letter'
+/** Os cards na imagem: inteiros (como na tela) ou só o título de cada tópico. */
+export type CardsMode = 'full' | 'title'
 
 export interface ExportOptions {
   /** PNG: quantas vezes o tamanho real (2 é nítido em tela Retina). */
@@ -18,6 +23,9 @@ export interface ExportOptions {
   background: boolean
   orientation: Orientation
   paper: Paper
+  cards: CardsMode
+  /** Abrir todos os ramos recolhidos na imagem (o mapa na tela continua como está). */
+  unfold: boolean
 }
 
 export const FORMATS: { id: ExportFormat; label: string; ext: string; hint: string; mime: string }[] = [
@@ -30,22 +38,37 @@ export const FORMATS: { id: ExportFormat; label: string; ext: string; hint: stri
 
 const MARGIN = 40
 
-/** O mapa inteiro com uma margem, em unidades de mundo. */
-export function exportFrame(s: Snapshot) {
-  const b = s.bounds
+/**
+ * O mapa inteiro com uma margem, em unidades de mundo. Com os cards lidos da tela, a nota solta entra com a altura de
+ * verdade (o card cresce com o texto; a altura guardada é a do último arraste).
+ */
+export function exportFrame(s: Snapshot, cards?: Map<string, CardPaint>) {
+  const b = { ...s.bounds }
+  for (const f of cards ? s.notes : []) {
+    const p = cards?.get(cardKey('f', f.id))
+    if (p) b.max_y = Math.max(b.max_y, f.y + p.height)
+  }
   return { width: b.max_x - b.min_x + MARGIN * 2, height: b.max_y - b.min_y + MARGIN * 2, x: MARGIN - b.min_x, y: MARGIN - b.min_y }
 }
 
 /** Orientação que faz o mapa caber maior: paisagem para mapas largos, retrato para os altos. */
-export function pickOrientation(s: Snapshot, o: Orientation): 'portrait' | 'landscape' {
+export function pickOrientation(s: Snapshot, o: Orientation, cards?: Map<string, CardPaint>): 'portrait' | 'landscape' {
   if (o !== 'auto') return o
-  const f = exportFrame(s)
+  const f = exportFrame(s, cards)
   return f.width >= f.height ? 'landscape' : 'portrait'
 }
 
-function paint(ctx: unknown, s: Snapshot, scale: number) {
-  const f = exportFrame(s)
+/** Os cards do mapa como a tela os mostra (o próprio `NoteCard` do Atrio, lido em `domcard.ts`). */
+export function readCards(s: Snapshot): Promise<Map<string, CardPaint>> {
+  const c = readThemeColors()
+  const branch = branchColors(s.nodes, mapTheme(s.style), theme.mode, c.nodeColors, (x) => resolveColor(x, c))
+  return paintCards(s, branch)
+}
+
+function paint(ctx: unknown, s: Snapshot, scale: number, cards: Map<string, CardPaint>) {
+  const f = exportFrame(s, cards)
   draw({
+    cards,
     snapshot: s, colors: readThemeColors(), view: { scale, x: f.x * scale, y: f.y * scale },
     selected: null, hovered: null, matches: new Set(), width: f.width * scale, height: f.height * scale, dpr: 1,
     linkStyle: prefs.linkStyle, mode: theme.mode, paintCards: true, ...({ ctx } as Record<string, unknown>),
@@ -57,13 +80,13 @@ function background(): string {
 }
 
 /** O mapa num canvas, `scale` vezes o tamanho real, com ou sem fundo. */
-export function renderCanvas(s: Snapshot, scale: number, withBackground: boolean): HTMLCanvasElement {
-  const f = exportFrame(s)
+export function renderCanvas(s: Snapshot, scale: number, withBackground: boolean, cards: Map<string, CardPaint>): HTMLCanvasElement {
+  const f = exportFrame(s, cards)
   const c = document.createElement('canvas')
   c.width = Math.ceil(f.width * scale)
   c.height = Math.ceil(f.height * scale)
   const ctx = c.getContext('2d')!
-  paint(ctx, s, scale)
+  paint(ctx, s, scale, cards)
   if (withBackground) {
     // O desenho limpa a área antes de pintar: o fundo entra por baixo depois.
     ctx.setTransform(1, 0, 0, 1, 0, 0)
@@ -75,46 +98,74 @@ export function renderCanvas(s: Snapshot, scale: number, withBackground: boolean
   return c
 }
 
-export function renderSvg(s: Snapshot, withBackground: boolean): string {
-  const f = exportFrame(s)
+export function renderSvg(s: Snapshot, withBackground: boolean, cards: Map<string, CardPaint>): string {
+  const f = exportFrame(s, cards)
   const ctx = new SvgContext()
-  paint(ctx, s, 1)
+  paint(ctx, s, 1, cards)
   return ctx.toSvg(f.width, f.height, withBackground ? background() : null)
 }
 
 /** PDF de uma página: o mapa cabe inteiro, centrado, com margem de 10 mm, desenhado a ~300 dpi. */
-export async function renderPdf(s: Snapshot, o: Pick<ExportOptions, 'orientation' | 'paper'>): Promise<Blob> {
+export async function renderPdf(s: Snapshot, o: Pick<ExportOptions, 'orientation' | 'paper'>, cards: Map<string, CardPaint>): Promise<Blob> {
   // Carregado só aqui: a biblioteca de PDF não pesa na abertura do app.
   const { jsPDF } = await import('jspdf')
-  const orientation = pickOrientation(s, o.orientation)
+  const orientation = pickOrientation(s, o.orientation, cards)
   const pdf = new jsPDF({ orientation, unit: 'mm', format: o.paper, compress: true })
   const pw = pdf.internal.pageSize.getWidth()
   const ph = pdf.internal.pageSize.getHeight()
-  const f = exportFrame(s)
+  const f = exportFrame(s, cards)
   const k = Math.min((pw - 20) / f.width, (ph - 20) / f.height)
   const w = f.width * k
   const h = f.height * k
   const px = (w / 25.4) * 300
   const scale = Math.max(1, Math.min(6, px / f.width))
-  const image = renderCanvas(s, scale, true).toDataURL('image/png')
+  const image = renderCanvas(s, scale, true, cards).toDataURL('image/png')
   pdf.setProperties({ title: s.title, creator: 'Nodo' })
   pdf.addImage(image, 'PNG', (pw - w) / 2, (ph - h) / 2, w, h, undefined, 'FAST')
   return pdf.output('blob')
 }
 
+/**
+ * O mapa como a exportação pediu, sem mudar o documento: com `unfold`, todos os ramos abertos; com só o título, cada
+ * tópico com card vira o tópico comum (a pílula com o nome) e o mapa é arrumado nesse tamanho, sem buracos entre os
+ * ramos (as notas soltas ficam de fora). O núcleo arruma e devolve tudo como estava.
+ */
+export async function exportView(s: Snapshot, o: Pick<ExportOptions, 'cards' | 'unfold'>): Promise<Snapshot> {
+  if (!o.unfold && o.cards === 'full') return s
+  const theme = mapTheme(s.style)
+  const plain = (n: Snapshot['nodes'][number]) => ({ ...n, note: '', card: {}, view: undefined })
+  // Abrir tudo mostra tópicos que a tela não mediu: primeiro o mapa aberto, depois as medidas de todos.
+  const open = o.unfold ? await api.exportLayout([], true) : s
+  const sizes = open.nodes.map((n) => ({ id: n.id, ...(o.cards === 'title' ? measureNode(plain(n), theme, true) : measureNode(n, theme)) }))
+  const laid = await api.exportLayout(sizes, o.unfold)
+  if (o.cards === 'full') return laid
+  // Sem as notas soltas, a moldura é só a dos tópicos.
+  const nodes = laid.nodes.map(plain)
+  const bounds = {
+    min_x: Math.min(...nodes.map((n) => n.x)),
+    min_y: Math.min(...nodes.map((n) => n.y)),
+    max_x: Math.max(...nodes.map((n) => n.x + n.width)),
+    max_y: Math.max(...nodes.map((n) => n.y + n.height)),
+  }
+  return { ...laid, nodes, notes: [], bounds }
+}
+
 /** Os bytes do arquivo no formato pedido. */
-export async function exportBytes(format: ExportFormat, s: Snapshot, o: ExportOptions): Promise<Uint8Array> {
+export async function exportBytes(format: ExportFormat, source: Snapshot, o: ExportOptions): Promise<Uint8Array> {
   const text = (t: string) => new TextEncoder().encode(t)
+  const image = format === 'png' || format === 'svg' || format === 'pdf'
+  const s = image ? await exportView(source, o) : source
+  const cards = image && o.cards === 'full' ? await readCards(s) : new Map<string, CardPaint>()
   switch (format) {
     case 'png': {
-      const blob = await new Promise<Blob | null>((ok) => renderCanvas(s, o.scale, o.background).toBlob(ok, 'image/png'))
+      const blob = await new Promise<Blob | null>((ok) => renderCanvas(s, o.scale, o.background, cards).toBlob(ok, 'image/png'))
       if (!blob) throw new Error('não foi possível gerar a imagem')
       return new Uint8Array(await blob.arrayBuffer())
     }
     case 'svg':
-      return text(renderSvg(s, o.background))
+      return text(renderSvg(s, o.background, cards))
     case 'pdf':
-      return new Uint8Array(await (await renderPdf(s, o)).arrayBuffer())
+      return new Uint8Array(await (await renderPdf(s, o, cards)).arrayBuffer())
     default:
       return text(await api.exportText(format))
   }

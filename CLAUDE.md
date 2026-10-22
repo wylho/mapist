@@ -294,7 +294,16 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   Anexo aberto no card = o `AttachmentViewer` do Atrio 0.17.1 (`@wylho/atrio/viewer`, o mesmo do Ideario: foto com
   paleta, leitor de PDF, vídeo, áudio, Baixar); o comando `open_attachment` (abria no programa do sistema) saiu.
   `pdfjs-dist` entrou como dependência da interface.
-  Falta: exportar (PNG/SVG/PDF) desenhando o próprio card.
+  **Exportar desenha o próprio card** (`lib/domcard.ts`): o `NoteCard` do Atrio é montado fora da vista e o que o
+  navegador desenhou vira operações (caixas com cantos, linhas de texto, fotos recortadas, ícones, as bolinhas do
+  status pelo `::after`, marcadores `::before`), com as cores passadas a `rgb()`; `render.ts` (`replay`) repete no
+  canvas (PNG/PDF) e no `SvgContext` (que ganhou `clip`, `drawImage` e `drawSvgMarkup`). Notas soltas e a bolinha de
+  recolhido com o número também saem; a moldura usa a altura real do card da nota solta. O desenho à mão antigo
+  (`layoutCard`, `measureRun`, `cardFill`) saiu. **Opções novas na folha** (pedido do usuário): Cards "Inteiros / Só
+  o título" e Ramos recolhidos "Como estão / Expandir tudo" (só aparece se há ramo recolhido): o núcleo arruma o mapa
+  para a imagem e devolve exatamente como estava (`Editor::stash_view`/`restore_view`, comando `export_layout`,
+  `exportView` em `exporter.ts`); o documento, o desfazer e o "não salvo" não mudam.
+  Fase 3 da unificação concluída no Nodo.
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
   estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura

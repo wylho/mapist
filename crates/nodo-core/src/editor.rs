@@ -224,6 +224,28 @@ impl Editor {
         layout::reposition(map);
     }
 
+    /// Lay the map out another way for a moment (every branch open, other sizes), without touching the history, the
+    /// revision or the saved state: for exporting. Returns the map as it was; [`Editor::restore_view`] puts it back,
+    /// exactly.
+    pub fn stash_view(
+        &mut self,
+        sizes: impl IntoIterator<Item = (u64, f64, f64)>,
+        unfold: bool,
+    ) -> MindMap {
+        let map = self.history.current_mut();
+        let saved = map.clone();
+        if unfold {
+            layout::for_each_mut(&mut map.root, &mut |n| n.folded = false);
+        }
+        self.set_sizes(sizes);
+        saved
+    }
+
+    /// Put back the map [`Editor::stash_view`] returned.
+    pub fn restore_view(&mut self, map: MindMap) {
+        *self.history.current_mut() = map;
+    }
+
     /// Step back one edit. Returns `false` when there is nothing to undo.
     pub fn undo(&mut self) -> bool {
         if !self.history.undo() {
@@ -437,6 +459,35 @@ mod tests {
             Some("sage"),
             "desfaz como tudo"
         );
+    }
+
+    #[test]
+    fn a_view_for_exporting_opens_everything_and_puts_the_map_back_exactly() {
+        let mut ed = Editor::new("Mapa");
+        let a = ed
+            .apply(Action::AddChild {
+                parent: 0,
+                text: "A".into(),
+            })
+            .unwrap()
+            .unwrap();
+        let b = ed
+            .apply(Action::AddChild {
+                parent: a,
+                text: "B".into(),
+            })
+            .unwrap()
+            .unwrap();
+        ed.apply(Action::ToggleFold { id: a }).unwrap();
+        let before = ed.map().clone();
+        let (dirty, can_undo) = (ed.is_dirty(), ed.can_undo());
+        let saved = ed.stash_view([(a, 30.0, 300.0)], true);
+        assert!(!ed.map().find(a).unwrap().folded, "tudo aberto");
+        assert_eq!(ed.map().find(a).unwrap().height, 300.0);
+        assert!(ed.map().find(b).is_some());
+        ed.restore_view(saved);
+        assert_eq!(ed.map(), &before, "o mapa volta exatamente");
+        assert_eq!((ed.is_dirty(), ed.can_undo()), (dirty, can_undo));
     }
 
     #[test]

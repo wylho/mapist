@@ -698,6 +698,22 @@ fn set_sizes(state: State<'_, AppState>, sizes: Vec<NodeSize>) -> Result<Snapsho
     Ok(snapshot(&doc))
 }
 
+/// The map as an export wants it, without changing it (history, revision and saved state stay): every branch open
+/// with `unfold`, and the topics at other sizes (their title only, say). The map comes back exactly right after.
+#[tauri::command]
+fn export_layout(
+    state: State<'_, AppState>,
+    sizes: Vec<NodeSize>,
+    unfold: bool,
+) -> Result<Snapshot, String> {
+    let mut tabs = lock(&state)?;
+    let saved =
+        editor(&mut tabs)?.stash_view(sizes.iter().map(|s| (s.id, s.width, s.height)), unfold);
+    let out = snapshot(&tabs);
+    editor(&mut tabs)?.restore_view(saved);
+    Ok(out)
+}
+
 /// Close without saving, after the person confirmed it in the window.
 #[tauri::command]
 fn quit_app(app: tauri::AppHandle, state: State<'_, AppState>) {
@@ -925,6 +941,7 @@ pub fn run() {
             redo,
             search_nodes,
             set_sizes,
+            export_layout,
             quit_app,
             mac_lights_width,
             mcp_info,

@@ -5,10 +5,11 @@
 
 import type { Snapshot } from './api'
 import type { FlatNode } from './api'
-import { fitText, measureRun } from './measure'
-import { CARD, isCard, layoutCard } from './cardtext'
+import { fitText } from './measure'
+import { CARD, isCard } from './cardtext'
+import { cardKey, type CardPaint, type Radii } from './domcard'
 import { fontStack, levelFont, uiFont } from './font'
-import { mix, NODE_COLOR_TOKENS } from './palettes'
+import { NODE_COLOR_TOKENS } from './palettes'
 import { branchColors, levelStyle, lineWidth, mapTheme, softFill, textOn, type LevelStyle, type MapTheme } from './maptheme'
 
 export interface Viewport {
@@ -56,6 +57,8 @@ export interface DrawOptions {
    * canvas só desenha a seleção em volta. Na exportação sim, porque o PNG, o SVG e o PDF saem só do desenho.
    */
   paintCards?: boolean
+  /** Os cards lidos da tela (`domcard.ts`), para a exportação repetir o card exato; sem eles, o card não é pintado. */
+  cards?: Map<string, CardPaint>
 }
 
 /**
@@ -120,13 +123,23 @@ export function draw(o: DrawOptions) {
       isHovered: n.id === hovered,
       isMatch: matches.has(n.id),
       paintCards: o.paintCards ?? false,
+      cards: o.cards,
     })
   }
 
-  // Botão de recolher/expandir no começo do ramo (não sai na exportação).
-  if (!o.paintCards) {
+  // Notas soltas: na tela são HTML por cima do canvas; na exportação, o mesmo card repetido aqui.
+  if (o.paintCards && o.cards) {
+    for (const f of snapshot.notes) {
+      const p = o.cards.get(cardKey('f', f.id))
+      if (p) replay(ctx, p, f.x, f.y)
+    }
+  }
+
+  // Botão de recolher/expandir no começo do ramo. Na exportação, só o de quem está recolhido (o número diz o que
+  // ficou escondido); o "−" é só para a tela.
+  {
     for (const n of snapshot.nodes) {
-      if (!n.has_children || n.parent === null) continue
+      if (!n.has_children || n.parent === null || (o.paintCards && !n.folded)) continue
       drawKnob(ctx, n, {
         branch: branch.get(n.id) ?? colors.muted,
         colors,
@@ -210,10 +223,6 @@ export function hitKnob(snapshot: Snapshot, view: Viewport, clientX: number, cli
   return null
 }
 
-/** Recheio do card de um nó com nota: a cor do ramo bem clara, como as cores de nota do Ideario (opção A). */
-export function cardFill(branch: string, surface: string, mode: 'light' | 'dark'): string {
-  return mix(branch, surface, mode === 'dark' ? 0.2 : 0.22)
-}
 
 /**
  * Altura onde um ramo encosta no nó: no meio da caixa, ou na linha de baixo quando o nível é sublinhado
@@ -330,6 +339,7 @@ interface NodeOpts {
   isHovered: boolean
   isMatch: boolean
   paintCards: boolean
+  cards?: Map<string, CardPaint>
 }
 
 function drawNode(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
@@ -419,63 +429,11 @@ function drawNode(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
 
 /** Um nó com nota. Seleção e recolhido sempre; o card em si só quando `paintCards` (exportação). */
 function drawCard(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
-  const { colors, mode, branch } = o
+  const { colors } = o
   const { x, y, width: w, height: h } = n
   ctx.save()
-  if (o.paintCards) {
-    roundRect(ctx, x, y, w, h, CARD.radius)
-    ctx.fillStyle = cardFill(branch, colors.surface, mode)
-    ctx.fill()
-    ctx.strokeStyle = colors.cardEdge
-    ctx.lineWidth = 1
-    ctx.stroke()
-    const font = fontStack()
-    const lay = layoutCard(n.text, n.view?.preview ?? [], measureRun)
-    ctx.textAlign = 'left'
-    ctx.textBaseline = 'alphabetic'
-    for (const l of lay.lines) {
-      const done = l.kind === 'task' && l.done
-      const quiet = done || l.kind === 'more'
-      const ink = quiet ? colors.muted : colors.fg
-      // Como o CSS do card: parágrafos e tópicos a 85%.
-      ctx.globalAlpha = l.alpha * (l.kind === 'text' || l.kind === 'bullet' || l.kind === 'ordered' ? 0.85 : 1)
-      const size = l.kind === 'title' ? CARD.titleSize : l.kind === 'code' ? 11.5 : l.kind === 'more' ? 12 : CARD.bodySize
-      const weight = l.kind === 'title' ? 600 : l.kind === 'heading' ? 650 : 400
-      const mono = l.kind === 'code'
-      if (l.first && l.mark) {
-        ctx.font = `400 ${size}px ${font}`
-        ctx.fillStyle = colors.muted
-        ctx.fillText(l.mark, x + l.markX, y + l.y)
-      }
-      if (l.first && l.kind === 'task') {
-        roundRect(ctx, x + l.markX + 0.75, y + l.y - 11.25, 12.5, 12.5, 4)
-        ctx.strokeStyle = ink
-        ctx.lineWidth = 1.5
-        ctx.stroke()
-        if (l.done) {
-          ctx.beginPath()
-          ctx.moveTo(x + l.markX + 3.8, y + l.y - 5)
-          ctx.lineTo(x + l.markX + 6.2, y + l.y - 2.6)
-          ctx.lineTo(x + l.markX + 10.4, y + l.y - 8)
-          ctx.stroke()
-        }
-      }
-      ctx.font = `${weight} ${size}px ${mono ? 'ui-monospace, monospace' : font}`
-      ctx.fillStyle = ink
-      ctx.fillText(l.text, x + l.x, y + l.y)
-      if (done) {
-        // Tarefa feita: riscada, como no card.
-        const tw = measureRun(l.text, size, weight)
-        ctx.beginPath()
-        ctx.moveTo(x + l.x, y + l.y - size * 0.3)
-        ctx.lineTo(x + l.x + tw, y + l.y - size * 0.3)
-        ctx.strokeStyle = ink
-        ctx.lineWidth = 1
-        ctx.stroke()
-      }
-    }
-    ctx.globalAlpha = 1
-  }
+  const painted = o.paintCards ? o.cards?.get(cardKey('n', n.id)) : undefined
+  if (painted) replay(ctx, painted, x, y)
   const ring = o.isSelected ? 1 : o.isMatch ? 0.55 : o.isHovered ? 0.4 : 0
   if (ring > 0) {
     roundRect(ctx, x - 3, y - 3, w + 6, h + 6, CARD.radius + 3)
@@ -484,6 +442,72 @@ function drawCard(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
     ctx.globalAlpha = ring
     ctx.stroke()
     ctx.globalAlpha = 1
+  }
+  ctx.restore()
+}
+
+/** Um contorno de cantos arredondados, um raio por canto. */
+function radiiPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: Radii) {
+  const k = (v: number) => Math.min(v, w / 2, h / 2)
+  const [tl, tr, br, bl] = r.map(k)
+  ctx.beginPath()
+  ctx.moveTo(x + tl, y)
+  ctx.lineTo(x + w - tr, y)
+  if (tr) ctx.arcTo(x + w, y, x + w, y + tr, tr)
+  ctx.lineTo(x + w, y + h - br)
+  if (br) ctx.arcTo(x + w, y + h, x + w - br, y + h, br)
+  ctx.lineTo(x + bl, y + h)
+  if (bl) ctx.arcTo(x, y + h, x, y + h - bl, bl)
+  ctx.lineTo(x, y + tl)
+  if (tl) ctx.arcTo(x, y, x + tl, y, tl)
+  ctx.closePath()
+}
+
+/** Repete um card lido da tela (`domcard.ts`) com o canto em (ox, oy). */
+function replay(ctx: CanvasRenderingContext2D, p: CardPaint, ox: number, oy: number) {
+  ctx.save()
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'alphabetic'
+  for (const op of p.ops) {
+    ctx.globalAlpha = op.alpha
+    if (op.t === 'box') {
+      // A borda do CSS fica por dentro da caixa.
+      const i = op.stroke ? op.sw / 2 : 0
+      radiiPath(ctx, ox + op.x + i, oy + op.y + i, op.w - i * 2, op.h - i * 2, op.r)
+      if (op.fill) {
+        ctx.fillStyle = op.fill
+        ctx.fill()
+      }
+      if (op.stroke) {
+        ctx.strokeStyle = op.stroke
+        ctx.lineWidth = op.sw
+        ctx.stroke()
+      }
+    } else if (op.t === 'text') {
+      ctx.font = op.font
+      ctx.fillStyle = op.color
+      ctx.fillText(op.text, ox + op.x, oy + op.y)
+      if (op.strike != null) {
+        ctx.beginPath()
+        ctx.moveTo(ox + op.x, oy + op.strike)
+        ctx.lineTo(ox + op.x + op.width, oy + op.strike)
+        ctx.strokeStyle = op.color
+        ctx.lineWidth = 1
+        ctx.stroke()
+      }
+    } else if (op.t === 'img') {
+      ctx.save()
+      if (op.clip) {
+        radiiPath(ctx, ox + op.clip.x, oy + op.clip.y, op.clip.w, op.clip.h, op.clip.r)
+        ctx.clip()
+      }
+      ctx.drawImage(op.img, ox + op.x, oy + op.y, op.w, op.h)
+      ctx.restore()
+    } else {
+      const svg = ctx as unknown as { drawSvgMarkup?: (m: string, x: number, y: number, w: number, h: number) => void }
+      if (svg.drawSvgMarkup) svg.drawSvgMarkup(op.markup, ox + op.x, oy + op.y, op.w, op.h)
+      else if (op.img.complete && op.img.naturalWidth) ctx.drawImage(op.img, ox + op.x, oy + op.y, op.w, op.h)
+    }
   }
   ctx.restore()
 }
