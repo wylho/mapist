@@ -5,7 +5,6 @@
   import { Maximize, Minus, Plus } from '@lucide/svelte'
   import TopBar from './components/TopBar.svelte'
   import Canvas from './components/Canvas.svelte'
-  import Inspector from './components/Inspector.svelte'
   import SettingsSheet from './components/SettingsSheet.svelte'
   import ConfirmDialog from './components/ConfirmDialog.svelte'
   import UpdateNotice from './components/UpdateNotice.svelte'
@@ -203,9 +202,6 @@
       </div>
     </Canvas>
 
-    {#if prefs.inspectorOpen}
-      <Inspector />
-    {/if}
   </div>
 
   <!-- O que dá para fazer agora: tira a dúvida de "já posso digitar?". Só com teclado, então não no celular. -->

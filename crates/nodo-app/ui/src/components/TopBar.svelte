@@ -9,7 +9,6 @@
     FilePlus2,
     FolderOpen,
     Palette,
-    PanelRight,
     Plus,
     Redo2,
     Save,
@@ -113,14 +112,6 @@
     {:else}
       <button class="icon-btn" aria-label="Buscar" title="Buscar ({mod}F)" onclick={() => (ui.searchOpen = true)}><Search size={19} /></button>
     {/if}
-    <button
-      class="icon-btn"
-      class:on={prefs.inspectorOpen}
-      aria-label={prefs.inspectorOpen ? 'Fechar painel' : 'Abrir painel'}
-      aria-pressed={prefs.inspectorOpen}
-      title={prefs.inspectorOpen ? 'Fechar painel' : 'Abrir painel'}
-      onclick={() => prefs.toggleInspector()}
-    ><PanelRight size={19} /></button>
     <button class="icon-btn" aria-label="Configurações" title="Configurações ({mod},)" onclick={() => (ui.settingsOpen = true)}><Settings size={19} /></button>
   </div>
 </header>

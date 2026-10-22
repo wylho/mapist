@@ -93,7 +93,7 @@ export function measureCard(title: string, note: string, card: CardFields = {}):
   }
   host.innerHTML = '<div class="card"></div>'
   const el = host.firstElementChild as HTMLElement
-  const app = mount(MapCard, { target: el, props: { title, blocks: previewFromMarkdown(note), card } })
+  const app = mount(MapCard, { target: el, props: { title, blocks: previewFromMarkdown(note), card, onstatus: () => {} } })
   flushSync()
   const size = { width: CARD.width, height: Math.ceil(el.getBoundingClientRect().height) }
   unmount(app)

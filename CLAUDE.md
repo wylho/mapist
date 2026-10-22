@@ -146,7 +146,8 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   na interface (evento `close-requested`); `.minder` associado no instalador e aberto por argumento ou pelo evento do
   macOS (`open-file`). Ícones de todas as plataformas em `icons/`, `bundle.targets = all`.
 - Interface (`ui/src/`): `App.svelte` (casca do Ideario, atalhos ⌘N/⌘O/⌘S/⌘⇧S/⌘F/⌘,/⌘0), `components/` (TopBar,
-  Canvas, Inspector com lado do ramo, SettingsSheet, ConfirmDialog, Picker) e `lib/` (api, document, ui, prefs,
+  Canvas, SettingsSheet, ConfirmDialog, Picker; o painel lateral (Inspector) saiu na 0.3.0: tudo do tópico está no
+  card e no clique direito) e `lib/` (api, document, ui, prefs,
   palettes, theme, render com `traceBranch` curvas/em ângulo, measure, font, preview). `atrio.css` (do Atrio) + `map.css`.
 - **Preview** (`ui/src/lib/preview.ts`): espelha o núcleo (mesmo layout, recolhidos escondidos); `?preview`, e
   `?select=Texto` abre com o nó selecionado. Mapa de exemplo "Lançamento do app", inventado.
@@ -211,7 +212,7 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   salva sozinho; `lib/notes.svelte.ts`). **Notas soltas** no fundo do mapa: `model::FreeNote`, `<nodo-notes>` no
   arquivo (o Minder ignora), `Action::AddFreeNote/SetFreeNote/PlaceFreeNote/RemoveFreeNote`, comandos
   `add_free_note`/`set_free_note`/`place_free_note`/`remove_free_note`, ferramentas MCP; "Nova nota aqui" no menu do
-  fundo, "Adicionar nota" no do nó. O inspetor só mostra a prévia da nota e o botão para abrir.
+  fundo, "Adicionar nota" no do nó.
 - **Atrio no Nodo** (D26): `main.ts` importa `@wylho/atrio/atrio.css` (o `ideario.css` saiu); cards pelo `CardBody`;
   ⌘C num nó copia como card e ⌘V cola um card (do Ideario ou de outro nó) como filho com a nota
   (`Action::AddTopic`, comando `add_topic`, `add_node` do MCP aceita `note`), e "Copiar como card"/"Colar card"
@@ -228,6 +229,8 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   do Ideario). Interface: `components/NodeNote.svelte` (o card aberto, barra do topo como a do Ideario),
   `components/MapCard.svelte`, `lib/notes.svelte.ts` (um card aberto por vez, `docMode`), `lib/notedoc.ts` (conversão
   só da prévia); copiar/colar leva emoji e etiquetas. `vite.config.ts` exclui o Atrio do pré-empacotamento.
+  Seletor de status no card do mapa (Atrio 0.9.0, `CardPills` com `onstatus`; `doc.setStatus` com o `setStatus` do
+  Atrio; `.map-card .status-toggle` recebe o clique). Painel lateral removido (pedido do usuário: ficou inútil).
   Falta: a exportação (PNG/SVG/PDF) ainda não desenha emoji e pílulas do card; anexos no `.nodo`.
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;

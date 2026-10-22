@@ -56,42 +56,6 @@
   font-weight: 600;
 }
 
-/* ── inspetor ─────────────────────────────────────────────────────────── */
-
-.inspector {
-  flex: none;
-  width: var(--side-w);
-  background: var(--bg);
-  border-left: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.inspector-head {
-  padding: 20px 18px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-.inspector-title {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .09em;
-  color: var(--muted);
-}
-.inspector-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0 12px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.inspector-body::-webkit-scrollbar { width: 10px; }
-.inspector-body::-webkit-scrollbar-thumb { background: var(--line); border-radius: 10px; border: 3px solid var(--bg); }
-
 /* Campos dentro de cards, como as notas do Ideario. */
 .card-body.field { padding: 13px 14px; display: flex; flex-direction: column; gap: 9px; }
 .field-label {
@@ -149,31 +113,6 @@ kbd {
   padding: 3px 7px;
   min-width: 24px;
   text-align: center;
-}
-
-/* Responsivo: abaixo de 900px o inspetor vira gaveta inferior. */
-@media (max-width: 900px) {
-  .inspector {
-    position: absolute;
-    right: 0; bottom: 0; left: 0;
-    width: auto;
-    height: 48%;
-    border-left: 0;
-    border-top: 1px solid var(--line);
-    border-radius: 24px 24px 0 0;
-    box-shadow: var(--float-shadow);
-    z-index: 8;
-  }
-  .inspector-body { padding-bottom: 12px; }
-}
-/* Mensagem neutra em faixa, no inspetor. */
-.banner {
-  margin-block: 4px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: var(--raised);
-  color: var(--muted);
-  font-size: 13px;
 }
 
 /* Etiqueta do modo preview, só para deixar claro que os dados são de exemplo. */
@@ -324,3 +263,5 @@ kbd {
 /* Nó com nota: o card do Ideario por cima do canvas, no lugar e no zoom do nó. O mouse passa direto para o canvas. */
 .map-card { position: absolute; z-index: 1; transform-origin: 0 0; pointer-events: none; transition: none; }
 .map-card:hover { box-shadow: none; }
+/* O seletor de status do card recebe o clique (o resto do card deixa o mouse com o canvas). */
+.map-card .status-toggle { pointer-events: auto; }

@@ -611,3 +611,19 @@ describe('campos do card no nó', () => {
     expect(docToMarkdown(markdownToDoc(md))).toBe(md)
   })
 })
+
+describe('status pelo card do mapa', () => {
+  it('muda com as regras do card e "Sem status" tira o que foi posto à mão', async () => {
+    const { seedDemo } = await import('../src/lib/preview')
+    const { doc } = await import('../src/lib/document.svelte')
+    seedDemo()
+    await doc.load()
+    const id = doc.snapshot.nodes.find((n) => n.text === 'Design')!.id
+    await doc.setStatus(id, 'doing')
+    expect(doc.node(id)?.card).toEqual({ reminder_doing: true, status_on: true })
+    await doc.setStatus(id, 'done')
+    expect(doc.node(id)?.card).toEqual({ reminder_done: true, status_on: true })
+    await doc.setStatus(id, 'none')
+    expect(doc.node(id)?.card).toEqual({})
+  })
+})

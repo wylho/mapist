@@ -8,7 +8,7 @@ import { api, hasHost, isPreview, type CardFields, type Snapshot } from './api'
 import { measureAll } from './measure'
 import { mapTheme } from './maptheme'
 import { ui } from './ui.svelte'
-import type { ClipCard, NoteColor } from '@wylho/atrio'
+import { emptyMeta, setStatus, type ClipCard, type NoteColor, type ReminderStatus, type RepeatKind } from '@wylho/atrio'
 import { NODE_COLOR_TOKENS, resolveNodeColor } from './palettes'
 import { theme } from './theme.svelte'
 
@@ -373,6 +373,27 @@ class Document {
   /** Etiquetas, emoji, lembrete e status do card do nó. */
   setCard(id: number, card: CardFields) {
     return this.run(() => api.setCard(id, card))
+  }
+
+  /** Muda o status pelo seletor do card no mapa, com as regras do card (`setStatus` do Atrio). */
+  setStatus(id: number, to: ReminderStatus | 'none') {
+    const c = this.node(id)?.card ?? {}
+    const m = emptyMeta({
+      reminderAt: c.reminder_at ?? null,
+      reminderRepeat: (c.reminder_repeat ?? null) as RepeatKind | null,
+      reminderDone: !!c.reminder_done,
+      reminderDoing: !!c.reminder_doing,
+      statusOn: !!c.status_on,
+    })
+    setStatus(m, to)
+    return this.setCard(id, {
+      ...c,
+      reminder_at: m.reminderAt,
+      reminder_repeat: m.reminderRepeat,
+      reminder_done: m.reminderDone,
+      reminder_doing: m.reminderDoing,
+      status_on: m.statusOn,
+    })
   }
 
   /** Grava o documento do editor do card como a nota do nó (o núcleo converte para Markdown). */

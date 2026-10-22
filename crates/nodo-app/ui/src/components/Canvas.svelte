@@ -421,8 +421,7 @@
       style:width="{c.n.width}px"
       style:background={c.fill}
       style:transform="scale({view.scale})"
-      aria-hidden="true"
-    ><MapCard title={c.n.text} blocks={c.blocks} card={c.n.card} /></div>
+    ><MapCard title={c.n.text} blocks={c.blocks} card={c.n.card} onstatus={(s) => void doc.setStatus(c.n.id, s)} /></div>
   {/each}
   {#if doc.editing && editorBox}
     <input
