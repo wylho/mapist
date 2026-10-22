@@ -43,7 +43,8 @@ export function measureNode(node: FlatNode, theme: MapTheme = mapTheme(null), ti
   const style = levelStyle(theme, node.depth)
   c.font = levelFont(style)
 
-  const lines = node.text.split('\n')
+  // O texto quebra em linhas na largura máxima do nível, em vez de esticar a caixa (pedido do usuário).
+  const lines = wrapText(node.text, maxBoxWidth(node.depth) - style.padX, style)
   let widest = 0
   for (const line of lines) {
     const w = c.measureText(line).width
@@ -59,6 +60,46 @@ export function measureNode(node: FlatNode, theme: MapTheme = mapTheme(null), ti
 /** Mede todos os nós de um snapshot, em unidades de mundo, no tema do mapa. */
 export function measureAll(nodes: FlatNode[], theme: MapTheme = mapTheme(null)): { id: number; width: number; height: number }[] {
   return nodes.map((n) => ({ id: n.id, ...measureNode(n, theme) }))
+}
+
+/** Largura máxima da caixa de um tópico: a mesma do card (`CARD.width`), e um pouco mais na raiz. */
+export function maxBoxWidth(depth: number): number {
+  // PRÉVIA DE OPÇÕES (provisório): `?maxw=1|2|3` = vezes a largura do card.
+  const k = Number(typeof location !== 'undefined' ? new URLSearchParams(location.search).get('maxw') ?? 1 : 1) || 1
+  return CARD.width * k
+}
+
+/**
+ * Quebra o texto em linhas que cabem em `maxWidth` (unidades de mundo), nas palavras; uma palavra maior que a linha
+ * é cortada nas letras. Quebras de linha do próprio texto ficam. A mesma conta mede (`measureNode`) e desenha.
+ */
+export function wrapText(text: string, maxWidth: number, style: { size: number; weight: number }): string[] {
+  const c = context()
+  c.font = levelFont(style)
+  const fits = (s: string) => c.measureText(s).width <= maxWidth
+  const out: string[] = []
+  for (const para of text.split('\n')) {
+    let line = ''
+    for (const word of para.split(/\s+/).filter(Boolean)) {
+      const next = line ? `${line} ${word}` : word
+      if (fits(next)) {
+        line = next
+        continue
+      }
+      if (line) out.push(line)
+      // Palavra sozinha maior que a linha (um endereço, por exemplo): vai em pedaços.
+      line = ''
+      for (const ch of word) {
+        if (line && !fits(line + ch)) {
+          out.push(line)
+          line = ''
+        }
+        line += ch
+      }
+    }
+    out.push(line)
+  }
+  return out
 }
 
 /** Trunca um texto para caber em `maxWidth`, com reticências, na fonte do nível. Tudo em unidades de mundo. */

@@ -5,7 +5,7 @@
 
 import type { Snapshot } from './api'
 import type { FlatNode } from './api'
-import { fitText } from './measure'
+import { wrapText } from './measure'
 import { t } from '@wylho/atrio'
 import { CARD, isCard } from './cardtext'
 import { cardKey, type CardPaint, type Radii } from './domcard'
@@ -127,6 +127,26 @@ export function draw(o: DrawOptions) {
       roundRect(ctx, cx + 1, cy + 1, cw - 2, ch - 2, 6)
       ctx.fillStyle = tableBg.get(n.id)!
       ctx.fill()
+    }
+  }
+
+  // Matriz: o que fica listado dentro de uma célula (sem célula própria, recuado) ganha a linha do ramo em cotovelo,
+  // do pai até ele, para o recuo ler como "filho de", não como desalinhado (pedido do usuário).
+  if (table) {
+    for (const n of snapshot.nodes) {
+      const p = n.parent !== null ? byId.get(n.parent) : undefined
+      if (n.cell || !p) continue
+      const ex = p.x + Math.max(10, (n.x - p.x) / 2)
+      const my = n.y + n.height / 2
+      ctx.beginPath()
+      ctx.moveTo(ex, p.y + p.height)
+      ctx.lineTo(ex, my - 6)
+      ctx.quadraticCurveTo(ex, my, ex + 6, my)
+      ctx.lineTo(n.x, my)
+      ctx.strokeStyle = branch.get(n.id) ?? colors.muted
+      ctx.lineWidth = 1.5
+      ctx.lineCap = 'round'
+      ctx.stroke()
     }
   }
 
@@ -430,6 +450,31 @@ function drawNode(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
     }
   }
 
+  // PRÉVIA DE OPÇÕES (provisório): `?chip=a|b` dá caixa própria a cada tópico dentro da célula.
+  const chip = o.tableBg !== undefined && n.depth >= 2 ? (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('chip') : null) : null
+  let chipFill: string | null = null
+  if (chip === 'a') {
+    roundRect(ctx, x, y, w, h, 10)
+    ctx.fillStyle = colors.surface
+    ctx.fill()
+    ctx.strokeStyle = colors.cardEdge
+    ctx.lineWidth = 1
+    ctx.stroke()
+    chipFill = colors.surface
+  } else if (chip === 'b') {
+    roundRect(ctx, x, y, w, h, 8)
+    ctx.globalAlpha = 0.6
+    ctx.fillStyle = colors.surface
+    ctx.fill()
+    ctx.globalAlpha = 1
+    ctx.save()
+    roundRect(ctx, x, y, w, h, 8)
+    ctx.clip()
+    ctx.fillStyle = branch
+    ctx.fillRect(x, y, 4, h)
+    ctx.restore()
+  }
+
   // Contorno do estilo.
   if (o.tableBg !== undefined) {
     // sem contorno: a célula já é a caixa
@@ -470,14 +515,21 @@ function drawNode(ctx: CanvasRenderingContext2D, n: FlatNode, o: NodeOpts) {
   // Rótulo
   ctx.font = levelFont(style)
   const ink =
-    o.tableBg !== undefined ? textOn(o.tableBg, colors.fg, colors.onAccent)
+    chipFill ? textOn(chipFill, colors.fg, colors.onAccent)
+    : o.tableBg !== undefined ? textOn(o.tableBg, colors.fg, colors.onAccent)
     : style.text === 'branch' ? branch
     : textOn(fill ?? colors.stage, colors.fg, colors.onAccent)
   ctx.fillStyle = ink
-  ctx.textAlign = 'center'
+  ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
-  const label = fitText(n.text, w - style.padX / 2, style)
-  ctx.fillText(label, x + w / 2, style.underline && o.tableBg === undefined ? y + h / 2 - 2 : y + h / 2)
+  // As mesmas linhas da medição (`wrapText` na largura da caixa), alinhadas à esquerda como no card (pedido do
+  // usuário); o bloco de texto fica no meio da caixa, então uma linha só continua centrada.
+  const lines = wrapText(n.text, w - style.padX + 0.5, style)
+  const widest = Math.max(...lines.map((l) => ctx.measureText(l).width))
+  const left = x + (w - widest) / 2
+  const lineH = style.size * 1.4
+  const top = y + h / 2 - (lines.length * lineH) / 2 + lineH / 2 - (style.underline && o.tableBg === undefined ? 2 : 0)
+  lines.forEach((line, i) => ctx.fillText(line, left, top + i * lineH))
 
   ctx.restore()
 }

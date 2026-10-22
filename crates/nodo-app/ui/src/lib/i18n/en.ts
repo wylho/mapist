@@ -5,6 +5,9 @@
 export const EN: Record<string, string> = {
   // Barra de cima, abas e zoom
   'Novo mapa': 'New map',
+  'Comece um mapa': 'Start a map',
+  'Recentes': 'Recent',
+  'Abrir…': 'Open…',
   Abrir: 'Open',
   Salvar: 'Save',
   Exportar: 'Export',
