@@ -892,7 +892,6 @@ pub fn run() {
             attachments::import_path,
             attachments::get_attachments,
             attachments::save_attachment,
-            attachments::open_attachment,
             reload_map,
             save_map,
             add_node,

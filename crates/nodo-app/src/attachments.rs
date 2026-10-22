@@ -89,36 +89,6 @@ pub fn save_attachment(
         .map_err(|e| format!("não foi possível salvar: {e}"))
 }
 
-/// Open an attachment in the program the system uses for it (a copy in the temporary folder).
-#[tauri::command]
-pub fn open_attachment(
-    app: tauri::AppHandle,
-    state: State<'_, AppState>,
-    hash: String,
-) -> Result<(), String> {
-    let (data, name) = {
-        let doc = lock(&state)?;
-        let found = doc.iter().find_map(|t| {
-            let a = t.editor.attachments();
-            Some((a.source(&hash)?, a.get(&hash)?.name.clone()))
-        });
-        found.ok_or("esse anexo não está no mapa")?
-    };
-    let dir = std::env::temp_dir()
-        .join("nodo-anexos")
-        .join(&hash[..hash.len().min(8)]);
-    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    let file = dir.join(name);
-    if !file.exists() {
-        std::fs::write(&file, data.read().map_err(|e| e.to_string())?)
-            .map_err(|e| e.to_string())?;
-    }
-    use tauri_plugin_opener::OpenerExt;
-    app.opener()
-        .open_path(file.to_string_lossy(), None::<&str>)
-        .map_err(|e| e.to_string())
-}
-
 /// Answer `att://localhost/<hash>` with the file, whole or the piece asked for (Range).
 pub fn serve(app: &tauri::AppHandle, req: &Request<Vec<u8>>) -> Response<Vec<u8>> {
     let hash = hash_from_path(req.uri().path());

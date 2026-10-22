@@ -291,7 +291,10 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   O `components/NoteCard.svelte` antigo (o card translúcido) saiu.
   A barra do card aberto é a `CardTopBar` do Atrio 0.16.0 (a mesma do Ideario; `NodeNote.svelte` só passa o rótulo
   e "Apagar tópico/nota" no `menuEnd`).
-  Falta: salvar/fechar iguais, visualizador de anexos, exportar pelo próprio card.
+  Anexo aberto no card = o `AttachmentViewer` do Atrio 0.17.1 (`@wylho/atrio/viewer`, o mesmo do Ideario: foto com
+  paleta, leitor de PDF, vídeo, áudio, Baixar); o comando `open_attachment` (abria no programa do sistema) saiu.
+  `pdfjs-dist` entrou como dependência da interface.
+  Falta: exportar (PNG/SVG/PDF) desenhando o próprio card.
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
   estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura

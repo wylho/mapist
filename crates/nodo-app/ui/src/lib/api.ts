@@ -207,11 +207,6 @@ export const attachments = {
     if (path) await call<void>('save_attachment', { hash: a.hash, path })
   },
 
-  /** Abre no programa que o sistema usa para esse tipo de arquivo. */
-  async open(a: Attachment) {
-    if (isPreview) return void window.open(previewAttachmentUrl(a.hash), '_blank')
-    await call<void>('open_attachment', { hash: a.hash })
-  },
 }
 
 /** Prévia: os anexos importados aqui ficam como blobs, com o endereço de cada um. */

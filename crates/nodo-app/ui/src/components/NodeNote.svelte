@@ -12,11 +12,13 @@
     CardTopBar,
     emptyMeta,
     features,
+    type Attachment,
     type CardHost,
     type CardMeta,
     type TagCount,
   } from '@wylho/atrio'
   import { NoteEditor } from '@wylho/atrio/editor'
+  import { AttachmentViewer } from '@wylho/atrio/viewer'
   import { api, attachments, hasHost, isPreview, type CardFields, type FlatNode, type NoteCard } from '../lib/api'
   import { doc, nodeColorOf, noteColorOf } from '../lib/document.svelte'
   import { openLink } from '../lib/markdown'
@@ -191,6 +193,8 @@
     return [...count].map(([name, n]) => ({ name, count: n }))
   }
 
+  let viewing = $state<Attachment | null>(null)
+
   const host: CardHost = {
     tags: knownTags,
     mediaUrl: (h) => attachments.url(h),
@@ -199,7 +203,8 @@
     importPath: (p) => attachments.importPath(p),
     attachments: (hs) => attachments.list(hs),
     download: (a) => void attachments.download(a),
-    openAttachment: (a) => void attachments.open(a),
+    // O visualizador do Atrio, o mesmo do Ideario (foto, PDF, vídeo, áudio); o resto se baixa de lá.
+    openAttachment: (a) => (viewing = a),
     openUrl: (url) => void openLink(url),
     markdownToDoc: (md) => api.markdownDoc(md) as Promise<{ content?: unknown[] }>,
   }
@@ -240,3 +245,11 @@
     </NoteEditor>
   {/if}
 </CardDialog>
+
+<AttachmentViewer
+  att={viewing}
+  imageUrl={(h) => attachments.url(h)}
+  mediaUrl={(h) => attachments.url(h)}
+  onclose={() => (viewing = null)}
+  ondownload={(a) => void attachments.download(a)}
+/>
