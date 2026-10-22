@@ -168,8 +168,11 @@ const PROTOCOLS: [&str; 3] = ["2025-06-18", "2025-03-26", PROTOCOL_VERSION];
 /// use it well. Agents behave noticeably better with this than without it.
 const INSTRUCTIONS: &str = "\
 Nodo is a mind-mapping app. A map is a tree of nodes: one root, each node \
-with children, and branches drawn either side of the root. Every node has text \
-and an optional Markdown note. Loose notes can also sit on the canvas itself, \
+with children, and branches drawn either side of the root. Every node has a \
+title (its text) and an optional Markdown note. Titles are plain text with no \
+formatting: Markdown in a title (**bold**, # heading, [link](url), lists) is not \
+rendered and shows as typed, so write titles as plain words and put anything \
+formatted in the note. Loose notes can also sit on the canvas itself, \
 apart from any node (add_free_note, set_free_note, remove_free_note).
 
 Read the map with get_map or map_stats first. Prefer the targeted tools \

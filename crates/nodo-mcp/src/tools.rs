@@ -17,7 +17,7 @@ pub fn catalog() -> Vec<Value> {
             json!({
                 "type": "object",
                 "properties": {
-                    "title": { "type": "string", "description": "Text of the root node." }
+                    "title": { "type": "string", "description": "Text of the root node. Plain text: titles have no formatting, so Markdown (**, #, links) shows as typed." }
                 },
                 "required": ["title"]
             }),
@@ -64,7 +64,7 @@ pub fn catalog() -> Vec<Value> {
                 "type": "object",
                 "properties": {
                     "parent": { "type": "integer", "description": "Id of the parent node." },
-                    "text": { "type": "string", "description": "Text of the new node." },
+                    "text": { "type": "string", "description": "Title of the new node. Plain text: titles have no formatting, so Markdown (**, #, links) shows as typed. Put formatted text in note." },
                     "note": { "type": "string", "description": "Optional Markdown note; a node with a note is drawn as a card." }
                 },
                 "required": ["parent", "text"]
@@ -81,12 +81,12 @@ pub fn catalog() -> Vec<Value> {
         ),
         tool(
             "set_text",
-            "Replace a node's text.",
+            "Replace a node's text (its title). Plain text only: Markdown is not rendered in a title; formatting goes in the note (set_note).",
             json!({
                 "type": "object",
                 "properties": {
                     "id": { "type": "integer" },
-                    "text": { "type": "string" }
+                    "text": { "type": "string", "description": "Plain text: titles have no formatting, so Markdown (**, #, links) shows as typed." }
                 },
                 "required": ["id", "text"]
             }),
@@ -125,7 +125,7 @@ pub fn catalog() -> Vec<Value> {
             json!({
                 "type": "object",
                 "properties": {
-                    "title": { "type": "string" },
+                    "title": { "type": "string", "description": "Plain text: titles have no formatting, so Markdown (**, #, links) shows as typed." },
                     "text": { "type": "string", "description": "Markdown text of the note." },
                     "x": { "type": "number", "description": "Left edge, in map units." },
                     "y": { "type": "number", "description": "Top edge, in map units." }
@@ -140,8 +140,8 @@ pub fn catalog() -> Vec<Value> {
                 "type": "object",
                 "properties": {
                     "id": { "type": "integer" },
-                    "title": { "type": "string" },
-                    "text": { "type": "string" },
+                    "title": { "type": "string", "description": "Plain text: titles have no formatting, so Markdown (**, #, links) shows as typed." },
+                    "text": { "type": "string", "description": "Markdown text of the note." },
                     "color": { "type": ["string", "null"], "enum": ["sand", "sage", "sky", "rose", "lilac", "butter", null] },
                     "tags": { "type": "array", "items": { "type": "string" } },
                     "emoji": { "type": ["string", "null"] },
