@@ -10,7 +10,7 @@
   import SettingsSheet from './components/SettingsSheet.svelte'
   import ConfirmDialog from './components/ConfirmDialog.svelte'
   import UpdateNotice from './components/UpdateNotice.svelte'
-  import { MenuAt } from '@wylho/atrio'
+  import { MenuAt, t } from '@wylho/atrio'
   import ExportSheet from './components/ExportSheet.svelte'
   import { backgroundMenu, nodeMenu, type ViewActions } from './lib/mapmenus'
   import { cardToClipboard, readCard } from '@wylho/atrio'
@@ -49,7 +49,7 @@
     const { html, text } = cardToClipboard(card)
     e.clipboardData.setData('text/html', html)
     e.clipboardData.setData('text/plain', text)
-    ui.say('Copiado como card')
+    ui.say(t('Copiado como card'))
   }
 
   function onPaste(e: ClipboardEvent) {
@@ -209,10 +209,10 @@
     <Canvas bind:this={canvasRef} oncontext={openMenu} onzoom={(z) => { zoom = z; prefs.setZoom(z) }}>
       <TabBar />
       <div class="zoombar">
-        <button aria-label="Diminuir zoom" title="Diminuir ({modKey}-)" onclick={() => canvasRef?.zoomBy(1 / 1.2)}><Minus size={17} /></button>
-        <button class="zoomlevel" title="Tamanho real ({modKey}0)" aria-label="Zoom em {zoomPct}%; voltar a 100%" onclick={() => canvasRef?.actualSize()}>{zoomPct}%</button>
-        <button aria-label="Aumentar zoom" title="Aumentar ({modKey}=)" onclick={() => canvasRef?.zoomBy(1.2)}><Plus size={17} /></button>
-        <button aria-label="Ver o mapa inteiro" title="Ver o mapa inteiro (⇧1)" onclick={() => canvasRef?.fit(true)}><Maximize size={17} /></button>
+        <button aria-label={t('Diminuir zoom')} title={t('Diminuir ({tecla})', { tecla: `${modKey}-` })} onclick={() => canvasRef?.zoomBy(1 / 1.2)}><Minus size={17} /></button>
+        <button class="zoomlevel" title={t('Tamanho real ({tecla})', { tecla: `${modKey}0` })} aria-label={t('Zoom em {pct}%; voltar a 100%', { pct: zoomPct })} onclick={() => canvasRef?.actualSize()}>{zoomPct}%</button>
+        <button aria-label={t('Aumentar zoom')} title={t('Aumentar ({tecla})', { tecla: `${modKey}=` })} onclick={() => canvasRef?.zoomBy(1.2)}><Plus size={17} /></button>
+        <button aria-label={t('Ver o mapa inteiro')} title="{t('Ver o mapa inteiro')} (⇧1)" onclick={() => canvasRef?.fit(true)}><Maximize size={17} /></button>
       </div>
     </Canvas>
 
@@ -222,19 +222,19 @@
   {#if doc.hasDocument}
     <div class="key-hint" aria-live="polite">
       {#if doc.editing}
-        <span><kbd>Enter</kbd> confirma</span><span><kbd>Tab</kbd> confirma e cria filho</span><span><kbd>Esc</kbd> cancela</span>
+        <span><kbd>Enter</kbd> {t('confirma')}</span><span><kbd>Tab</kbd> {t('confirma e cria filho')}</span><span><kbd>Esc</kbd> {t('cancela')}</span>
       {:else if doc.selectedNode}
-        <span>Digite para escrever</span><span><kbd>Tab</kbd> filho</span><span><kbd>Enter</kbd> irmão</span><span><kbd>Espaço</kbd> editar</span>
+        <span>{t('Digite para escrever')}</span><span><kbd>Tab</kbd> {t('filho')}</span><span><kbd>Enter</kbd> {t('irmão')}</span><span><kbd>{t('Espaço')}</kbd> {t('editar')}</span>
       {/if}
     </div>
   {/if}
 
   {#if isPreview}
-    <div class="preview-tag" title="Backend simulado em memória; nenhum arquivo é lido ou gravado">
-      <span class="dot"></span> Prévia: dados de exemplo
+    <div class="preview-tag" title={t('Backend simulado em memória; nenhum arquivo é lido ou gravado')}>
+      <span class="dot"></span> {t('Prévia: dados de exemplo')}
     </div>
   {:else if !hasHost}
-    <div class="preview-tag">Rodando fora do app: sem acesso ao documento</div>
+    <div class="preview-tag">{t('Rodando fora do app: sem acesso ao documento')}</div>
   {/if}
 
   <div class="toast" class:show={!!ui.toast} role="status" aria-live="polite">

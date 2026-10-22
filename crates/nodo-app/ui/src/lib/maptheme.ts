@@ -2,7 +2,8 @@
 // ramo principal de uma cor, herdada pelos filhos. O tema é do mapa (fica no arquivo, `nodo-style`); a paleta de
 // interface (Configurações → Aparência) continua decidindo fundo, superfície e destaque.
 //
-// Os nomes têm de bater com `nodo_core::MAP_STYLES`: o núcleo recusa qualquer outro.
+// Os nomes têm de bater com `nodo_core::MAP_STYLES`: o núcleo recusa qualquer outro. `label` e `hint` ficam em
+// português (a chave da tradução); a tela passa cada um por `t` na hora de mostrar.
 
 import type { FlatNode } from './api'
 import { contrast, mix } from './palettes'

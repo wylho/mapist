@@ -6,7 +6,7 @@
   import { draw, hitKnob, hitTest, readThemeColors, resolveColor, type Viewport } from '../lib/render'
   import { CARD, isCard, summaryOf } from '../lib/cardtext'
   import { attachments } from '../lib/api'
-  import { ContextMenu, NoteCard as Card, nearestNoteColor, SEP, type MenuEntry, type NoteColor } from '@wylho/atrio'
+  import { ContextMenu, NoteCard as Card, nearestNoteColor, SEP, t, type MenuEntry, type NoteColor } from '@wylho/atrio'
   import { BookOpen, Trash2 } from '@lucide/svelte'
   import { notes } from '../lib/notes.svelte'
   import NodeNote from './NodeNote.svelte'
@@ -315,9 +315,9 @@
 
   function freeMenu(id: number): MenuEntry[] {
     return [
-      { label: 'Abrir nota', icon: BookOpen, onSelect: () => notes.showFree(id) },
+      { label: t('Abrir nota'), icon: BookOpen, onSelect: () => notes.showFree(id) },
       SEP,
-      { label: 'Apagar nota', icon: Trash2, danger: true, onSelect: () => void doc.removeFreeNote(id) },
+      { label: t('Apagar nota'), icon: Trash2, danger: true, onSelect: () => void doc.removeFreeNote(id) },
     ]
   }
 
@@ -475,7 +475,7 @@
   ondblclick={onDblClick}
   oncontextmenu={onContextMenu}
   role="application"
-  aria-label="Mapa mental"
+  aria-label={t('Mapa mental')}
 >
   <canvas bind:this={canvas}></canvas>
   {#each cardNodes as c (c.n.id)}
@@ -502,7 +502,7 @@
       onkeydown={onEditorKey}
       onblur={() => void doc.commitEdit()}
       onpointerdown={(e) => e.stopPropagation()}
-      aria-label="Texto do nó"
+      aria-label={t('Texto do nó')}
     />
   {/if}
 

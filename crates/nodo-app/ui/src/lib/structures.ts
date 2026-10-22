@@ -1,5 +1,8 @@
 // Estruturas de mapa e espaçamentos (os mesmos nomes de nodo_core::STRUCTURES e SPACINGS). O desenho de cada
 // estrutura é um esquema pequeno em SVG, para a escolha ser visual como no XMind.
+//
+// Rótulos e dicas em português: são a chave da tradução, e a tela passa cada um por `t` na hora de mostrar (o `id` é
+// o que fica no arquivo e nunca muda).
 
 export const STRUCTURES = [
   { id: 'mapa', label: 'Mapa', hint: 'Ramos dos dois lados' },

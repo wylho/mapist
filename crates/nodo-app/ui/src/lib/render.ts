@@ -6,6 +6,7 @@
 import type { Snapshot } from './api'
 import type { FlatNode } from './api'
 import { fitText } from './measure'
+import { t } from '@wylho/atrio'
 import { CARD, isCard } from './cardtext'
 import { cardKey, type CardPaint, type Radii } from './domcard'
 import { fontStack, levelFont, uiFont } from './font'
@@ -97,7 +98,7 @@ export function draw(o: DrawOptions) {
     ctx.font = uiFont(14)
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText('Nenhum mapa aberto — use Novo para começar', width / 2, height / 2)
+    ctx.fillText(t('Nenhum mapa aberto — use Novo para começar'), width / 2, height / 2)
     return
   }
 

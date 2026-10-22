@@ -11,7 +11,7 @@
 import type { CardFields, CardView, NodeSize, NoteCard, Snapshot, TabInfo } from './api'
 import { docToMarkdown, markdownToDoc } from './notedoc'
 import { rememberPreviewUrl } from './api'
-import { coverFromMarkdown, hashTags, previewFromMarkdown, type Attachment } from '@wylho/atrio'
+import { coverFromMarkdown, hashTags, i18n, previewFromMarkdown, t, type Attachment } from '@wylho/atrio'
 
 // ── modelo em memória ────────────────────────────────────────────────────
 
@@ -155,11 +155,11 @@ function pushTab() {
 const untouched = () => path === null && !dirty && past.length === 0
 
 function tabList(): TabInfo[] {
-  return tabs.map((t) => {
-    if (t.id === activeTab) return { id: t.id, title: nodes.get(rootId)?.text ?? 'Sem título', path, dirty }
-    const o = JSON.parse(t.state) as { nodes: [number, PNode][]; rootId: number; dirty: boolean; path: string | null }
+  return tabs.map((tab) => {
+    if (tab.id === activeTab) return { id: tab.id, title: nodes.get(rootId)?.text ?? t('Sem título'), path, dirty }
+    const o = JSON.parse(tab.state) as { nodes: [number, PNode][]; rootId: number; dirty: boolean; path: string | null }
     const root = o.nodes.find(([id]) => id === o.rootId)?.[1]
-    return { id: t.id, title: root?.text ?? 'Sem título', path: o.path, dirty: o.dirty }
+    return { id: tab.id, title: root?.text ?? t('Sem título'), path: o.path, dirty: o.dirty }
   })
 }
 
@@ -184,7 +184,7 @@ function mapSnapshot(): Omit<Snapshot, 'tabs' | 'active'> {
       notes: [],
       dirty,
       path,
-      title: 'Sem título',
+      title: t('Sem título'),
       can_undo: past.length > 0,
       can_redo: future.length > 0,
       stale: false,
@@ -245,7 +245,7 @@ function mapSnapshot(): Omit<Snapshot, 'tabs' | 'active'> {
     notes: freeNotes.map((f) => ({ ...f, card: { ...f.card }, view: viewOf(f.text) })),
     dirty,
     path,
-    title: nodes.get(rootId)?.text ?? 'Sem título',
+    title: nodes.get(rootId)?.text ?? t('Sem título'),
     can_undo: past.length > 0,
     can_redo: future.length > 0,
     stale: false,
@@ -520,7 +520,59 @@ function commit(fn: () => void, relayoutAfter = true) {
 
 // ── dados iniciais: um mapa de exemplo, para o preview ter o que mostrar ──
 
-/** Começa o preview: uma aba só, com o mapa de exemplo. */
+type Branch = [text: string, children: string[]]
+
+/**
+ * O mapa de exemplo, nos dois idiomas (o da interface na hora de começar a prévia): a mesma estrutura, os mesmos
+ * cards e a mesma nota solta. Tudo inventado (o repositório é público). Os ramos vão na ordem de `fillDemo`: o segundo
+ * filho do Design ganha `designSystem`, e os três últimos ramos ficam à esquerda.
+ */
+export const DEMO = {
+  pt: {
+    file: 'exemplo.nodo',
+    root: 'Lançamento do app',
+    rootNote: 'Plano do trimestre. **Responsável:** time de produto.',
+    branches: [
+      ['Descoberta', ['Entrevistas', 'Análise de mercado']],
+      ['Design', ['Wireframes', 'Design system']],
+      ['Construção', ['Núcleo', 'Layout', 'Servidor MCP', 'Janela']],
+      ['Lançamento', ['Beta', 'Documentação', 'Versão 1.0']],
+      ['Divulgação', ['Site', 'Vídeo curto', 'Comunidade']],
+      ['Pesquisa', ['Concorrentes', 'Artigos']],
+    ] as Branch[],
+    designSystem: ['Cores', 'Componentes'],
+    mcpNote: 'Dezessete ferramentas, o mesmo desfazer da janela.',
+    discoveryNote: '- 12 entrevistas com quem já usa mapas\n- Dor nº 1: **exportar para slides**',
+    buildNote: '- [x] Núcleo\n- [x] Layout\n- [ ] Servidor MCP\n- [ ] Janela',
+    researchTag: 'pesquisa',
+    betaNote: 'Convidar 30 pessoas da lista de espera. #convites',
+    freeTitle: 'Ideias soltas',
+    freeText: '- [ ] Pedir feedback da beta\n- [ ] Ver preço do domínio\n\nAnotar tudo antes da reunião. #reuniao',
+  },
+  en: {
+    file: 'example.nodo',
+    root: 'App launch',
+    rootNote: 'Plan for the quarter. **Owner:** product team.',
+    branches: [
+      ['Discovery', ['Interviews', 'Market analysis']],
+      ['Design', ['Wireframes', 'Design system']],
+      ['Build', ['Core', 'Layout', 'MCP server', 'Window']],
+      ['Launch', ['Beta', 'Documentation', 'Version 1.0']],
+      ['Outreach', ['Website', 'Short video', 'Community']],
+      ['Research', ['Competitors', 'Articles']],
+    ] as Branch[],
+    designSystem: ['Colors', 'Components'],
+    mcpNote: 'Seventeen tools, the same undo as the window.',
+    discoveryNote: '- 12 interviews with people who already use mind maps\n- Top pain point: **exporting to slides**',
+    buildNote: '- [x] Core\n- [x] Layout\n- [ ] MCP server\n- [ ] Window',
+    researchTag: 'research',
+    betaNote: 'Invite 30 people from the waiting list. #invites',
+    freeTitle: 'Loose ideas',
+    freeText: '- [ ] Ask for beta feedback\n- [ ] Check the domain price\n\nWrite everything down before the meeting. #meeting',
+  },
+}
+
+/** Começa o preview: uma aba só, com o mapa de exemplo (no idioma da interface). */
 export function seedDemo() {
   tabs = []
   activeTab = null
@@ -534,50 +586,46 @@ function fillDemo() {
   past.length = 0
   future.length = 0
   dirty = false
-  path = 'exemplo.nodo'
+  const x = DEMO[i18n.locale === 'en' ? 'en' : 'pt']
+  path = x.file
   style = null
   freeNotes = []
 
   // Um mapa inventado (o repositório é público): o lançamento de um app fictício, com ramos dos dois lados.
-  const root = makeNode('Lançamento do app', 'right', 'Plano do trimestre. **Responsável:** time de produto.')
+  const root = makeNode(x.root, 'right', x.rootNote)
   rootId = root.id
   root.parent = null
   nodes.set(root.id, root)
 
-  const branch = (parent: PNode, text: string, token: string, children: string[] = [], side = parent.side) => {
+  const branch = (parent: PNode, text: string, children: string[] = [], side = parent.side) => {
     // Sem cor fixa: quem pinta os ramos é o tema do mapa (a cor escolhida à mão continua valendo por cima).
-    void token
     const n = makeNode(text, side, '', null)
     n.parent = parent.id
     parent.children.push(n.id)
     nodes.set(n.id, n)
-    for (const c of children) branch(n, c, token)
+    for (const c of children) branch(n, c)
     return n
   }
 
-  branch(root, 'Descoberta', '#6eb0f7', ['Entrevistas', 'Análise de mercado'])
-  const design = branch(root, 'Design', '#b28ee6', ['Wireframes', 'Design system'])
-  const ds = nodes.get(design.children[1])!
-  branch(ds, 'Cores', '#b28ee6')
-  branch(ds, 'Componentes', '#b28ee6')
-  const build = branch(root, 'Construção', '#7fbf7f', ['Núcleo', 'Layout', 'Servidor MCP', 'Janela'])
-  branch(root, 'Lançamento', '#e8c547', ['Beta', 'Documentação', 'Versão 1.0'], 'left')
-  branch(root, 'Divulgação', '#f0a36b', ['Site', 'Vídeo curto', 'Comunidade'], 'left')
-  branch(root, 'Pesquisa', '#e5818d', ['Concorrentes', 'Artigos'], 'left')
+  const [discovery, design, build, launch, outreach, research] = x.branches
+  const found = branch(root, ...discovery)
+  const ds = nodes.get(branch(root, ...design).children[1])!
+  for (const c of x.designSystem) branch(ds, c)
+  const core = branch(root, ...build)
+  const ship = branch(root, ...launch, 'left')
+  branch(root, ...outreach, 'left')
+  const last = branch(root, ...research, 'left')
 
   // Notas (os nós com nota viram card) e um ramo recolhido, para os marcadores aparecerem.
-  nodes.get(build.children[2])!.note = 'Dezessete ferramentas, o mesmo desfazer da janela.'
-  nodes.get(root.children[0])!.note = '- 12 entrevistas com quem já usa mapas\n- Dor nº 1: **exportar para slides**'
-  build.note = '- [x] Núcleo\n- [x] Layout\n- [ ] Servidor MCP\n- [ ] Janela'
-  build.card = { tags: ['mvp'], emoji: '🛠️', status_on: true, reminder_doing: true }
-  nodes.get(root.children[0])!.card = { emoji: '🔎', tags: ['pesquisa'] }
-  const launch = root.children.map((c) => nodes.get(c)!).find((n) => n.text === 'Lançamento')
-  if (launch) {
-    const beta = nodes.get(launch.children[0])!
-    beta.note = 'Convidar 30 pessoas da lista de espera. #convites'
-    beta.card = { reminder_at: Date.now() + 2 * 86_400_000, tags: ['beta'] }
-  }
-  nodes.get(root.children[root.children.length - 1])!.folded = true
+  nodes.get(core.children[2])!.note = x.mcpNote
+  found.note = x.discoveryNote
+  core.note = x.buildNote
+  core.card = { tags: ['mvp'], emoji: '🛠️', status_on: true, reminder_doing: true }
+  found.card = { emoji: '🔎', tags: [x.researchTag] }
+  const beta = nodes.get(ship.children[0])!
+  beta.note = x.betaNote
+  beta.card = { reminder_at: Date.now() + 2 * 86_400_000, tags: ['beta'] }
+  last.folded = true
 
   relayout()
   // Uma nota solta (o card padrão, sem ramo), no vão embaixo da raiz.
@@ -585,12 +633,13 @@ function fillDemo() {
   freeNotes = [
     {
       id: 1,
-      x: Math.round(r.x - 10),
+      // No meio do vão entre os ramos da esquerda e o card da Construção (a largura do vão muda com o idioma).
+      x: Math.round((Math.max(...[ship, last].map((n) => n.x + n.width)) + core.x - 240) / 2),
       y: Math.round(r.y + r.height + 150),
       width: 240,
       height: 150,
-      title: 'Ideias soltas',
-      text: '- [ ] Pedir feedback da beta\n- [ ] Ver preço do domínio\n\nAnotar tudo antes da reunião. #reuniao',
+      title: x.freeTitle,
+      text: x.freeText,
       color: 'lilac',
       card: { emoji: '💡' },
     },
@@ -609,7 +658,7 @@ export const previewBackend = {
     past.length = 0
     future.length = 0
     freeNotes = []
-    const root = makeNode(title || 'Tópico central')
+    const root = makeNode(title || t('Tópico central'))
     rootId = root.id
     nodes.set(root.id, root)
     dirty = false

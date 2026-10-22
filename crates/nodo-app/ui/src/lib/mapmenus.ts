@@ -28,7 +28,7 @@ import {
 } from '@lucide/svelte'
 import { SPACINGS, STRUCTURES, spacingOf, structureOf } from './structures'
 import type { MenuEntry } from '@wylho/atrio'
-import { SEP } from '@wylho/atrio'
+import { SEP, t } from '@wylho/atrio'
 import { doc } from './document.svelte'
 import { ui } from './ui.svelte'
 import { prefs } from './prefs.svelte'
@@ -66,19 +66,19 @@ function tokenColor(token: string): string {
 /** Copiar o nó como card do Atrio e colar um card (do Ideario ou de outro nó) como filho. */
 function clipItems(withCopy: boolean): MenuEntry[] {
   const paste: MenuEntry = {
-    label: 'Colar card',
+    label: t('Colar card'),
     icon: ClipboardPaste,
     hint: `${mod}V`,
     onSelect: async () => {
       const card = await readClipboardCard()
       if (card) await doc.pasteCard(card)
-      else ui.say('Nenhum card copiado. No Ideario, copie a nota com ⌘C')
+      else ui.say(t('Nenhum card copiado. No Ideario, copie a nota com {tecla}', { tecla: `${mod}C` }))
     },
   }
   if (!withCopy) return [paste]
   return [
     {
-      label: 'Copiar como card',
+      label: t('Copiar como card'),
       icon: Copy,
       hint: `${mod}C`,
       onSelect: async () => {
@@ -86,9 +86,9 @@ function clipItems(withCopy: boolean): MenuEntry[] {
         if (!card) return
         try {
           await writeCard(card)
-          ui.say('Copiado como card')
+          ui.say(t('Copiado como card'))
         } catch {
-          ui.say('Não foi possível copiar')
+          ui.say(t('Não foi possível copiar'))
         }
       },
     },
@@ -108,41 +108,41 @@ export function nodeMenu(id: number, view: ViewActions): MenuEntry[] {
   const canDown = siblings.slice(pos + 1).some(sameSide)
 
   const items: MenuEntry[] = [
-    { label: 'Editar texto', icon: Pencil, hint: 'Espaço', onSelect: () => doc.startEdit() },
-    { label: 'Adicionar filho', icon: Plus, hint: 'Tab', onSelect: () => void doc.addChild() },
+    { label: t('Editar texto'), icon: Pencil, hint: t('Espaço'), onSelect: () => doc.startEdit() },
+    { label: t('Adicionar filho'), icon: Plus, hint: 'Tab', onSelect: () => void doc.addChild() },
   ]
   items.splice(
     1,
     0,
-    { label: 'Abrir card', icon: StickyNote, hint: `${mod}↵`, onSelect: () => notes.show(id, !n.note.trim()) },
+    { label: t('Abrir card'), icon: StickyNote, hint: `${mod}↵`, onSelect: () => notes.show(id, !n.note.trim()) },
   )
-  if (!isRoot) items.push({ label: 'Adicionar irmão', icon: CornerDownRight, hint: 'Enter', onSelect: () => void doc.addSibling() })
+  if (!isRoot) items.push({ label: t('Adicionar irmão'), icon: CornerDownRight, hint: 'Enter', onSelect: () => void doc.addSibling() })
   items.push(SEP)
   items.push({
-    label: 'Cor do ramo',
+    label: t('Cor do ramo'),
     icon: Palette,
     sub: [
-      { label: 'Sem cor', checked: !n.color, onSelect: () => void doc.setColor(id, null) },
+      { label: t('Sem cor'), checked: !n.color, onSelect: () => void doc.setColor(id, null) },
       SEP,
       ...COLORS.map(([token, name]): MenuEntry => {
         const value = resolveNodeColor(token, theme.colors)
-        return { label: name, swatch: tokenColor(token), checked: n.color === value, onSelect: () => void doc.setColor(id, value) }
+        return { label: t(name), swatch: tokenColor(token), checked: n.color === value, onSelect: () => void doc.setColor(id, value) }
       }),
     ],
   })
   if (n.depth === 1) {
     items.push({
-      label: 'Lado do ramo',
+      label: t('Lado do ramo'),
       icon: n.side === 'left' ? PanelLeft : PanelRight,
       sub: [
-        { label: 'Esquerda', icon: PanelLeft, checked: n.side === 'left', onSelect: () => void doc.setSide(id, 'left') },
-        { label: 'Direita', icon: PanelRight, checked: n.side !== 'left', onSelect: () => void doc.setSide(id, 'right') },
+        { label: t('Esquerda'), icon: PanelLeft, checked: n.side === 'left', onSelect: () => void doc.setSide(id, 'left') },
+        { label: t('Direita'), icon: PanelRight, checked: n.side !== 'left', onSelect: () => void doc.setSide(id, 'right') },
       ],
     })
   }
   if (n.has_children) {
     items.push({
-      label: n.folded ? 'Expandir ramo' : 'Recolher ramo',
+      label: n.folded ? t('Expandir ramo') : t('Recolher ramo'),
       icon: n.folded ? ChevronsUpDown : ChevronsDownUp,
       hint: `${mod}/`,
       onSelect: () => void doc.toggleFold(),
@@ -150,14 +150,14 @@ export function nodeMenu(id: number, view: ViewActions): MenuEntry[] {
   }
   if (!isRoot) {
     items.push(
-      { label: 'Subir', icon: ArrowUp, hint: `${alt}↑`, disabled: !canUp, onSelect: () => void doc.reorder(-1) },
-      { label: 'Descer', icon: ArrowDown, hint: `${alt}↓`, disabled: !canDown, onSelect: () => void doc.reorder(1) },
+      { label: t('Subir'), icon: ArrowUp, hint: `${alt}↑`, disabled: !canUp, onSelect: () => void doc.reorder(-1) },
+      { label: t('Descer'), icon: ArrowDown, hint: `${alt}↓`, disabled: !canDown, onSelect: () => void doc.reorder(1) },
     )
   }
-  items.push({ label: 'Enquadrar este ramo', icon: Focus, hint: '⇧2', onSelect: view.fitSelection })
+  items.push({ label: t('Enquadrar este ramo'), icon: Focus, hint: '⇧2', onSelect: view.fitSelection })
   items.push(SEP, ...clipItems(true))
   if (!isRoot) {
-    items.push(SEP, { label: 'Excluir', icon: Trash2, hint: 'Delete', danger: true, onSelect: () => void doc.remove() })
+    items.push(SEP, { label: t('Excluir'), icon: Trash2, hint: 'Delete', danger: true, onSelect: () => void doc.remove() })
   }
   return items
 }
@@ -165,47 +165,47 @@ export function nodeMenu(id: number, view: ViewActions): MenuEntry[] {
 /** Menu do fundo do mapa: ver, zoom, aparência e histórico. */
 export function backgroundMenu(view: ViewActions, at: { x: number; y: number }): MenuEntry[] {
   return [
-    { label: 'Nova nota aqui', icon: StickyNote, onSelect: () => view.addNoteAt(at.x, at.y) },
+    { label: t('Nova nota aqui'), icon: StickyNote, onSelect: () => view.addNoteAt(at.x, at.y) },
     ...clipItems(false),
     SEP,
-    { label: 'Ver o mapa inteiro', icon: Maximize, hint: '⇧1', onSelect: view.fit },
-    { label: 'Tamanho real', icon: ZoomIn, hint: `${mod}0`, onSelect: view.actualSize },
+    { label: t('Ver o mapa inteiro'), icon: Maximize, hint: '⇧1', onSelect: view.fit },
+    { label: t('Tamanho real'), icon: ZoomIn, hint: `${mod}0`, onSelect: view.actualSize },
     SEP,
     {
-      label: 'Estrutura',
+      label: t('Estrutura'),
       icon: Network,
       sub: [
         ...STRUCTURES.map((st): MenuEntry => ({
-          label: st.label,
-          hint: st.hint,
+          label: t(st.label),
+          hint: t(st.hint),
           checked: structureOf(doc.snapshot.structure) === st.id,
           onSelect: () => void doc.setStructure(st.id),
         })),
         SEP,
         ...SPACINGS.map((sp): MenuEntry => ({
-          label: `Espaçamento ${sp.label.toLowerCase()}`,
+          label: t('Espaçamento {nome}', { nome: t(sp.label).toLowerCase() }),
           checked: spacingOf(doc.snapshot.spacing) === sp.id,
           onSelect: () => void doc.setSpacing(sp.id),
         })),
       ],
     },
-    { label: 'Arrumar posições', icon: WandSparkles, onSelect: () => void doc.relayout() },
-    { label: 'Tema do mapa…', icon: Palette, onSelect: () => (ui.themeOpen = true) },
-    { label: 'Exportar…', icon: Share, hint: `${mod}⇧E`, onSelect: () => (ui.exportOpen = true) },
+    { label: t('Arrumar posições'), icon: WandSparkles, onSelect: () => void doc.relayout() },
+    { label: t('Tema do mapa…'), icon: Palette, onSelect: () => (ui.themeOpen = true) },
+    { label: t('Exportar…'), icon: Share, hint: `${mod}⇧E`, onSelect: () => (ui.exportOpen = true) },
     {
-      label: 'Linhas',
+      label: t('Linhas'),
       icon: Spline,
       sub: [
-        { label: 'Curvas', checked: prefs.linkStyle === 'curved', onSelect: () => prefs.setLinkStyle('curved') },
-        { label: 'Em ângulo', checked: prefs.linkStyle === 'orthogonal', onSelect: () => prefs.setLinkStyle('orthogonal') },
+        { label: t('Curvas'), checked: prefs.linkStyle === 'curved', onSelect: () => prefs.setLinkStyle('curved') },
+        { label: t('Em ângulo'), checked: prefs.linkStyle === 'orthogonal', onSelect: () => prefs.setLinkStyle('orthogonal') },
       ],
     },
-    { label: 'Buscar no mapa', icon: Search, hint: `${mod}F`, onSelect: () => {
+    { label: t('Buscar no mapa'), icon: Search, hint: `${mod}F`, onSelect: () => {
       ui.searchOpen = true
       requestAnimationFrame(() => document.getElementById('busca')?.focus())
     } },
     SEP,
-    { label: 'Desfazer', icon: Undo2, hint: `${mod}Z`, disabled: !doc.snapshot.can_undo, onSelect: () => void doc.undo() },
-    { label: 'Refazer', icon: Redo2, hint: `${mod}⇧Z`, disabled: !doc.snapshot.can_redo, onSelect: () => void doc.redo() },
+    { label: t('Desfazer'), icon: Undo2, hint: `${mod}Z`, disabled: !doc.snapshot.can_undo, onSelect: () => void doc.undo() },
+    { label: t('Refazer'), icon: Redo2, hint: `${mod}⇧Z`, disabled: !doc.snapshot.can_redo, onSelect: () => void doc.redo() },
   ]
 }

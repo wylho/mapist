@@ -1,6 +1,8 @@
 import '@wylho/atrio/atrio.css'
 import './map.css'
 import { mount } from 'svelte'
+import { addMessages } from '@wylho/atrio'
+import { EN } from './lib/i18n/en'
 import './lib/theme.svelte' // instancia o tema e aplica as variáveis antes da primeira pintura
 import App from './App.svelte'
 
@@ -10,6 +12,9 @@ document.addEventListener('contextmenu', (e) => {
   if ((e.target as Element).closest?.('input, textarea, [contenteditable="true"]')) return
   e.preventDefault()
 })
+
+// Inglês da interface (o português é o próprio texto do código), antes de montar: a primeira pintura já sai no idioma.
+addMessages('en', EN)
 
 const target = document.getElementById('app')
 if (!target) throw new Error('#app não encontrado no documento')

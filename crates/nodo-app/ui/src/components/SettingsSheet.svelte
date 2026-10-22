@@ -10,7 +10,7 @@
   import { theme, type ThemePref } from '../lib/theme.svelte'
   import { DESKTOPS, PALETTES, paletteColors, type DesktopId, type PaletteId } from '../lib/palettes'
   import type { LinkStyle } from '../lib/render'
-  import { Picker } from '@wylho/atrio'
+  import { i18n, LOCALES, Picker, setLocale, t, type LocalePref } from '@wylho/atrio'
   import { updates } from '../lib/updates.svelte'
 
   // Sistema primeiro: é o padrão e faz o app parecer nativo.
@@ -18,7 +18,7 @@
     { id: 'system', label: 'Sistema', hint: '' },
     ...Object.entries(PALETTES).map(([id, p]) => ({ id: id as PaletteId, label: p.label, hint: p.hint })),
   ]
-  const systemName = $derived(`Cores do ${DESKTOPS[theme.simDesktop].label}`)
+  const systemName = $derived(t('Cores do {sistema}', { sistema: DESKTOPS[theme.simDesktop].label }))
 
   const mod = /Mac/.test(navigator.platform) ? '⌘' : 'Ctrl+'
   const alt = /Mac/.test(navigator.platform) ? '⌥' : 'Alt+'
@@ -29,7 +29,7 @@
   }
 
   async function checkNow() {
-    if (!(await updates.check())) ui.say('Você já tem a versão mais recente.')
+    if (!(await updates.check())) ui.say(t('Você já tem a versão mais recente.'))
   }
 
   // ---------- Claude (MCP) ----------
@@ -42,16 +42,16 @@
     const on = !mcp.desktopInstalled
     try {
       mcp = await (on ? api.mcpInstall() : api.mcpUninstall())
-      ui.say(on ? 'Ligado no Claude Desktop. Se ele estiver aberto, feche e abra de novo.' : 'Desligado do Claude Desktop.')
+      ui.say(on ? t('Ligado no Claude Desktop. Se ele estiver aberto, feche e abra de novo.') : t('Desligado do Claude Desktop.'))
     } catch (e) {
-      ui.say(`Não foi possível: ${e instanceof Error ? e.message : e}`)
+      ui.say(t('Não foi possível: {erro}', { erro: String(e instanceof Error ? e.message : e) }))
     }
   }
   async function copyCommand() {
     if (!mcp) return
     try {
       await navigator.clipboard.writeText(mcp.claudeCode)
-      ui.say('Comando copiado. Cole no terminal.')
+      ui.say(t('Comando copiado. Cole no terminal.'))
     } catch {
       ui.say(mcp.claudeCode)
     }
@@ -63,16 +63,16 @@
     <Dialog.Overlay class="overlay" />
     <Dialog.Content class="sheet" aria-describedby={undefined}>
       <div class="sheet-head">
-        <Dialog.Title class="sheet-title">Configurações</Dialog.Title>
-        <Dialog.Close class="icon-btn" aria-label="Fechar"><X size={20} /></Dialog.Close>
+        <Dialog.Title class="sheet-title">{t('Configurações')}</Dialog.Title>
+        <Dialog.Close class="icon-btn" aria-label={t('Fechar')}><X size={20} /></Dialog.Close>
       </div>
       <div class="sheet-scroll">
         <section class="set-group">
-          <h3>Aparência</h3>
-          <div class="theme-grid" role="radiogroup" aria-label="Tema">
-            {#each THEMES as t (t.id)}
-              {@const c = paletteColors(t.id, theme.mode, theme.simDesktop, theme.systemAccent)}
-              <button class="theme-tile" role="radio" aria-checked={theme.palette === t.id} onclick={() => theme.setPalette(t.id)}>
+          <h3>{t('Aparência')}</h3>
+          <div class="theme-grid" role="radiogroup" aria-label={t('Tema')}>
+            {#each THEMES as th (th.id)}
+              {@const c = paletteColors(th.id, theme.mode, theme.simDesktop, theme.systemAccent)}
+              <button class="theme-tile" role="radio" aria-checked={theme.palette === th.id} onclick={() => theme.setPalette(th.id)}>
                 <span class="theme-swatch" style:background={c.bg} aria-hidden="true">
                   <span class="theme-card" style:background={c.surface} style:border-color={c.line}>
                     <i style:background={c.fg}></i><i style:background={c.muted}></i>
@@ -81,14 +81,14 @@
                     <i style:background={c.accent}></i>{#each c.notes.slice(0, 3) as n (n)}<i style:background={n}></i>{/each}
                   </span>
                 </span>
-                <span class="theme-name">{t.label}</span>
-                <small>{t.id === 'system' ? systemName : t.hint}</small>
+                <span class="theme-name">{t(th.label)}</span>
+                <small>{th.id === 'system' ? systemName : t(th.hint)}</small>
               </button>
             {/each}
           </div>
           {#if theme.palette === 'system' && !hasHost}
             <div class="set-row">
-              <span><b>Prévia do sistema</b><small>Só no navegador. No app, as cores vêm da área de trabalho.</small></span>
+              <span><b>{t('Prévia do sistema')}</b><small>{t('Só no navegador. No app, as cores vêm da área de trabalho.')}</small></span>
               <Picker
                 id="sistema"
                 bind:value={() => theme.simDesktop, (v) => theme.setSimDesktop(v)}
@@ -97,34 +97,46 @@
             </div>
           {/if}
           <div class="set-row">
-            <span><b>Claro ou escuro</b></span>
+            <span><b>{t('Claro ou escuro')}</b></span>
             <ToggleGroup.Root
               type="single"
               value={theme.pref}
               onValueChange={(v) => v && theme.set(v as ThemePref)}
               class="seg tight"
-              aria-label="Claro ou escuro"
+              aria-label={t('Claro ou escuro')}
             >
-              <ToggleGroup.Item value="light" class="seg-item"><Sun size={15} />Claro</ToggleGroup.Item>
-              <ToggleGroup.Item value="dark" class="seg-item"><Moon size={15} />Escuro</ToggleGroup.Item>
-              <ToggleGroup.Item value="system" class="seg-item"><Monitor size={15} />Automático</ToggleGroup.Item>
+              <ToggleGroup.Item value="light" class="seg-item"><Sun size={15} />{t('Claro')}</ToggleGroup.Item>
+              <ToggleGroup.Item value="dark" class="seg-item"><Moon size={15} />{t('Escuro')}</ToggleGroup.Item>
+              <ToggleGroup.Item value="system" class="seg-item"><Monitor size={15} />{t('Automático')}</ToggleGroup.Item>
+            </ToggleGroup.Root>
+          </div>
+          <div class="set-row">
+            <span><b>{t('Idioma')}</b><small>{t('Automático segue o idioma do sistema.')}</small></span>
+            <ToggleGroup.Root
+              type="single"
+              value={i18n.pref}
+              onValueChange={(v) => v && setLocale(v as LocalePref)}
+              class="seg tight"
+              aria-label={t('Idioma')}
+            >
+              {#each LOCALES as l (l.id)}<ToggleGroup.Item value={l.id} class="seg-item">{t(l.label)}</ToggleGroup.Item>{/each}
             </ToggleGroup.Root>
           </div>
         </section>
 
         <section class="set-group">
-          <h3>Mapa</h3>
+          <h3>{t('Mapa')}</h3>
           <div class="set-row">
-            <span><b>Linhas</b><small>Como os ramos ligam um nó ao outro.</small></span>
+            <span><b>{t('Linhas')}</b><small>{t('Como os ramos ligam um nó ao outro.')}</small></span>
             <ToggleGroup.Root
               type="single"
               value={prefs.linkStyle}
               onValueChange={(v) => v && prefs.setLinkStyle(v as LinkStyle)}
               class="seg tight"
-              aria-label="Traçado das linhas"
+              aria-label={t('Traçado das linhas')}
             >
-              <ToggleGroup.Item value="curved" class="seg-item">Curvas</ToggleGroup.Item>
-              <ToggleGroup.Item value="orthogonal" class="seg-item">Em ângulo</ToggleGroup.Item>
+              <ToggleGroup.Item value="curved" class="seg-item">{t('Curvas')}</ToggleGroup.Item>
+              <ToggleGroup.Item value="orthogonal" class="seg-item">{t('Em ângulo')}</ToggleGroup.Item>
             </ToggleGroup.Root>
           </div>
         </section>
@@ -136,77 +148,77 @@
               <span>
                 <b>Claude Desktop</b>
                 <small>{mcp.desktopInstalled
-                  ? 'Ligado: no Claude, peça para ler, criar e reorganizar seus mapas. Tudo continua no seu computador.'
+                  ? t('Ligado: no Claude, peça para ler, criar e reorganizar seus mapas. Tudo continua no seu computador.')
                   : mcp.desktopFound
-                    ? 'Deixa o Claude ler, criar e reorganizar seus mapas, pelo mesmo núcleo do app e com o mesmo desfazer. Tudo continua no seu computador.'
-                    : 'O Claude Desktop não foi encontrado neste computador. Dá para ligar mesmo assim (vale quando ele for instalado).'}</small>
+                    ? t('Deixa o Claude ler, criar e reorganizar seus mapas, pelo mesmo núcleo do app e com o mesmo desfazer. Tudo continua no seu computador.')
+                    : t('O Claude Desktop não foi encontrado neste computador. Dá para ligar mesmo assim (vale quando ele for instalado).')}</small>
               </span>
-              <button class="btn {mcp.desktopInstalled ? 'ghost' : 'primary'}" onclick={mcpToggle}>{mcp.desktopInstalled ? 'Desligar' : 'Ligar'}</button>
+              <button class="btn {mcp.desktopInstalled ? 'ghost' : 'primary'}" onclick={mcpToggle}>{mcp.desktopInstalled ? t('Desligar') : t('Ligar')}</button>
             </div>
             <div class="set-row mcp-code">
               <span>
                 <b>Claude Code</b>
-                <small>Rode uma vez no terminal:</small>
+                <small>{t('Rode uma vez no terminal:')}</small>
                 <code>{mcp.claudeCode}</code>
               </span>
-              <button class="icon-btn" aria-label="Copiar comando" title="Copiar" onclick={copyCommand}><Copy size={18} /></button>
+              <button class="icon-btn" aria-label={t('Copiar comando')} title={t('Copiar')} onclick={copyCommand}><Copy size={18} /></button>
             </div>
           </section>
         {/if}
 
         <section class="set-group">
-          <h3>Atalhos</h3>
-            <span class="keys-head">Escrever</span>
+          <h3>{t('Atalhos')}</h3>
+            <span class="keys-head">{t('Escrever')}</span>
             <div class="keys">
-              <div class="keys-row"><span>Escrever no nó</span><kbd>digite</kbd></div>
-              <div class="keys-row"><span>Editar o texto</span><kbd>Espaço ou F2</kbd></div>
-              <div class="keys-row"><span>Adicionar filho</span><kbd>Tab</kbd></div>
-              <div class="keys-row"><span>Adicionar irmão</span><kbd>Enter</kbd></div>
-              <div class="keys-row"><span>Confirmar e criar o próximo</span><kbd>Tab (editando)</kbd></div>
-              <div class="keys-row"><span>Cancelar a edição</span><kbd>Esc</kbd></div>
-              <div class="keys-row"><span>Abrir o card do tópico</span><kbd>{mod}Enter</kbd></div>
+              <div class="keys-row"><span>{t('Escrever no nó')}</span><kbd>{t('digite')}</kbd></div>
+              <div class="keys-row"><span>{t('Editar o texto')}</span><kbd>{t('Espaço ou F2')}</kbd></div>
+              <div class="keys-row"><span>{t('Adicionar filho')}</span><kbd>Tab</kbd></div>
+              <div class="keys-row"><span>{t('Adicionar irmão')}</span><kbd>Enter</kbd></div>
+              <div class="keys-row"><span>{t('Confirmar e criar o próximo')}</span><kbd>{t('Tab (editando)')}</kbd></div>
+              <div class="keys-row"><span>{t('Cancelar a edição')}</span><kbd>Esc</kbd></div>
+              <div class="keys-row"><span>{t('Abrir o card do tópico')}</span><kbd>{mod}Enter</kbd></div>
             </div>
-            <span class="keys-head">Organizar</span>
+            <span class="keys-head">{t('Organizar')}</span>
             <div class="keys">
-              <div class="keys-row"><span>Andar pelo mapa</span><kbd>← ↑ → ↓</kbd></div>
-              <div class="keys-row"><span>Subir ou descer entre irmãos</span><kbd>{alt}↑ {alt}↓</kbd></div>
-              <div class="keys-row"><span>Ir para a raiz</span><kbd>Home</kbd></div>
-              <div class="keys-row"><span>Recolher ou expandir</span><kbd>{mod}/</kbd></div>
-              <div class="keys-row"><span>Excluir</span><kbd>Delete</kbd></div>
-              <div class="keys-row"><span>Menu do nó</span><kbd>⇧F10</kbd></div>
+              <div class="keys-row"><span>{t('Andar pelo mapa')}</span><kbd>← ↑ → ↓</kbd></div>
+              <div class="keys-row"><span>{t('Subir ou descer entre irmãos')}</span><kbd>{alt}↑ {alt}↓</kbd></div>
+              <div class="keys-row"><span>{t('Ir para a raiz')}</span><kbd>Home</kbd></div>
+              <div class="keys-row"><span>{t('Recolher ou expandir')}</span><kbd>{mod}/</kbd></div>
+              <div class="keys-row"><span>{t('Excluir')}</span><kbd>Delete</kbd></div>
+              <div class="keys-row"><span>{t('Menu do nó')}</span><kbd>⇧F10</kbd></div>
             </div>
-            <span class="keys-head">Ver</span>
+            <span class="keys-head">{t('Ver')}</span>
             <div class="keys">
-              <div class="keys-row"><span>Ver o mapa inteiro</span><kbd>⇧1</kbd></div>
-              <div class="keys-row"><span>Enquadrar a seleção</span><kbd>⇧2</kbd></div>
-              <div class="keys-row"><span>Tamanho real (100%)</span><kbd>{mod}0</kbd></div>
-              <div class="keys-row"><span>Aproximar ou afastar</span><kbd>{mod}= {mod}-</kbd></div>
-              <div class="keys-row"><span>Buscar</span><kbd>{mod}F</kbd></div>
+              <div class="keys-row"><span>{t('Ver o mapa inteiro')}</span><kbd>⇧1</kbd></div>
+              <div class="keys-row"><span>{t('Enquadrar a seleção')}</span><kbd>⇧2</kbd></div>
+              <div class="keys-row"><span>{t('Tamanho real (100%)')}</span><kbd>{mod}0</kbd></div>
+              <div class="keys-row"><span>{t('Aproximar ou afastar')}</span><kbd>{mod}= {mod}-</kbd></div>
+              <div class="keys-row"><span>{t('Buscar')}</span><kbd>{mod}F</kbd></div>
             </div>
-            <span class="keys-head">Arquivo</span>
+            <span class="keys-head">{t('Arquivo')}</span>
             <div class="keys">
-              <div class="keys-row"><span>Novo mapa (aba nova)</span><kbd>{mod}N ou {mod}T</kbd></div>
-              <div class="keys-row"><span>Fechar a aba</span><kbd>{mod}W</kbd></div>
-              <div class="keys-row"><span>Próxima aba ou anterior</span><kbd>Ctrl+Tab Ctrl+⇧Tab</kbd></div>
-              <div class="keys-row"><span>Abrir</span><kbd>{mod}O</kbd></div>
-              <div class="keys-row"><span>Salvar</span><kbd>{mod}S</kbd></div>
-              <div class="keys-row"><span>Salvar como</span><kbd>{mod}⇧S</kbd></div>
-              <div class="keys-row"><span>Exportar</span><kbd>{mod}⇧E</kbd></div>
-              <div class="keys-row"><span>Desfazer</span><kbd>{mod}Z</kbd></div>
-              <div class="keys-row"><span>Refazer</span><kbd>{mod}⇧Z</kbd></div>
-              <div class="keys-row"><span>Configurações</span><kbd>{mod},</kbd></div>
+              <div class="keys-row"><span>{t('Novo mapa (aba nova)')}</span><kbd>{t('{a} ou {b}', { a: `${mod}N`, b: `${mod}T` })}</kbd></div>
+              <div class="keys-row"><span>{t('Fechar a aba')}</span><kbd>{mod}W</kbd></div>
+              <div class="keys-row"><span>{t('Próxima aba ou anterior')}</span><kbd>Ctrl+Tab Ctrl+⇧Tab</kbd></div>
+              <div class="keys-row"><span>{t('Abrir')}</span><kbd>{mod}O</kbd></div>
+              <div class="keys-row"><span>{t('Salvar')}</span><kbd>{mod}S</kbd></div>
+              <div class="keys-row"><span>{t('Salvar como')}</span><kbd>{mod}⇧S</kbd></div>
+              <div class="keys-row"><span>{t('Exportar')}</span><kbd>{mod}⇧E</kbd></div>
+              <div class="keys-row"><span>{t('Desfazer')}</span><kbd>{mod}Z</kbd></div>
+              <div class="keys-row"><span>{t('Refazer')}</span><kbd>{mod}⇧Z</kbd></div>
+              <div class="keys-row"><span>{t('Configurações')}</span><kbd>{mod},</kbd></div>
             </div>
         </section>
 
         <p class="footnote">
-          {isPreview ? 'Prévia no navegador · dados de exemplo' : `Nodo${version ? ` v${version}` : ''}`}
+          {isPreview ? t('Prévia no navegador · dados de exemplo') : `Nodo${version ? ` v${version}` : ''}`}
           {#if updates.info}
             · <button class="link" onclick={() => updates.install()} disabled={updates.phase === 'downloading'}>
-              {updates.phase === 'downloading' ? 'Atualizando…' : `Atualizar para a v${updates.info.version}`}
+              {updates.phase === 'downloading' ? t('Atualizando…') : t('Atualizar para a v{versao}', { versao: updates.info.version })}
             </button>
           {:else if hasHost && updates.supported}
             · <button class="link" onclick={checkNow} disabled={updates.phase === 'checking'}>
-              {updates.phase === 'checking' ? 'Procurando…' : 'Procurar atualizações'}
+              {updates.phase === 'checking' ? t('Procurando…') : t('Procurar atualizações')}
             </button>
           {/if}
         </p>

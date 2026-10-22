@@ -9,6 +9,7 @@ import { measureNode } from './measure'
 import { prefs } from './prefs.svelte'
 import { theme } from './theme.svelte'
 import { SvgContext } from './svgctx'
+import { t } from '@wylho/atrio'
 
 export type ExportFormat = 'png' | 'svg' | 'pdf' | 'markdown' | 'opml'
 export type Orientation = 'auto' | 'portrait' | 'landscape'
@@ -28,6 +29,7 @@ export interface ExportOptions {
   unfold: boolean
 }
 
+// Rótulos em português (a chave da tradução): a tela passa cada um por `t` na hora de mostrar.
 export const FORMATS: { id: ExportFormat; label: string; ext: string; hint: string; mime: string }[] = [
   { id: 'png', label: 'Imagem PNG', ext: 'png', hint: 'Para mensagens, slides e redes', mime: 'image/png' },
   { id: 'svg', label: 'SVG', ext: 'svg', hint: 'Vetor aberto: amplia sem perder e edita no Figma, Inkscape…', mime: 'image/svg+xml' },
@@ -159,7 +161,7 @@ export async function exportBytes(format: ExportFormat, source: Snapshot, o: Exp
   switch (format) {
     case 'png': {
       const blob = await new Promise<Blob | null>((ok) => renderCanvas(s, o.scale, o.background, cards).toBlob(ok, 'image/png'))
-      if (!blob) throw new Error('não foi possível gerar a imagem')
+      if (!blob) throw new Error(t('não foi possível gerar a imagem'))
       return new Uint8Array(await blob.arrayBuffer())
     }
     case 'svg':
@@ -179,7 +181,7 @@ export async function exportTo(format: ExportFormat, s: Snapshot, o: ExportOptio
   const bytes = await exportBytes(format, s, o)
   if (hasHost) {
     const { save } = await import('@tauri-apps/plugin-dialog')
-    const path = await save({ defaultPath: name, filters: [{ name: f.label, extensions: [f.ext] }] })
+    const path = await save({ defaultPath: name, filters: [{ name: t(f.label), extensions: [f.ext] }] })
     if (!path) return null
     await api.writeExport(path, bytes)
     return path

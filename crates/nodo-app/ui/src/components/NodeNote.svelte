@@ -18,6 +18,7 @@
     type TagCount,
   } from '@wylho/atrio'
   import { NoteEditor } from '@wylho/atrio/editor'
+  import { t } from '@wylho/atrio'
   import { AttachmentViewer } from '@wylho/atrio/viewer'
   import { api, attachments, hasHost, isPreview, type CardFields, type FlatNode, type NoteCard } from '../lib/api'
   import { doc, nodeColorOf, noteColorOf } from '../lib/document.svelte'
@@ -221,23 +222,23 @@
       {onbody}
       {autofocus}
       dialogTitle
-      placeholder="Escreva… use #tag para marcar"
+      placeholder={t('Escreva… use #tag para marcar')}
     >
       {#snippet top()}
         <CardTopBar
           {meta}
           {card}
           onback={close}
-          backLabel="Voltar ao mapa"
+          backLabel={t('Voltar ao mapa')}
           {wide}
           docMode={notes.docMode}
           ondoc={() => (notes.docMode = !notes.docMode)}
         >
-          {#snippet label()}{free ? 'Nota' : isRoot ? 'Tópico central' : 'Tópico'}{/snippet}
+          {#snippet label()}{free ? t('Nota') : isRoot ? t('Tópico central') : t('Tópico')}{/snippet}
           {#snippet menuEnd()}
             {#if !isRoot}
               <DropdownMenu.Separator class="menu-sep" />
-              <DropdownMenu.Item class="menu-item danger" onSelect={() => void removeTopic()}><Trash2 size={16} />{free ? 'Apagar nota' : 'Apagar tópico'}</DropdownMenu.Item>
+              <DropdownMenu.Item class="menu-item danger" onSelect={() => void removeTopic()}><Trash2 size={16} />{free ? t('Apagar nota') : t('Apagar tópico')}</DropdownMenu.Item>
             {/if}
           {/snippet}
         </CardTopBar>

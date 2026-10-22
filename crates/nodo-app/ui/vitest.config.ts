@@ -8,5 +8,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: ['tests/**/*.test.ts'],
+    // Os testes falam do mapa de exemplo em português: o idioma fica fixo, seja qual for o do sistema.
+    setupFiles: ['tests/setup.ts'],
   },
 })

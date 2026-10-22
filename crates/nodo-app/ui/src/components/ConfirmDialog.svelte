@@ -1,5 +1,6 @@
 <script lang="ts">
   import { AlertDialog } from 'bits-ui'
+  import { t } from '@wylho/atrio'
   import { ui } from '../lib/ui.svelte'
 
   // Confirmação só para o que não tem volta (o resto usa "Desfazer"). Mesmo componente do Ideario,
@@ -30,12 +31,12 @@
         <!-- Três saídas, como no sistema: descartar à esquerda, longe do Salvar, que é a principal. -->
         <div class="confirm-actions three">
           <button class="btn ghost discard" onclick={() => close(true)}>{req.confirm}</button>
-          <AlertDialog.Cancel class="btn ghost">Cancelar</AlertDialog.Cancel>
+          <AlertDialog.Cancel class="btn ghost">{t('Cancelar')}</AlertDialog.Cancel>
           <AlertDialog.Action class="btn primary" onclick={save}>{req.save}</AlertDialog.Action>
         </div>
       {:else}
         <div class="confirm-actions">
-          <AlertDialog.Cancel class="btn ghost">Cancelar</AlertDialog.Cancel>
+          <AlertDialog.Cancel class="btn ghost">{t('Cancelar')}</AlertDialog.Cancel>
           <AlertDialog.Action class="btn danger" onclick={() => close(true)}>{req?.confirm}</AlertDialog.Action>
         </div>
       {/if}

@@ -6,6 +6,7 @@
   import { WandSparkles, X } from '@lucide/svelte'
   import { SPACINGS, STRUCTURES, sketch, spacingOf, structureOf } from '../lib/structures'
   import { tick } from 'svelte'
+  import { i18n, t } from '@wylho/atrio'
   import { doc } from '../lib/document.svelte'
   import { theme } from '../lib/theme.svelte'
   import { prefs } from '../lib/prefs.svelte'
@@ -23,20 +24,20 @@
 
   /** Um mapa pequeno (raiz, três ramos, dois sub-ramos) posicionado à mão, medido no tema que vai mostrar. */
   function sample(id: MapThemeId): Snapshot {
-    const t = MAP_THEMES[id]
+    const th = MAP_THEMES[id]
     const make = (id: number, text: string, depth: number, parent: number | null): FlatNode => ({
       id, text, note: '', side: 'right', depth, x: 0, y: 0, width: 0, height: 0, color: null, folded: false, card: {},
       child_ids: [], parent, has_children: false,
     })
     const nodes = [
-      make(0, 'Ideia', 0, null),
-      make(1, 'Ramo', 1, 0),
-      make(2, 'Ramo', 1, 0),
-      make(3, 'Ramo', 1, 0),
-      make(4, 'Detalhe', 2, 1),
-      make(5, 'Detalhe', 2, 1),
+      make(0, t('Ideia'), 0, null),
+      make(1, t('Ramo'), 1, 0),
+      make(2, t('Ramo'), 1, 0),
+      make(3, t('Ramo'), 1, 0),
+      make(4, t('Detalhe'), 2, 1),
+      make(5, t('Detalhe'), 2, 1),
     ]
-    for (const n of nodes) Object.assign(n, measureNode(n, t))
+    for (const n of nodes) Object.assign(n, measureNode(n, th))
     const [root, a, b, c, a1, a2] = nodes
     root.x = 0
     root.y = 70 - root.height / 2
@@ -81,6 +82,7 @@
 
   $effect(() => {
     void theme.palette
+    void i18n.locale
     void theme.mode
     void prefs.linkStyle
     if (open) tick().then(() => requestAnimationFrame(paint))
@@ -97,13 +99,13 @@
     <Dialog.Overlay class="overlay" />
     <Dialog.Content class="sheet" aria-describedby={undefined}>
       <div class="sheet-head">
-        <Dialog.Title class="sheet-title">Mapa</Dialog.Title>
-        <Dialog.Close class="icon-btn" aria-label="Fechar"><X size={20} /></Dialog.Close>
+        <Dialog.Title class="sheet-title">{t('Mapa')}</Dialog.Title>
+        <Dialog.Close class="icon-btn" aria-label={t('Fechar')}><X size={20} /></Dialog.Close>
       </div>
       <div class="sheet-scroll">
         <section class="set-group">
-          <h3>Estrutura</h3>
-          <div class="structure-grid" role="radiogroup" aria-label="Estrutura do mapa">
+          <h3>{t('Estrutura')}</h3>
+          <div class="structure-grid" role="radiogroup" aria-label={t('Estrutura do mapa')}>
             {#each STRUCTURES as st (st.id)}
               {@const sk = sketch(st.id)}
               <button class="theme-tile structure-tile" role="radio" aria-checked={structure === st.id}
@@ -112,32 +114,32 @@
                   {#each sk.lines as d (d)}<path {d} />{/each}
                   {#each sk.boxes as [x, y, w, h], i (i)}<rect {x} {y} width={w} height={h} rx="3" class:root={i === 0} />{/each}
                 </svg>
-                <span class="theme-name">{st.label}</span>
-                <small>{st.hint}</small>
+                <span class="theme-name">{t(st.label)}</span>
+                <small>{t(st.hint)}</small>
               </button>
             {/each}
           </div>
           <div class="set-row">
-            <span class="grow"><b>Espaçamento</b><small>Quanto espaço fica entre os nós.</small></span>
-            <ToggleGroup.Root type="single" value={spacing} onValueChange={(v) => v && v !== spacing && doc.setSpacing(v)} class="seg tight" aria-label="Espaçamento">
-              {#each SPACINGS as sp (sp.id)}<ToggleGroup.Item value={sp.id} class="seg-item">{sp.label}</ToggleGroup.Item>{/each}
+            <span class="grow"><b>{t('Espaçamento')}</b><small>{t('Quanto espaço fica entre os nós.')}</small></span>
+            <ToggleGroup.Root type="single" value={spacing} onValueChange={(v) => v && v !== spacing && doc.setSpacing(v)} class="seg tight" aria-label={t('Espaçamento')}>
+              {#each SPACINGS as sp (sp.id)}<ToggleGroup.Item value={sp.id} class="seg-item">{t(sp.label)}</ToggleGroup.Item>{/each}
             </ToggleGroup.Root>
           </div>
           <div class="set-row">
-            <span class="grow"><b>Arrumar posições</b><small>Desfaz os arrastos à mão e põe tudo no lugar da estrutura.</small></span>
-            <button class="btn soft sm" onclick={() => doc.relayout()}><WandSparkles size={15} />Arrumar</button>
+            <span class="grow"><b>{t('Arrumar posições')}</b><small>{t('Desfaz os arrastos à mão e põe tudo no lugar da estrutura.')}</small></span>
+            <button class="btn soft sm" onclick={() => doc.relayout()}><WandSparkles size={15} />{t('Arrumar')}</button>
           </div>
         </section>
 
-        <h3 class="sheet-sub">Tema</h3>
-        <p class="map-theme-note">Fica salvo neste mapa. As cores dos ramos saem do tema; uma cor escolhida no painel continua valendo.</p>
-        <div class="map-theme-grid" role="radiogroup" aria-label="Tema do mapa">
+        <h3 class="sheet-sub">{t('Tema')}</h3>
+        <p class="map-theme-note">{t('Fica salvo neste mapa. As cores dos ramos saem do tema; uma cor escolhida no painel continua valendo.')}</p>
+        <div class="map-theme-grid" role="radiogroup" aria-label={t('Tema do mapa')}>
           {#each MAP_THEME_IDS as id (id)}
-            {@const t = MAP_THEMES[id]}
+            {@const th = MAP_THEMES[id]}
             <button class="theme-tile map-theme-tile" role="radio" aria-checked={current === id} onclick={() => pick(id)}>
               <canvas class="map-theme-preview" bind:this={canvases[id]} aria-hidden="true"></canvas>
-              <span class="theme-name">{t.label}</span>
-              <small>{t.hint}</small>
+              <span class="theme-name">{t(th.label)}</span>
+              <small>{t(th.hint)}</small>
             </button>
           {/each}
         </div>

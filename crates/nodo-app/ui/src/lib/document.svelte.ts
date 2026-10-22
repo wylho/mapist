@@ -5,6 +5,7 @@
 // divergência entre o que a tela mostra e o que o core acha que tem.
 
 import { api, hasHost, isPreview, type CardFields, type Snapshot } from './api'
+import { t, tn } from '@wylho/atrio'
 import { measureAll } from './measure'
 import { mapTheme } from './maptheme'
 import { ui } from './ui.svelte'
@@ -90,7 +91,7 @@ class Document {
   private syncTitle() {
     if (!hasHost) return
     const s = this.snapshot
-    const name = s.path ? s.path.split(/[\\/]/).pop() : s.title || 'Sem título'
+    const name = s.path ? s.path.split(/[\\/]/).pop() : s.title || t('Sem título')
     const title = `${s.dirty ? '• ' : ''}${name} — Nodo`
     import('@tauri-apps/api/window')
       .then(({ getCurrentWindow }) => getCurrentWindow().setTitle(title))
@@ -147,7 +148,7 @@ class Document {
     try {
       const snap = await api.snapshot()
       if (snap.nodes.length > 0) await this.adopt(snap)
-      else await this.create('Tópico central')
+      else await this.create(t('Tópico central'))
       // Prévia: `?select=Texto do nó` já abre com ele selecionado (prints do site, scripts/site-shots.mjs).
       const pick = isPreview ? new URLSearchParams(location.search).get('select') : null
       if (pick) this.selected = this.snapshot.nodes.find((n) => n.text === pick)?.id ?? null
@@ -165,13 +166,13 @@ class Document {
     await this.run(() => api.open(path))
     const name = path.split(/[\\/]/).pop() ?? path
     if (!this.error && /\.(md|markdown|txt|opml|minder)$/i.test(path)) {
-      ui.say(`${name} virou um mapa. Salve para guardá-lo como .nodo; o original fica como está.`, 5200)
+      ui.say(t('{nome} virou um mapa. Salve para guardá-lo como .nodo; o original fica como está.', { nome: name }), 5200)
     }
   }
 
   async save(path?: string) {
     await this.run(() => api.save(path))
-    if (!this.error) ui.say('Mapa salvo')
+    if (!this.error) ui.say(t('Mapa salvo'))
   }
 
   /** Zoom e posição de cada aba, para voltar a ela como estava (o Canvas guarda e lê). */
@@ -185,8 +186,8 @@ class Document {
   }
 
   /** Nome que a aba mostra: o do arquivo, ou o do mapa enquanto não foi salvo. */
-  tabName(t: { title: string; path: string | null }) {
-    return t.path ? (t.path.split(/[\\/]/).pop() ?? t.path).replace(/\.nodo$/i, '') : t.title || 'Sem título'
+  tabName(tab: { title: string; path: string | null }) {
+    return tab.path ? (tab.path.split(/[\\/]/).pop() ?? tab.path).replace(/\.nodo$/i, '') : tab.title || t('Sem título')
   }
 
   /** Antes de outra aba vir para a frente: guarda a seleção desta e fecha o que é só dela. */
@@ -218,9 +219,9 @@ class Document {
     if (!this.snapshot.dirty) return true
     const name = this.tabName(this.snapshot)
     const choice = await ui.choose({
-      title: 'Salvar as alterações?',
-      text: `“${name}” tem alterações que não foram salvas.`,
-      save: 'Salvar',
+      title: t('Salvar as alterações?'),
+      text: t('“{nome}” tem alterações que não foram salvas.', { nome: name }),
+      save: t('Salvar'),
       discard,
     })
     if (choice === 'cancel') return false
@@ -235,13 +236,13 @@ class Document {
     if (!tab || id === null) return
     if (tab.dirty) {
       await this.switchTab(id)
-      if (!(await this.settleUnsaved('Fechar sem salvar'))) return
+      if (!(await this.settleUnsaved(t('Fechar sem salvar')))) return
     }
     if (id === this.snapshot.active) await this.leaveTab()
     this.selections.delete(id)
     this.views.delete(id)
     await this.run(() => api.closeTab(id))
-    if (this.snapshot.tabs.length === 0) return this.create('Tópico central')
+    if (this.snapshot.tabs.length === 0) return this.create(t('Tópico central'))
     // A aba que veio para a frente volta com a seleção que tinha.
     const back = this.snapshot.active !== null ? this.selections.get(this.snapshot.active) : null
     if (back != null && this.snapshot.nodes.some((n) => n.id === back)) this.selected = back
@@ -250,7 +251,7 @@ class Document {
   /** Novo mapa (⌘N), numa aba nova. */
   async newMap() {
     await this.leaveTab()
-    await this.create('Tópico central')
+    await this.create(t('Tópico central'))
   }
 
   /** Abre um arquivo vindo de fora (Finder), numa aba nova (ou na dele, se já estiver aberto). */
@@ -267,15 +268,15 @@ class Document {
       const picked = await open({
         multiple: false,
         filters: [
-          { name: 'Mapas e listas', extensions: ['nodo', 'minder', 'md', 'markdown', 'opml', 'txt'] },
-          { name: 'Mapa do Nodo', extensions: ['nodo'] },
+          { name: t('Mapas e listas'), extensions: ['nodo', 'minder', 'md', 'markdown', 'opml', 'txt'] },
+          { name: t('Mapa do Nodo'), extensions: ['nodo'] },
           { name: 'Markdown', extensions: ['md', 'markdown', 'txt'] },
           { name: 'OPML', extensions: ['opml'] },
         ],
       })
       path = typeof picked === 'string' ? picked : null
     } else {
-      path = window.prompt('Caminho do arquivo (.nodo, .minder, .md ou .opml)')
+      path = window.prompt(t('Caminho do arquivo (.nodo, .minder, .md ou .opml)'))
     }
     if (path) await this.openPath(path)
   }
@@ -288,10 +289,10 @@ class Document {
       const { save } = await import('@tauri-apps/plugin-dialog')
       path = await save({
         defaultPath: `${(this.snapshot.title || 'mapa').replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'mapa'}.nodo`,
-        filters: [{ name: 'Mapa do Nodo', extensions: ['nodo'] }],
+        filters: [{ name: t('Mapa do Nodo'), extensions: ['nodo'] }],
       })
     } else {
-      path = window.prompt('Salvar como (caminho)')
+      path = window.prompt(t('Salvar como (caminho)'))
     }
     if (path) await this.save(path.endsWith('.nodo') ? path : `${path}.nodo`)
   }
@@ -361,13 +362,13 @@ class Document {
       : { id: created.id, draft: created.text, selectAll: true }
   }
 
-  addChild(text = 'Nova ideia') {
+  addChild(text = t('Nova ideia')) {
     const id = this.selected
     if (id === null) return Promise.resolve()
     return this.addAndEdit(id, text, !!this.selectedNode?.folded)
   }
 
-  addSibling(text = 'Nova ideia') {
+  addSibling(text = t('Nova ideia')) {
     const n = this.selectedNode
     // Na raiz não há irmão: Enter cria um filho, como no XMind.
     if (!n) return Promise.resolve()
@@ -421,7 +422,7 @@ class Document {
     if (parent === undefined) return
     const before = new Set(this.snapshot.nodes.map((n) => n.id))
     const fields = { emoji: card.emoji ?? null, tags: card.tags ?? [] }
-    await this.run(() => api.addTopic(parent, card.title.trim() || 'Nota', card.markdown.trim(), nodeColorOf(card.color), fields))
+    await this.run(() => api.addTopic(parent, card.title.trim() || t('Nota'), card.markdown.trim(), nodeColorOf(card.color), fields))
     const id = this.snapshot.nodes.find((n) => !before.has(n.id))?.id
     if (id !== undefined) this.selected = id
   }
@@ -568,14 +569,14 @@ class Document {
     if (!snap.stale) return
     if (snap.dirty) {
       const ok = await ui.ask({
-        title: 'O arquivo mudou fora do Nodo',
-        text: 'Outro programa (talvez o Claude) salvou este mapa. Recarregar descarta as alterações feitas aqui.',
-        confirm: 'Recarregar',
+        title: t('O arquivo mudou fora do Nodo'),
+        text: t('Outro programa (talvez o Claude) salvou este mapa. Recarregar descarta as alterações feitas aqui.'),
+        confirm: t('Recarregar'),
       })
       if (!ok) return
     }
     await this.run(() => api.reload())
-    if (!this.error) ui.say('Mapa atualizado a partir do arquivo')
+    if (!this.error) ui.say(t('Mapa atualizado a partir do arquivo'))
   }
 
   /** A janela pediu para fechar com alterações não salvas: salvar (todas as abas que têm), sair ou cancelar. */
@@ -583,12 +584,12 @@ class Document {
     const dirty = this.snapshot.tabs.filter((t) => t.dirty)
     const many = dirty.length > 1
     const choice = await ui.choose({
-      title: 'Salvar as alterações?',
+      title: t('Salvar as alterações?'),
       text: many
-        ? `${dirty.length} mapas têm alterações que não foram salvas.`
-        : `“${this.tabName(dirty[0] ?? this.snapshot)}” tem alterações que não foram salvas.`,
-      save: many ? 'Salvar todos' : 'Salvar',
-      discard: 'Sair sem salvar',
+        ? tn(dirty.length, '{n} mapa tem alterações que não foram salvas.', '{n} mapas têm alterações que não foram salvas.')
+        : t('“{nome}” tem alterações que não foram salvas.', { nome: this.tabName(dirty[0] ?? this.snapshot) }),
+      save: many ? t('Salvar todos') : t('Salvar'),
+      discard: t('Sair sem salvar'),
     })
     if (choice === 'cancel') return
     if (choice === 'save') {

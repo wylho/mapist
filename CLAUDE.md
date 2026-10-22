@@ -166,7 +166,7 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   palettes, theme, render com `traceBranch` curvas/em ângulo, measure, font, preview). `atrio.css` (do Atrio) + `map.css`.
 - **Preview** (`ui/src/lib/preview.ts`): espelha o núcleo (mesmo layout, recolhidos escondidos); `?preview`, e
   `?select=Texto` abre com o nó selecionado. Mapa de exemplo "Lançamento do app", inventado.
-- **Testes:** 107 Rust + 49 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
+- **Testes:** 122 Rust + 61 do frontend. clippy e svelte-check limpos. Build real verificado no Linux (`.deb`,
   `.AppImage`; a janela abre um `.minder` passado como argumento) e `nodo --mcp` testado de ponta a ponta.
 - **CI/Release:** `.github/workflows/build.yml` (verificação + instaladores dos três sistemas nos Artifacts) e
   `release.yml` (rascunho → publicar); `scripts/check-version.sh` e `scripts/bump-version.sh`; guia em
@@ -320,6 +320,21 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   do tema, o resto na cor suave do ramo), tópico só como texto, clique em qualquer ponto da célula escolhe o tópico,
   sem botão de recolher. Esquemas na folha Mapa (`structures.ts`), espelho na prévia, MCP `set_layout`. Testes de
   propriedade: cada tópico na sua célula, células sem sobreposição, colunas da matriz alinhadas, pai cobrindo filhos.
+- **Inglês e português** (pedido do usuário: o app usado no mundo; o sistema de idiomas é do Atrio 0.18.0,
+  `t`/`tn`/`setLocale`/`LOCALES`): o texto em português do código é a chave, `t('Nova nota aqui')`, e o inglês fica em
+  `ui/src/lib/i18n/en.ts` (`EN`, ~250 textos), registrado em `main.ts` (`addMessages('en', EN)`) antes de montar.
+  Traduzidos barra, abas, zoom, dica de teclado, menus (`mapmenus.ts`, menu da nota solta no `Canvas.svelte`),
+  folhas Mapa/Exportar/Configurações (com a lista de atalhos), caixas de confirmação, avisos, atualização, barra do
+  card aberto (`NodeNote.svelte`), títulos e `aria-label`. Listas constantes (`STRUCTURES`, `SPACINGS`, `MAP_THEMES`,
+  `FORMATS`, paletas, cores) guardam o rótulo em português e passam por `t` só na hora de mostrar; os `id` gravados no
+  arquivo não mudam. Novo mapa nasce com "Tópico central"/"Central topic" e tópicos novos com "Nova ideia"/"New idea"
+  no idioma da interface. **Idioma** nas Configurações (Aparência: Automático / English / Português; Automático
+  segue o sistema; a escolha fica em `localStorage` `atrio.locale`). O mapa de exemplo da prévia (`lib/preview.ts`,
+  `DEMO.pt`/`DEMO.en`) sai no idioma da interface ("App launch" em inglês), com a mesma forma; a nota solta fica no vão
+  entre os ramos da esquerda e o card da Construção. Testes: `tests/setup.ts` fixa `pt-BR`; `tests/i18n.test.ts`
+  confere que todo `t(...)` do código e todo rótulo das listas tem inglês, que os marcadores `{…}` batem, os rótulos
+  traduzidos e o exemplo em inglês. Fora: núcleo Rust e MCP (mensagens de erro do núcleo continuam em português), site
+  e README (outra tarefa), textos das peças do Atrio (dicionário do próprio Atrio).
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
   estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura
