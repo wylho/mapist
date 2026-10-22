@@ -349,6 +349,12 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   `scripts/mac-icon.sh` compila com o `actool` do Xcode 26 no CI (Build e Release, passo "Ícone do macOS 26") num
   `Assets.car` que vai para `Contents/Resources` com `CFBundleIconName = AppIcon`; o `icon.icns` continua para os macOS
   anteriores. Sem Xcode 26 no runner, avisa e sai com o ícone antigo. Mudou o desenho: mudar `source/` e o `.icon`.
+- **Depois da 0.4.0** (mapa importado de um Markdown do usuário): o título do tópico importado é texto puro
+  (`import.rs` `plain_title`: lido pelo `atrio::markdown`, sai negrito, itálico, código e riscado; link vira
+  "texto (endereço)", como nas notas; linha que não é parágrafo comum, como `2024. Ano`, fica como veio) e a linha
+  horizontal `---`/`***`/`___` não vira nota (`is_rule`; antes um `---` entre seções transformava o tópico de cima em
+  card vazio). Os cards do mapa são ampliados por `zoom` em vez de `transform: scale` (`Canvas.svelte`, `map.css`):
+  no macOS o emoji de capa (imagem) saía pixelado com zoom; `left`/`top` vão em unidades do mundo.
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
   estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura

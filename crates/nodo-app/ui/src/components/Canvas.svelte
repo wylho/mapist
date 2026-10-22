@@ -483,7 +483,7 @@
       class="map-card"
       card={c.summary}
       thumb={(h) => attachments.thumb(h)}
-      style="left: {c.n.x * view.scale + view.x}px; top: {c.n.y * view.scale + view.y}px; width: {c.n.width}px; transform: scale({view.scale})"
+      style="left: {c.n.x + view.x / view.scale}px; top: {c.n.y + view.y / view.scale}px; width: {c.n.width}px; zoom: {view.scale}"
       tabindex={-1}
       onstatus={(s) => void doc.setStatus(c.n.id, s)}
     />
@@ -515,7 +515,7 @@
           class="map-card free-card"
           card={freeSummary(f)}
           thumb={(h) => attachments.thumb(h)}
-          style="left: {(f.x + (moved?.dx ?? 0)) * view.scale + view.x}px; top: {(f.y + (moved?.dy ?? 0)) * view.scale + view.y}px; width: {f.width}px; transform: scale({view.scale})"
+          style="left: {f.x + (moved?.dx ?? 0) + view.x / view.scale}px; top: {f.y + (moved?.dy ?? 0) + view.y / view.scale}px; width: {f.width}px; zoom: {view.scale}"
           data-free-note={f.id}
           onpointerdown={(e) => startFreeDrag(e, f.id)}
           ondblclick={(e) => {

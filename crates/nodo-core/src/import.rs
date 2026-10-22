@@ -215,7 +215,7 @@ fn read_items(markdown: &str) -> Vec<Item> {
             items.push(Item {
                 depth: level,
                 heading: true,
-                text,
+                text: plain_title(&text),
                 note: Vec::new(),
             });
             continue;
@@ -232,9 +232,14 @@ fn read_items(markdown: &str) -> Vec<Item> {
             items.push(Item {
                 depth: heading + indents.len(),
                 heading: false,
-                text,
+                text: plain_title(&text),
                 note: Vec::new(),
             });
+            continue;
+        }
+
+        // Linha horizontal (`---`, `***`, `___`) separa seções do documento; não é texto de nenhum tópico.
+        if is_rule(trimmed) {
             continue;
         }
 
@@ -248,6 +253,52 @@ fn read_items(markdown: &str) -> Vec<Item> {
         }
     }
     items
+}
+
+/// O título do tópico é texto puro: negrito, itálico, código, riscado e links do Markdown saem, ficando o texto. A
+/// leitura é a do Atrio (a mesma das notas). Se a linha não for um parágrafo comum (`2024. Ano` seria uma lista), fica
+/// como veio.
+fn plain_title(line: &str) -> String {
+    fn collect(v: &serde_json::Value, out: &mut String) {
+        match v.get("type").and_then(|t| t.as_str()) {
+            Some("text") => out.push_str(v.get("text").and_then(|t| t.as_str()).unwrap_or("")),
+            Some("hardBreak") => out.push(' '),
+            _ => {}
+        }
+        for c in v
+            .get("content")
+            .and_then(|c| c.as_array())
+            .into_iter()
+            .flatten()
+        {
+            collect(c, out);
+        }
+    }
+    let doc = atrio::markdown::from_markdown(line);
+    let blocks = doc.get("content").and_then(|c| c.as_array());
+    let [only] = blocks.map(Vec::as_slice).unwrap_or(&[]) else {
+        return line.to_string();
+    };
+    if !matches!(
+        only.get("type").and_then(|t| t.as_str()),
+        Some("paragraph" | "heading")
+    ) {
+        return line.to_string();
+    }
+    let mut text = String::new();
+    collect(only, &mut text);
+    let text = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    if text.is_empty() {
+        line.to_string()
+    } else {
+        text
+    }
+}
+
+/// `---`, `***` ou `___` (três ou mais, espaços entre eles valem): a linha horizontal do Markdown.
+fn is_rule(line: &str) -> bool {
+    let marks: Vec<char> = line.chars().filter(|c| !c.is_whitespace()).collect();
+    marks.len() >= 3 && ['-', '*', '_'].iter().any(|m| marks.iter().all(|c| c == m))
 }
 
 fn attach(items: &mut [Item], line: &str) {
@@ -335,6 +386,31 @@ mod tests {
         let orc = &map.root.children[1];
         assert_eq!(texts(orc), ["Hotel", "Passagens"]);
         assert_eq!(orc.children[1].note, "Total em aberto.");
+    }
+
+    #[test]
+    fn titles_lose_the_inline_markdown() {
+        let md = "# **Plano** da `feira`\n\n- **Banca:** perto da *entrada*.\n- Ver o [mapa](https://exemplo.org) e ~~o atalho~~\n- 2024. Ano da primeira feira\n- 5 * 3 caixas\n";
+        let map = from_markdown(md, "x");
+        assert_eq!(map.root.text, "Plano da feira");
+        assert_eq!(
+            texts(&map.root),
+            [
+                "Banca: perto da entrada.",
+                "Ver o mapa (https://exemplo.org) e o atalho",
+                "2024. Ano da primeira feira",
+                "5 * 3 caixas"
+            ]
+        );
+    }
+
+    #[test]
+    fn a_rule_between_sections_is_not_a_note() {
+        let md = "## Vídeos\n- Narração calma.\n- Música da plataforma.\n\n---\n\n## Fotos\n- Luz natural.\n\n***\n";
+        let map = from_markdown(md, "x");
+        assert_eq!(texts(&map.root), ["Vídeos", "Fotos"]);
+        assert_eq!(map.root.children[0].children[1].note, "");
+        assert_eq!(map.root.children[1].children[0].note, "");
     }
 
     #[test]
