@@ -414,6 +414,17 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
   `tauri.conf.json`. **Instância única** (`tauri-plugin-single-instance`): abrir outro arquivo com o app aberto vai
   para a mesma janela, numa aba (`open_from_system` e `map_in_args` em `src/lib.rs`). O AppImage não registra tipos
   sozinho (só com AppImageLauncher/Gear Lever); o Windows já associava pelo instalador.
+- **Recolher/expandir em todas as estruturas** (pedido do usuário: não estava claro em outros modos; opção A, o "−" ao
+  passar o mouse e o número sempre à vista quando recolhido): `render.ts` `knobAt` põe o botão onde o ramo dos filhos
+  sai em cada estrutura (linha do tempo acima ou abaixo do principal, para o lado dos galhos; árvore e lógico à
+  direita; organograma embaixo; matriz na divisa da célula do cabeçalho ou no começo da lista recuada; tabela em árvore
+  na divisa com a coluna dos filhos, ou logo depois do texto quando recolhido). Matriz e tabela antes não tinham
+  botão nenhum; nelas o botão é claro com o número na cor do ramo. Testes em `tests/lib.test.ts`.
+- **Nota solta fora de cima dos tópicos** (pedido do usuário: na matriz a nota posta no modo mapa cobria uma linha):
+  `layout::clear_notes` no núcleo, chamado pelo `Editor` depois de trocar estrutura, espaçamento e "Arrumar posições":
+  a nota que ficou em cima de um tópico vai para a direita do mapa, uma embaixo da outra; as que estavam livres não
+  mudam; tudo no mesmo passo do desfazer. A interface manda a altura de verdade de cada nota no `set_sizes` (`notes`,
+  `Editor::set_note_heights`). Espelho em `preview.ts` (`clearNotes`). Teste no `editor.rs` (todas as estruturas).
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
   estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura

@@ -806,9 +806,19 @@ fn search_nodes(
 /// without duplicating the font stack. So the renderer measures and reports
 /// back, and positioning stays in the core.
 #[tauri::command]
-fn set_sizes(state: State<'_, AppState>, sizes: Vec<NodeSize>) -> Result<Snapshot, String> {
+fn set_sizes(
+    state: State<'_, AppState>,
+    sizes: Vec<NodeSize>,
+    notes: Option<Vec<NodeSize>>,
+) -> Result<Snapshot, String> {
     let mut doc = lock(&state)?;
-    editor(&mut doc)?.set_sizes(sizes.iter().map(|s| (s.id, s.width, s.height)));
+    let ed = editor(&mut doc)?;
+    ed.set_sizes(sizes.iter().map(|s| (s.id, s.width, s.height)));
+    // A altura de verdade de cada nota solta (o card cresce com o texto): é por ela que o núcleo tira uma nota de
+    // cima dos tópicos quando o mapa muda de forma.
+    if let Some(notes) = notes {
+        ed.set_note_heights(notes.iter().map(|n| (n.id, n.height)));
+    }
     Ok(snapshot(&doc))
 }
 

@@ -508,6 +508,40 @@ function reposition() {
 
 // ── histórico ────────────────────────────────────────────────────────────
 
+/** Como `layout::clear_notes` do núcleo: nota solta que ficou em cima de um tópico vai para a direita do mapa. */
+function clearNotes() {
+  const GAP = 32
+  const boxes: [number, number, number, number][] = []
+  const walk = (id: number) => {
+    const n = nodes.get(id)
+    if (!n) return
+    boxes.push(n.cell ?? [n.x, n.y, n.width, n.height])
+    if (!n.folded) n.children.forEach(walk)
+  }
+  walk(rootId)
+  const right = Math.max(...boxes.map((b) => b[0] + b[2])) + GAP * 2
+  let nextY = Math.min(...boxes.map((b) => b[1]))
+  const hits = (r: [number, number, number, number]) =>
+    boxes.some((b) => r[0] < b[0] + b[2] && b[0] < r[0] + r[2] && r[1] < b[1] + b[3] && b[1] < r[1] + r[3])
+  for (const f of freeNotes) {
+    const r: [number, number, number, number] = [f.x, f.y, f.width, f.height]
+    if (!hits(r)) {
+      boxes.push(r)
+      continue
+    }
+    for (;;) {
+      const at: [number, number, number, number] = [right, nextY, f.width, f.height]
+      nextY += Math.max(f.height, 40) + GAP
+      if (!hits(at)) {
+        f.x = at[0]
+        f.y = at[1]
+        boxes.push(at)
+        break
+      }
+    }
+  }
+}
+
 function commit(fn: () => void, relayoutAfter = true) {
   past.push(snapshotState())
   if (past.length > 200) past.shift()
@@ -911,6 +945,7 @@ export const previewBackend = {
     commit(() => {
       structure = next
     })
+    clearNotes()
     return snapshotOf()
   },
 
@@ -919,11 +954,13 @@ export const previewBackend = {
     commit(() => {
       spacing = next
     })
+    clearNotes()
     return snapshotOf()
   },
 
   relayout: () => {
     commit(() => {})
+    clearNotes()
     return snapshotOf()
   },
 
@@ -1039,7 +1076,11 @@ export const previewBackend = {
     return snapshotOf()
   },
 
-  set_sizes: ({ sizes }: { sizes: NodeSize[] }) => {
+  set_sizes: ({ sizes, notes }: { sizes: NodeSize[]; notes?: NodeSize[] | null }) => {
+    for (const s of notes ?? []) {
+      const f = freeNotes.find((x) => x.id === s.id)
+      if (f) f.height = s.height
+    }
     for (const s of sizes) {
       const n = nodes.get(s.id)
       if (n) {

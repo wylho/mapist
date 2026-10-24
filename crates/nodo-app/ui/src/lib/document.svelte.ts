@@ -6,7 +6,7 @@
 
 import { api, hasHost, isPreview, type CardFields, type Edit, type Snapshot } from './api'
 import { t, tn } from '@wylho/atrio'
-import { measureAll } from './measure'
+import { measureAll, measureCard } from './measure'
 import { mapTheme } from './maptheme'
 import { ui } from './ui.svelte'
 import { recents } from './recents.svelte'
@@ -160,9 +160,14 @@ class Document {
       }
     }
     this.sizes = next
-    if (!changed) return
+    // As notas soltas também: o núcleo precisa da altura de verdade para tirá-las de cima dos tópicos quando o mapa
+    // muda de estrutura.
+    const notes = this.snapshot.notes
+      .map((f) => ({ id: f.id, width: f.width, height: measureCard(f.title, f.view, f.card).height }))
+      .filter((m) => Math.abs(m.height - (this.snapshot.notes.find((f) => f.id === m.id)?.height ?? 0)) > 0.5)
+    if (!changed && notes.length === 0) return
     try {
-      const updated = await api.setSizes(measured)
+      const updated = await api.setSizes(measured, notes)
       this.snapshot = updated
     } catch (e) {
       // O host pode não expor set_sizes ainda; seguir com a estimativa do core

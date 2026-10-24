@@ -204,7 +204,7 @@ export function draw(o: DrawOptions) {
  * Tela de toque (sem "mouse em cima"): o botão de recolher fica sempre à vista. Com mouse, aparece ao passar sobre o
  * tópico ou com ele escolhido, como no XMind (escolha do usuário).
  */
-const touch = (typeof matchMedia !== 'undefined' && matchMedia('(hover: none)').matches) || (typeof location !== 'undefined' && location.search.includes('knobs=always')) // PRÉVIA (provisório): ?knobs=always
+const touch = typeof matchMedia !== 'undefined' && matchMedia('(hover: none)').matches
 
 /**
  * Centro do botão de recolher: onde o ramo dos filhos sai do tópico, em cada estrutura, para ficar claro de onde vêm

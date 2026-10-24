@@ -191,6 +191,8 @@ impl Editor {
 
         let map = self.history.current_mut();
         match action {
+            // "Arrumar posições" já arrumou a árvore (e só ela): falta tirar as notas soltas de cima dos tópicos.
+            Action::Relayout => layout::clear_notes(map),
             // Notas soltas e arrastos não mexem na árvore: nada a reposicionar.
             a if a.keeps_layout() => {}
             Action::AddChild { .. } | Action::AddTopic { .. } | Action::SetText { .. } => {
@@ -200,6 +202,12 @@ impl Editor {
                     layout::measure(node);
                 }
                 layout::reposition(map);
+            }
+            // O mapa mudou de forma: nota solta que ficou em cima de um tópico sai do caminho (no mesmo passo do
+            // desfazer, que guarda o mapa inteiro).
+            Action::SetStructure { .. } | Action::SetSpacing { .. } => {
+                layout::reposition(map);
+                layout::clear_notes(map);
             }
             _ => layout::reposition(map),
         }
@@ -216,6 +224,17 @@ impl Editor {
             }
         }
         layout::reposition(map);
+    }
+
+    /// Heights of the loose notes as the renderer drew them (the card grows with its text). Not an edit: no undo step,
+    /// not dirty; it only makes [`layout::clear_notes`] see the notes at their real size.
+    pub fn set_note_heights(&mut self, heights: impl IntoIterator<Item = (u64, f64)>) {
+        let map = self.history.current_mut();
+        for (id, height) in heights {
+            if let Some(note) = map.notes.iter_mut().find(|n| n.id == id) {
+                note.height = height;
+            }
+        }
     }
 
     /// Lay the map out another way for a moment (every branch open, other sizes), without touching the history, the
@@ -541,6 +560,58 @@ mod tests {
         while ed.undo() {}
         assert!(ed.map().notes.is_empty());
         assert!(!ed.is_dirty());
+    }
+
+    #[test]
+    fn a_new_structure_never_leaves_a_loose_note_on_top_of_a_topic() {
+        let mut ed = Editor::new("Raiz");
+        let (a, _, _) = tree(&mut ed);
+        // A nota vai exatamente para onde fica o tópico A (no mapa), e cobre também onde a raiz fica nas outras.
+        let at = node(&ed, a).clone();
+        let id = ed
+            .apply(Action::AddFreeNote {
+                x: -200.0,
+                y: -200.0,
+                text: "Ideia".into(),
+            })
+            .unwrap()
+            .unwrap();
+        ed.apply(Action::PlaceFreeNote {
+            id,
+            x: at.pos.x,
+            y: at.pos.y,
+            width: 600.0,
+            height: 400.0,
+        })
+        .unwrap();
+        let placed = ed.map().free_note(id).unwrap().pos;
+        for structure in [
+            "matriz",
+            "tabela",
+            "linha",
+            "arvore",
+            "organograma",
+            "logico",
+        ] {
+            ed.apply(Action::SetStructure {
+                structure: Some(structure.into()),
+            })
+            .unwrap();
+            let n = ed.map().free_note(id).unwrap().clone();
+            for t in ed.map().nodes() {
+                let (x, y, w, h) = t.cell.unwrap_or((t.pos.x, t.pos.y, t.width, t.height));
+                let apart = n.pos.x >= x + w
+                    || x >= n.pos.x + n.width
+                    || n.pos.y >= y + h
+                    || y >= n.pos.y + n.height;
+                assert!(apart, "em {structure}, a nota cobre \"{}\"", t.text);
+            }
+        }
+        // Tudo no mesmo passo do desfazer: voltar a estrutura devolve a nota para onde a pessoa pôs.
+        for _ in 0..6 {
+            ed.undo();
+        }
+        assert_eq!(ed.map().free_note(id).unwrap().pos, placed);
     }
 
     #[test]

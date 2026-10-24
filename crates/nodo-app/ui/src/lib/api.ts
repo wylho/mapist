@@ -327,7 +327,7 @@ export const api = {
    * navegador já sabe fazer isso com precisão, então ele mede e o core só
    * posiciona. Ver `measure.ts`.
    */
-  setSizes: (sizes: NodeSize[]) => call<Snapshot>('set_sizes', { sizes }),
+  setSizes: (sizes: NodeSize[], notes?: NodeSize[]) => call<Snapshot>('set_sizes', { sizes, notes: notes ?? null }),
   /** O mapa como a exportação quer (tudo aberto, outros tamanhos), sem mudar o documento. */
   exportLayout: (sizes: NodeSize[], unfold: boolean) => call<Snapshot>('export_layout', { sizes, unfold }),
 

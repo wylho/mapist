@@ -483,3 +483,47 @@ pub fn for_each_mut<F: FnMut(&mut Node)>(node: &mut Node, f: &mut F) {
         for_each_mut(child, f);
     }
 }
+
+/// Space kept between a loose note moved out of the way and the map (and the next note).
+const NOTE_GAP: f64 = 32.0;
+
+/// After the map takes a new shape (another structure, spacing, "Arrumar posições"), a loose note that ended up on top
+/// of a topic goes to the right of the map, one under the other; the ones that were in the clear stay put. Pedido do
+/// usuário: na matriz, a nota posta no modo mapa cobria uma linha inteira.
+pub fn clear_notes(map: &mut MindMap) {
+    let mut boxes: Vec<(f64, f64, f64, f64)> = Vec::new();
+    fn visible(n: &Node, out: &mut Vec<(f64, f64, f64, f64)>) {
+        out.push(n.cell.unwrap_or((n.pos.x, n.pos.y, n.width, n.height)));
+        if !n.folded {
+            for c in &n.children {
+                visible(c, out);
+            }
+        }
+    }
+    visible(&map.root, &mut boxes);
+    let right = boxes.iter().map(|b| b.0 + b.2).fold(f64::MIN, f64::max) + NOTE_GAP * 2.0;
+    let top = boxes.iter().map(|b| b.1).fold(f64::MAX, f64::min);
+    let hits = |r: (f64, f64, f64, f64), others: &[(f64, f64, f64, f64)]| {
+        others
+            .iter()
+            .any(|b| r.0 < b.0 + b.2 && b.0 < r.0 + r.2 && r.1 < b.1 + b.3 && b.1 < r.1 + r.3)
+    };
+    let mut next_y = top;
+    for note in &mut map.notes {
+        let r = (note.pos.x, note.pos.y, note.width, note.height);
+        if !hits(r, &boxes) {
+            // Fica onde está, e as que vierem depois também não podem cair em cima dela.
+            boxes.push(r);
+            continue;
+        }
+        loop {
+            let at = (right, next_y, note.width, note.height);
+            next_y += note.height.max(40.0) + NOTE_GAP;
+            if !hits(at, &boxes) {
+                note.pos = Point { x: at.0, y: at.1 };
+                boxes.push(at);
+                break;
+            }
+        }
+    }
+}
