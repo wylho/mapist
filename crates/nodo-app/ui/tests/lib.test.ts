@@ -15,11 +15,12 @@ import {
   resolveNodeColor,
   systemColors,
 } from '../src/lib/palettes'
-import { hitTest, resolveColor, traceBranch } from '../src/lib/render'
+import { hitTest, knobAt, resolveColor, traceBranch } from '../src/lib/render'
 import { MAX_BOX_WIDTH, wrapLines } from '../src/lib/measure'
 import { CARD } from '../src/lib/cardtext'
 import { MAX_RECENTS, pushRecent, recentFolder, recentName, recents } from '../src/lib/recents.svelte'
-import type { Snapshot } from '../src/lib/api'
+import type { FlatNode, Snapshot } from '../src/lib/api'
+import { levelStyle, mapTheme } from '../src/lib/maptheme'
 
 describe('mix', () => {
   it('returns the first colour at t=1 and the second at t=0', () => {
@@ -836,5 +837,45 @@ describe('recentes da tela inicial', () => {
     expect(recents.list[0].path).toBe('/tmp/mapa.nodo')
     recents.remove('/tmp/mapa.nodo')
     expect(recents.list.some((r) => r.path === '/tmp/mapa.nodo')).toBe(false)
+  })
+})
+
+describe('botão de recolher em cada estrutura', () => {
+  // Um principal com filhos recolhidos, onde quer que a estrutura o ponha.
+  const node = (over: Partial<FlatNode>): FlatNode => ({
+    id: 1, text: 'Ramo', note: '', side: 'right', depth: 1, x: 100, y: 100, width: 80, height: 40,
+    color: null, folded: true, child_ids: [], parent: 0, has_children: true, ...over,
+  } as FlatNode)
+  const root = node({ id: 0, depth: 0, parent: null, x: 0, y: 100, child_ids: [1, 2], folded: false })
+  const snap = (structure: string | null, nodes: FlatNode[]) => ({ structure, nodes } as unknown as Snapshot)
+  const style = levelStyle(mapTheme(null), 1)
+  const at = (structure: string | null, n: FlatNode, nodes = [root, n]) =>
+    knobAt(n, snap(structure, nodes), new Map(nodes.map((x) => [x.id, x])), style)
+
+  it('mapa e lógico: do lado dos filhos; no lógico sempre à direita', () => {
+    const left = node({ side: 'left' })
+    expect(at(null, left).x).toBeLessThan(left.x)
+    expect(at('logico', left).x).toBeGreaterThan(left.x + left.width)
+  })
+
+  it('organograma: embaixo, no meio', () => {
+    const n = node({})
+    expect(at('organograma', n)).toEqual({ x: n.x + n.width / 2, y: n.y + n.height + 11 })
+  })
+
+  it('linha do tempo: em cima do 1º principal e embaixo do 2º, nunca em cima da linha', () => {
+    const a = node({ id: 1 })
+    const b = node({ id: 2, x: 300 })
+    expect(at('linha', a, [root, a, b]).y).toBeLessThan(a.y)
+    expect(at('linha', b, [root, a, b]).y).toBeGreaterThan(b.y + b.height)
+  })
+
+  it('matriz e tabela: o botão existe e fica na divisa da célula ou logo depois do texto', () => {
+    const header = node({ cell: [0, 80, 260, 80], folded: false })
+    expect(at('matriz', header)).toEqual({ x: 260, y: header.y + header.height / 2 })
+    expect(at('tabela', header).x).toBe(260)
+    // Recolhido, a célula da tabela vai até o fim: o botão fica perto do texto, não na borda da tabela.
+    const folded = node({ cell: [0, 80, 900, 40] })
+    expect(at('tabela', folded).x).toBe(folded.x + folded.width + 11)
   })
 })

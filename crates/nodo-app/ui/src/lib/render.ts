@@ -187,13 +187,14 @@ export function draw(o: DrawOptions) {
   // ficou escondido); o "−" é só para a tela.
   {
     for (const n of snapshot.nodes) {
-      if (table || !n.has_children || n.parent === null || (o.paintCards && !n.folded)) continue
+      if (!n.has_children || n.parent === null || (o.paintCards && !n.folded)) continue
       drawKnob(ctx, n, {
         branch: branch.get(n.id) ?? colors.muted,
         colors,
         active: n.id === hovered || n.id === selected || picked.has(n.id),
-        down: snapshot.structure === 'organograma',
-        style: levelStyle(theme, n.depth),
+        at: knobAt(n, snapshot, byId, levelStyle(theme, n.depth)),
+        // Na tabela o botão fica sobre a célula pintada na cor do ramo: claro, com o número na cor do ramo.
+        light: table,
       })
     }
   }
@@ -203,12 +204,43 @@ export function draw(o: DrawOptions) {
  * Tela de toque (sem "mouse em cima"): o botão de recolher fica sempre à vista. Com mouse, aparece ao passar sobre o
  * tópico ou com ele escolhido, como no XMind (escolha do usuário).
  */
-const touch = typeof matchMedia !== 'undefined' && matchMedia('(hover: none)').matches
+const touch = (typeof matchMedia !== 'undefined' && matchMedia('(hover: none)').matches) || (typeof location !== 'undefined' && location.search.includes('knobs=always')) // PRÉVIA (provisório): ?knobs=always
 
-/** Centro do botão de recolher: no começo do ramo dos filhos (do lado deles, ou embaixo no organograma). */
-export function knobAt(n: FlatNode, style: LevelStyle, down: boolean): { x: number; y: number } {
-  if (down) return { x: n.x + n.width / 2, y: n.y + n.height + 11 }
-  return { x: n.side === 'left' ? n.x - 11 : n.x + n.width + 11, y: anchorY(n, style) }
+/**
+ * Centro do botão de recolher: onde o ramo dos filhos sai do tópico, em cada estrutura, para ficar claro de onde vêm
+ * os filhos e que dá para abrir e fechar (pedido do usuário: em outras estruturas o botão ficava no lugar errado ou
+ * nem aparecia).
+ */
+export function knobAt(n: FlatNode, snapshot: Snapshot, byId: Map<number, FlatNode>, style: LevelStyle): { x: number; y: number } {
+  const below = (x: number) => ({ x, y: n.y + n.height + 11 })
+  const right = { x: n.x + n.width + 11, y: anchorY(n, style) }
+  switch (snapshot.structure) {
+    case 'organograma':
+      return below(n.x + n.width / 2)
+    case 'arvore':
+      // Lista recuada: logo depois do texto (embaixo, ficava sob o tópico seguinte, que vem colado).
+      return right
+    case 'linha': {
+      if (n.depth !== 1) return right
+      // Principal da linha do tempo: os galhos do 1º, 3º… sobem e os do 2º, 4º… descem.
+      const parent = n.parent === null ? undefined : byId.get(n.parent)
+      const up = (parent?.child_ids.indexOf(n.id) ?? 0) % 2 === 0
+      return { x: n.x + 12, y: up ? n.y - 11 : n.y + n.height + 11 }
+    }
+    case 'matriz':
+      // Cabeçalho da linha: na divisa com as colunas; dentro da célula: onde começa a lista recuada.
+      if (n.depth === 1 && n.cell) return { x: n.cell[0] + n.cell[2], y: n.y + n.height / 2 }
+      return below(n.x + 12)
+    case 'tabela':
+      // Tabela em árvore: na divisa com a coluna dos filhos, à direita; recolhido, a célula vai até o fim da tabela,
+      // então o botão fica logo depois do texto.
+      if (n.cell && !n.folded) return { x: n.cell[0] + n.cell[2], y: n.cell[1] + n.cell[3] / 2 }
+      return { x: n.x + n.width + 11, y: n.y + n.height / 2 }
+    case 'logico':
+      return right
+    default:
+      return n.side === 'left' ? { x: n.x - 11, y: anchorY(n, style) } : right
+  }
 }
 
 const KNOB_R = 8.5
@@ -216,9 +248,9 @@ const KNOB_R = 8.5
 function drawKnob(
   ctx: CanvasRenderingContext2D,
   n: FlatNode,
-  o: { branch: string; colors: ThemeColors; active: boolean; down: boolean; style: LevelStyle },
+  o: { branch: string; colors: ThemeColors; active: boolean; at: { x: number; y: number }; light?: boolean },
 ) {
-  const { x, y } = knobAt(n, o.style, o.down)
+  const { x, y } = o.at
   const count = n.hidden ?? 0
   const label = count > 99 ? '99+' : String(count)
   ctx.save()
@@ -229,12 +261,12 @@ function drawKnob(
     // Recolhido: sempre à vista, na cor do ramo, com quantos tópicos estão escondidos.
     ctx.beginPath()
     ctx.arc(x, y, KNOB_R + (label.length > 1 ? 1.5 : 0), 0, Math.PI * 2)
-    ctx.fillStyle = o.branch
+    ctx.fillStyle = o.light ? o.colors.surface : o.branch
     ctx.fill()
-    ctx.strokeStyle = o.colors.stage
-    ctx.lineWidth = 2
+    ctx.strokeStyle = o.light ? o.branch : o.colors.stage
+    ctx.lineWidth = o.light ? 1.5 : 2
     ctx.stroke()
-    ctx.fillStyle = textOn(o.branch, '#ffffff', '#16201c')
+    ctx.fillStyle = o.light ? textOn(o.colors.surface, o.colors.fg, '#ffffff') : textOn(o.branch, '#ffffff', '#16201c')
     ctx.fillText(label, x, y + 0.5)
   } else if (o.active || touch) {
     // Aberto: "−" para recolher.
@@ -261,12 +293,11 @@ export function hitKnob(snapshot: Snapshot, view: Viewport, clientX: number, cli
   const wy = (clientY - rect.top - view.y) / view.scale
   const r = Math.max(KNOB_R + 2, 11 / view.scale)
   const theme = mapTheme(snapshot.style)
-  const down = snapshot.structure === 'organograma'
-  if (isTable(snapshot.structure)) return null
+  const byId = new Map(snapshot.nodes.map((n) => [n.id, n]))
   for (let i = snapshot.nodes.length - 1; i >= 0; i--) {
     const n = snapshot.nodes[i]
     if (!n.has_children || n.parent === null) continue
-    const k = knobAt(n, levelStyle(theme, n.depth), down)
+    const k = knobAt(n, snapshot, byId, levelStyle(theme, n.depth))
     if (Math.hypot(wx - k.x, wy - k.y) <= r) return n.id
   }
   return null
