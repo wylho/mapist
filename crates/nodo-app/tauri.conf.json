@@ -58,7 +58,14 @@
         "name": "Mapa do Nodo",
         "description": "Mapa mental do Nodo",
         "role": "Editor",
-        "mimeType": "application/x-nodo"
+        "mimeType": "application/x-nodo",
+        "rank": "Owner",
+        "exportedType": {
+          "identifier": "io.github.wylho.nodo.map",
+          "conformsTo": [
+            "public.data"
+          ]
+        }
       },
       {
         "ext": [
@@ -67,9 +74,34 @@
         "name": "Mapa mental (Minder)",
         "description": "Mapa mental antigo, aberto como importação",
         "role": "Viewer",
-        "mimeType": "application/x-minder"
+        "mimeType": "application/x-minder",
+        "rank": "Alternate",
+        "exportedType": {
+          "identifier": "io.github.wylho.nodo.minder",
+          "conformsTo": [
+            "public.xml"
+          ]
+        }
       }
-    ]
+    ],
+    "linux": {
+      "deb": {
+        "files": {
+          "/usr/share/mime/packages/io.github.wylho.nodo.xml": "linux/nodo-mime.xml"
+        },
+        "desktopTemplate": "linux/nodo.desktop",
+        "postInstallScript": "linux/post-install.sh",
+        "postRemoveScript": "linux/post-remove.sh"
+      },
+      "rpm": {
+        "files": {
+          "/usr/share/mime/packages/io.github.wylho.nodo.xml": "linux/nodo-mime.xml"
+        },
+        "desktopTemplate": "linux/nodo.desktop",
+        "postInstallScript": "linux/post-install.sh",
+        "postRemoveScript": "linux/post-remove.sh"
+      }
+    }
   },
   "mainBinaryName": "nodo",
   "plugins": {

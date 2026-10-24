@@ -936,13 +936,36 @@ fn has_unsaved(app: &tauri::AppHandle) -> bool {
 /// A map path among the program arguments (double-click on Windows and Linux, or `nodo mapa.nodo` in a terminal):
 /// a `.nodo`, or a `.minder` from the early versions, which opens as an import.
 fn file_from_args() -> Option<std::path::PathBuf> {
-    std::env::args_os()
-        .skip(1)
-        .map(std::path::PathBuf::from)
-        .find(|p| {
+    map_in_args(std::env::args_os().skip(1))
+}
+
+/// The first map file among some arguments (the program's, or a second launch's that comes to this window).
+fn map_in_args<I, S>(args: I) -> Option<std::path::PathBuf>
+where
+    I: IntoIterator<Item = S>,
+    S: Into<std::path::PathBuf>,
+{
+    args.into_iter()
+        .map(Into::into)
+        .find(|p: &std::path::PathBuf| {
             p.extension()
                 .is_some_and(|e| e.eq_ignore_ascii_case("nodo") || e.eq_ignore_ascii_case("minder"))
         })
+}
+
+/// A file the system asked to open (Finder, or a second launch with a file). It goes into the tabs right here, so it
+/// is there even if the window has not loaded yet (the first snapshot brings it); with the window up, `open-file`
+/// brings its tab to the front (`open_map` finds it already open).
+fn open_from_system(app: &tauri::AppHandle, path: std::path::PathBuf) {
+    let state = app.state::<AppState>();
+    if let Ok(mut doc) = state.inner.lock() {
+        if let Some(id) = doc.find_path(&path) {
+            doc.switch(id);
+        } else if let Ok(ed) = Editor::open_or_import(&path) {
+            doc.open(ed);
+        }
+    }
+    let _ = app.emit("open-file", path.to_string_lossy().to_string());
 }
 
 /// Run the application.
@@ -956,6 +979,22 @@ pub fn run() {
     }
 
     tauri::Builder::default()
+        // Primeiro plugin, como pede o single-instance: um segundo `nodo arquivo.nodo` (duplo clique com o app aberto)
+        // não abre outra janela; o arquivo vem para esta, numa aba, e a janela vem para a frente.
+        .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.unminimize();
+                let _ = window.set_focus();
+            }
+            if let Some(path) = map_in_args(args.into_iter().skip(1)) {
+                let path = if path.is_relative() {
+                    std::path::Path::new(&cwd).join(path)
+                } else {
+                    path
+                };
+                open_from_system(app, path);
+            }
+        }))
         .plugin(tauri_plugin_dialog::init())
         // Opens links in the user's browser rather than inside the webview.
         .plugin(tauri_plugin_opener::init())
@@ -1069,6 +1108,16 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building Nodo")
         .run(|app, event| {
+            // macOS: o Finder (duplo clique, "Abrir com", arrastar para o ícone) manda o arquivo por evento, não por
+            // argumento; vale também para o primeiro arquivo, o que abriu o app.
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            if let tauri::RunEvent::Opened { urls } = &event {
+                for path in urls.iter().filter_map(|u| u.to_file_path().ok()) {
+                    if map_in_args([path.clone()]).is_some() {
+                        open_from_system(app, path);
+                    }
+                }
+            }
             // Cmd+Q on macOS quits the app without closing the window first.
             if let tauri::RunEvent::ExitRequested {
                 api, code: None, ..
@@ -1085,6 +1134,26 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_second_launch_finds_the_map_among_its_arguments() {
+        // O executável vem primeiro e é pulado por quem chama; opções e outros arquivos ficam de fora.
+        let args = [
+            "--verbose",
+            "/tmp/notas.txt",
+            "/home/ana/Viagem.NODO",
+            "/tmp/b.nodo",
+        ];
+        assert_eq!(
+            map_in_args(args),
+            Some(std::path::PathBuf::from("/home/ana/Viagem.NODO"))
+        );
+        assert_eq!(
+            map_in_args(["antigo.minder"]),
+            Some(std::path::PathBuf::from("antigo.minder"))
+        );
+        assert_eq!(map_in_args(["/tmp/foto.png", "--mcp"]), None);
+    }
 
     fn doc_with_map() -> Doc {
         let mut ed = Editor::new("Root");

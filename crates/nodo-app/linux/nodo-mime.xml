@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Os tipos de arquivo do Nodo para o Linux (shared-mime-info): sem isto o sistema vê o .nodo como um zip qualquer e
+     não oferece o Nodo em "Abrir com". Instalado em /usr/share/mime/packages pelo .deb e pelo .rpm. -->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-nodo">
+    <comment>Nodo mind map</comment>
+    <comment xml:lang="pt_BR">Mapa do Nodo</comment>
+    <comment xml:lang="pt">Mapa do Nodo</comment>
+    <sub-class-of type="application/zip"/>
+    <generic-icon name="x-office-document"/>
+    <glob pattern="*.nodo" weight="80"/>
+  </mime-type>
+  <mime-type type="application/x-minder">
+    <comment>Minder mind map</comment>
+    <comment xml:lang="pt_BR">Mapa mental do Minder</comment>
+    <comment xml:lang="pt">Mapa mental do Minder</comment>
+    <sub-class-of type="application/xml"/>
+    <generic-icon name="x-office-document"/>
+    <glob pattern="*.minder" weight="80"/>
+  </mime-type>
+</mime-info>

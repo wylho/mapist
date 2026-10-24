@@ -406,6 +406,14 @@ mesmo núcleo do aplicativo. Começou inspirado no [Minder](https://github.com/p
 - **Botão ? no canto** (pedido do usuário, aprovado na prévia): no lugar da dica de teclado fixa, um
   botão redondo; ao passar o mouse mostra a dica de agora, o clique abre as Configurações já nos Atalhos
   (`ui.settingsSection`, `#set-atalhos` em `SettingsSheet.svelte`; `.key-help` em `map.css`).
+- **".nodo" em "Abrir com" nos três sistemas** (pedido do usuário: no Linux o Nodo não aparecia): o `.desktop` do
+  `.deb`/`.rpm` agora passa o arquivo (`Exec=nodo %F`, `crates/nodo-app/linux/nodo.desktop`) e o pacote instala o tipo
+  `application/x-nodo` (`linux/nodo-mime.xml` em `/usr/share/mime/packages`, scripts `post-install.sh`/`post-remove.sh`
+  atualizam os bancos); testado instalando o `.deb`: o sistema vê "Mapa do Nodo" e o Nodo como padrão. macOS: o
+  Finder manda o arquivo por evento e o app não tratava (`RunEvent::Opened`); `exportedType` e `rank: Owner` no
+  `tauri.conf.json`. **Instância única** (`tauri-plugin-single-instance`): abrir outro arquivo com o app aberto vai
+  para a mesma janela, numa aba (`open_from_system` e `map_in_args` em `src/lib.rs`). O AppImage não registra tipos
+  sozinho (só com AppImageLauncher/Gear Lever); o Windows já associava pelo instalador.
 - **Próximo:** a exportação desenhar emoji e pílulas do card; anexos e gravações no tópico (precisam de um lugar
   para os arquivos ao lado do `.nodo`); o Ideario usar `CardPills`/`CardDialog` do Atrio no lugar das cópias dele;
   estruturas do XMind que faltam (chaves, linha do tempo, espinha de peixe, matriz, tabela em árvore); aba Estrutura
