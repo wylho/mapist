@@ -12,7 +12,7 @@
 Um app de mapas mentais grátis e de código aberto que abre num instante, funciona sem internet e guarda cada mapa num arquivo seu,
 legível sem o app. E o Claude pode trabalhar no mesmo mapa que você, pelas mesmas regras.</p>
 
-<p align="center"><a href="https://github.com/wylho/nodo/releases/latest"><b>Versão 0.6.0: tela inicial com os mapas recentes, tópicos mais arrumados e resumo das tabelas nos cards →</b></a></p>
+<p align="center"><a href="https://github.com/wylho/nodo/releases/latest"><b>Versão 0.6.1: arquivos .nodo abrem pelo gerenciador de arquivos e o recolher fica claro em todas as estruturas →</b></a></p>
 
 <p align="center">
   <b>Windows · macOS · Linux</b><br>
